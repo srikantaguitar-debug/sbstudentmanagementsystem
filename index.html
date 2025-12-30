@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Music Manager Pro (Logic Updated)</title>
+    <title>Music Classes Manager (Updated)</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4f46e5">
@@ -50,6 +50,9 @@
         .header-content { display: flex; align-items: center; gap: 12px; }
         #headerLogo { height: 40px; width: auto; border-radius: 6px; display: none; }
         header h1 { margin: 0; font-size: 16px; font-weight: 600; color: var(--primary); line-height: 1.2; }
+        /* Live Clock Style */
+        #liveClock { font-size: 10px; color: var(--text-muted); font-weight: 500; text-align: right; }
+
         .container { width: 95%; max-width: 800px; margin: 15px auto; }
 
         .bottom-nav {
@@ -61,10 +64,10 @@
         }
         .nav-item {
             border: none; background: none; display: flex; flex-direction: column;
-            align-items: center; color: #94a3b8; font-size: 9px; font-weight: 500;
+            align-items: center; color: #94a3b8; font-size: 8px; font-weight: 500;
             padding: 5px; flex-grow: 1; transition: 0.2s; cursor: pointer;
         }
-        .nav-item i { font-size: 18px; margin-bottom: 4px; }
+        .nav-item i { font-size: 16px; margin-bottom: 4px; }
         .nav-item.active { color: var(--primary); }
         .nav-item.active i { transform: translateY(-2px); }
         .tab-buttons { display: none; } 
@@ -135,6 +138,16 @@
         .student-time-sub { font-size: 11px; color: #666; display: block; }
         .status-present { color: var(--success); font-weight: bold; } .status-absent { color: var(--danger); font-weight: bold; }
 
+        /* Reminder List Styles */
+        .reminder-item {
+            background: #fff; padding: 12px; border-radius: 8px; margin-bottom: 8px;
+            border-left: 4px solid var(--warning); display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .reminder-day-badge {
+            font-size: 10px; background: #e2e8f0; padding: 2px 6px; border-radius: 4px; color: #475569; margin-right: 5px; text-transform: uppercase; font-weight: bold;
+        }
+
         .modal {
             display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; 
             background-color: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); align-items: center; justify-content: center;
@@ -192,7 +205,10 @@
     <header>
         <div class="header-content">
             <img id="headerLogo" src="" alt="Logo">
-            <div><h1>Music Classes Manager</h1><div style="font-size: 11px; color: var(--text-muted);">Pro Admin (Logic Updated)</div></div>
+            <div>
+                <h1>Music Classes Manager</h1>
+                <div id="liveClock">Loading time...</div>
+            </div>
         </div>
         <div onclick="openTab('settings')" style="padding: 5px;"><i class="fas fa-cog" style="color: var(--text-muted); font-size: 18px;"></i></div>
     </header>
@@ -202,6 +218,7 @@
             <button class="nav-item active" onclick="openTab('attendance')"><i class="fas fa-calendar-check"></i><span>Attend</span></button>
             <button class="nav-item" onclick="openTab('fees')"><i class="fas fa-rupee-sign"></i><span>Fees</span></button>
             <button class="nav-item" onclick="openTab('dashboard')"><i class="fas fa-chart-pie"></i><span>Dash</span></button>
+            <button class="nav-item" onclick="openTab('reminders')"><i class="fas fa-bell"></i><span>Remind</span></button>
             <button class="nav-item" onclick="openTab('studentMgmt')"><i class="fas fa-users"></i><span>Students</span></button>
             <button class="nav-item" onclick="openTab('reports')"><i class="fas fa-file-invoice"></i><span>Report</span></button>
             <button class="nav-item" onclick="openTab('analytics')"><i class="fas fa-chart-line"></i><span>Analytic</span></button>
@@ -212,6 +229,7 @@
             <button class="tab-button" onclick="openTab('fees')"></button>
             <button class="tab-button" onclick="openTab('studentMgmt')"></button>
             <button class="tab-button" onclick="openTab('dashboard')"></button>
+            <button class="tab-button" onclick="openTab('reminders')"></button>
             <button class="tab-button" onclick="openTab('reports')"></button>
             <button class="tab-button" onclick="openTab('analytics')"></button>
             <button class="tab-button" onclick="openTab('settings')"></button>
@@ -219,7 +237,16 @@
 
         <div id="attendance" class="tab-content active">
             <h3 style="border-left: 4px solid var(--primary); padding-left:10px;">Mark Attendance</h3>
-            <div class="form-group"><input type="date" id="attendanceDate" onchange="renderAttendance()"></div>
+            <div class="form-group" style="display: flex; gap: 10px;">
+                <div style="flex: 1;">
+                    <label>Date</label>
+                    <input type="date" id="attendanceDate" onchange="renderAttendance()">
+                </div>
+                <div style="flex: 1;">
+                    <label>Time (Optional)</label>
+                    <input type="time" id="attendanceTime" placeholder="Use default">
+                </div>
+            </div>
             <div class="search-bar"><input type="search" id="searchAttendance" onkeyup="searchTable('searchAttendance', 'attendanceTable')" placeholder="Search Name, Address..."></div>
             <table id="attendanceTable"><thead><tr><th>Student</th><th>Status</th><th>Action</th></tr></thead><tbody></tbody></table>
         </div>
@@ -230,6 +257,30 @@
             <div class="search-bar"><input type="search" id="searchFees" onkeyup="searchTable('searchFees', 'feeTable')" placeholder="Search Name, Address..."></div>
             <div id="feeSummary" class="summary-box"></div>
             <table id="feeTable"><thead><tr><th>Student</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table>
+        </div>
+
+        <div id="reminders" class="tab-content">
+            <h3 style="border-left: 4px solid var(--warning); padding-left:10px;">Weekly Reminders</h3>
+            <div class="dashboard-card">
+                <div class="form-group">
+                    <label>Add New Reminder</label>
+                    <input type="text" id="reminderText" placeholder="e.g. Check Guitars, Call Piano Batch..." style="margin-bottom:10px;">
+                    <div style="display: flex; gap: 10px;">
+                        <input type="date" id="reminderDate" style="flex:1;" onchange="updateReminderDay()">
+                        <select id="reminderDay" style="flex:1;">
+                            <option value="Monday">Monday</option>
+                            <option value="Tuesday">Tuesday</option>
+                            <option value="Wednesday">Wednesday</option>
+                            <option value="Thursday">Thursday</option>
+                            <option value="Friday">Friday</option>
+                            <option value="Saturday">Saturday</option>
+                            <option value="Sunday">Sunday</option>
+                        </select>
+                    </div>
+                    <button class="btn-primary" onclick="addReminder()" style="width:100%; margin-top: 10px;">Add Reminder</button>
+                </div>
+            </div>
+            <div id="reminderListContainer"></div>
         </div>
 
         <div id="studentMgmt" class="tab-content">
@@ -266,6 +317,11 @@
                 <h3>Dashboard</h3>
                 <button class="btn-primary" onclick="exportDashboardPDF()" style="font-size: 11px;"><i class="fas fa-download"></i> PDF</button>
             </div>
+            <div id="dashboardRemindersBox" class="dashboard-card" style="display: none; border-top-color: var(--warning); background-color: #fffbeb;">
+                <h3 style="color: #b45309; border:none; margin-bottom:5px;"><i class="fas fa-bell"></i> Reminders for Today</h3>
+                <div id="dashboardReminderList" style="padding-top:5px;"></div>
+            </div>
+
             <div id="birthdayAlertBox" class="dashboard-card birthday-card" style="display: none;">
                 <h3 style="color: var(--pink); border:none;"><i class="fas fa-birthday-cake"></i> Birthdays Today!</h3>
                 <div id="birthdayList"></div>
@@ -534,14 +590,23 @@
     <script>
         if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./serviceWorker.js').then(r => console.log('SW reg:', r.scope)).catch(e => console.log('SW fail:', e)); }); }
 
-        const DB_NAME = 'MusicClassManagerDB'; const DB_VERSION = 1; const STORE_NAME = 'appData'; let db;
+        const DB_NAME = 'MusicClassManagerDB'; const DB_VERSION = 2; const STORE_NAME = 'appData'; let db;
         function openDB() { return new Promise((resolve, reject) => { const request = indexedDB.open(DB_NAME, DB_VERSION); request.onupgradeneeded = (event) => { db = event.target.result; if (!db.objectStoreNames.contains(STORE_NAME)) { db.createObjectStore(STORE_NAME); } }; request.onsuccess = (event) => { db = event.target.result; resolve(db); }; request.onerror = (event) => { reject('Database error: ' + event.target.errorCode); }; }); }
         function dbGet(key) { return new Promise((resolve, reject) => { const transaction = db.transaction([STORE_NAME], 'readonly'); const store = transaction.objectStore(STORE_NAME); const request = store.get(key); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); }); }
         function dbSet(key, value) { return new Promise((resolve, reject) => { const transaction = db.transaction([STORE_NAME], 'readwrite'); const store = transaction.objectStore(STORE_NAME); const request = store.put(value, key); request.onsuccess = () => resolve(); request.onerror = () => reject(request.error); }); }
         function dbDelete(key) { return new Promise((resolve, reject) => { const transaction = db.transaction([STORE_NAME], 'readwrite'); const store = transaction.objectStore(STORE_NAME); const request = store.delete(key); request.onsuccess = () => resolve(); request.onerror = () => reject(request.error); }); }
         function dbClear() { return new Promise((resolve, reject) => { const transaction = db.transaction([STORE_NAME], 'readwrite'); const store = transaction.objectStore(STORE_NAME); const request = store.clear(); request.onsuccess = () => resolve(); request.onerror = () => reject(request.error); }); }
 
-        document.addEventListener('DOMContentLoaded', async () => { await openDB(); let existingPin = await dbGet('app_pin'); if (!existingPin) { const lsPin = localStorage.getItem('app_pin'); if(lsPin) { await dbSet('app_pin', lsPin); if(localStorage.getItem('students')) await dbSet('students', JSON.parse(localStorage.getItem('students'))); if(localStorage.getItem('attendance')) await dbSet('attendance', JSON.parse(localStorage.getItem('attendance'))); if(localStorage.getItem('fees')) await dbSet('fees', JSON.parse(localStorage.getItem('fees'))); if(localStorage.getItem('studentSerialCounter')) await dbSet('studentSerialCounter', localStorage.getItem('studentSerialCounter')); if(localStorage.getItem('instituteLogo')) await dbSet('instituteLogo', localStorage.getItem('instituteLogo')); if(localStorage.getItem('authorizedSignature')) await dbSet('authorizedSignature', localStorage.getItem('authorizedSignature')); if(localStorage.getItem('lastBackupDate')) await dbSet('lastBackupDate', localStorage.getItem('lastBackupDate')); Swal.fire('System Update', 'Data migrated.', 'success'); } else { await dbSet('app_pin', '1234'); } } await loadInstituteLogo(); await loadAuthSignature(); secureAction(() => { initApp(); checkBackupStatus(); }, true); document.querySelector('.close-pin').style.display = 'none'; });
+        // Start Clock Logic
+        function startClock() {
+            setInterval(() => {
+                const now = new Date();
+                const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
+                document.getElementById('liveClock').textContent = now.toLocaleString('en-IN', options);
+            }, 1000);
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => { await openDB(); let existingPin = await dbGet('app_pin'); if (!existingPin) { const lsPin = localStorage.getItem('app_pin'); if(lsPin) { await dbSet('app_pin', lsPin); if(localStorage.getItem('students')) await dbSet('students', JSON.parse(localStorage.getItem('students'))); if(localStorage.getItem('attendance')) await dbSet('attendance', JSON.parse(localStorage.getItem('attendance'))); if(localStorage.getItem('fees')) await dbSet('fees', JSON.parse(localStorage.getItem('fees'))); if(localStorage.getItem('studentSerialCounter')) await dbSet('studentSerialCounter', localStorage.getItem('studentSerialCounter')); if(localStorage.getItem('instituteLogo')) await dbSet('instituteLogo', localStorage.getItem('instituteLogo')); if(localStorage.getItem('authorizedSignature')) await dbSet('authorizedSignature', localStorage.getItem('authorizedSignature')); if(localStorage.getItem('lastBackupDate')) await dbSet('lastBackupDate', localStorage.getItem('lastBackupDate')); Swal.fire('System Update', 'Data migrated.', 'success'); } else { await dbSet('app_pin', '1234'); } } await loadInstituteLogo(); await loadAuthSignature(); secureAction(() => { initApp(); checkBackupStatus(); startClock(); }, true); document.querySelector('.close-pin').style.display = 'none'; });
 
         async function initApp() { 
             const now = new Date(); 
@@ -566,12 +631,13 @@
                 students = (sData || []).map(migrateStudentData); 
                 attendance = (await dbGet('attendance')) || {}; 
                 fees = (await dbGet('fees')) || {}; 
+                reminders = (await dbGet('reminders')) || []; // Load Reminders
                 studentSerialCounter = parseInt(await dbGet('studentSerialCounter')) || 1; 
                 
                 loadAllData(); 
             } catch(e) {
                 console.error("Init Error:", e);
-                students = []; attendance = {}; fees = {};
+                students = []; attendance = {}; fees = {}; reminders = [];
             }
 
             document.getElementById('attendanceDate').addEventListener('change', renderAttendance); 
@@ -583,7 +649,7 @@
         
         async function checkBackupStatus() { const lastBackup = await dbGet('lastBackupDate'); if (!lastBackup) { Swal.fire({ title: 'Backup Warning', text: 'Backup not taken yet.', icon: 'warning', confirmButtonText: 'Okay' }); } else { const daysDiff = (new Date() - new Date(lastBackup)) / (1000 * 60 * 60 * 24); if (daysDiff > 7) { Swal.fire({ title: 'Backup Reminder', text: `Last backup was ${Math.floor(daysDiff)} days ago.`, icon: 'warning', confirmButtonText: 'Okay' }); } } }
 
-        const INSTITUTE_NAME = "Guitar, Bass Guitar, Piano, Keyboard, Mandolin Classes"; const MY_NAME = "Srikanta Banerjee"; const DEFAULT_FEE = 500, DUE_DATE = 10; let students = [], attendance = {}, fees = {}, studentSerialCounter = 1; let financeChartInstance = null; let instituteLogo = null; let authorizedSignature = null;
+        const INSTITUTE_NAME = "Guitar, Bass Guitar, Piano, Keyboard, Mandolin Classes"; const MY_NAME = "Srikanta Banerjee"; const DEFAULT_FEE = 500, DUE_DATE = 10; let students = [], attendance = {}, fees = {}, reminders = [], studentSerialCounter = 1; let financeChartInstance = null; let instituteLogo = null; let authorizedSignature = null;
         let analyticsChartInstance = null; 
 
         async function saveInstituteLogo(input) { const file = input.files[0]; if (file) { const reader = new FileReader(); reader.onload = function(e) { const img = new Image(); img.onload = async function() { const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); const maxWidth = 200; const scaleSize = maxWidth / img.width; canvas.width = maxWidth; canvas.height = img.height * scaleSize; ctx.drawImage(img, 0, 0, canvas.width, canvas.height); const logoBase64 = canvas.toDataURL('image/jpeg', 0.8); await dbSet('instituteLogo', logoBase64); await loadInstituteLogo(); Swal.fire('Success', 'Logo saved!', 'success'); }; img.src = e.target.result; }; reader.readAsDataURL(file); } }
@@ -611,7 +677,6 @@
             return new Date(student.joining_date); 
         }
 
-        // UPDATED: Logic to handle Deactivation date (1-10 free rule)
         function wasStudentActiveDuringMonth(student, monthStr) {
             const [year, month] = monthStr.split('-').map(Number);
             const monthStart = new Date(year, month - 1, 1);
@@ -643,7 +708,6 @@
             const changeDate = new Date(lastChangeInMonth.date);
 
             if (lastChangeInMonth.status === 'Inactive') {
-                // RULE: If deactivated between 1st and 10th, no fee for this month.
                 if (changeDate.getDate() <= 10) {
                     return false; 
                 } else {
@@ -723,9 +787,9 @@
         async function changeAppPin() { const newPin = document.getElementById('newAppPin').value; if (newPin.length === 4 && !isNaN(newPin)) { await dbSet('app_pin', newPin); Swal.fire('Success', 'PIN changed successfully.', 'success'); document.getElementById('newAppPin').value = ''; } else { Swal.fire('Error', 'PIN must be 4 digits.', 'error'); } }
 
         async function addStudent() { const name = document.getElementById('studentName').value; const className = document.getElementById('studentClass').value; const day = document.getElementById('studentDay').value; const time = document.getElementById('studentTime').value; const fee = parseFloat(document.getElementById('studentFee').value) || DEFAULT_FEE; const email = document.getElementById('studentEmail').value; const guardian = document.getElementById('guardianName').value; const phone = document.getElementById('phone').value; const address = document.getElementById('address').value; const dob = document.getElementById('studentDOB').value; if (name.trim() === '') { Swal.fire('Error', 'Name is required.', 'error'); return; } const newStudent = { id: Date.now(), serial_no: studentSerialCounter++, name, class: className, class_day: day, class_time: time, fee_amount: fee, email, guardian, phone, address, dob: dob, photo: currentPhotoBase64, joining_date: new Date().toISOString().split('T')[0], status: { isActive: true, history: [{ status: 'Active', date: new Date().toISOString().split('T')[0], note: 'Joined' }] } }; students.push(newStudent); await saveData(); document.getElementById('studentName').value = ''; document.getElementById('studentClass').value = ''; document.getElementById('studentFee').value = ''; document.getElementById('studentEmail').value = ''; document.getElementById('guardianName').value = ''; document.getElementById('phone').value = ''; document.getElementById('address').value = ''; document.getElementById('studentDOB').value = ''; document.getElementById('studentDay').value = ''; document.getElementById('studentTime').value = ''; document.getElementById('photoPreview').style.display = 'none'; document.getElementById('photoPlaceholder').style.display = 'block'; currentPhotoBase64 = null; document.getElementById('addStudentCamera').value = ''; document.getElementById('addStudentGallery').value = ''; loadAllData(); Swal.fire('Success', 'Student added successfully!', 'success'); }
-        async function saveData() { await dbSet('students', students); await dbSet('attendance', attendance); await dbSet('fees', fees); await dbSet('studentSerialCounter', studentSerialCounter); }
-        function loadAllData() { renderDashboard(); loadStudentsList(); renderAttendance(); renderFees(); }
-        async function exportData() { const data = { students, attendance, fees, studentSerialCounter }; const jsonStr = JSON.stringify(data); const defaultDate = new Date().toISOString().split('T')[0]; const defaultName = `music_class_backup_${defaultDate}.json`; try { if (window.showSaveFilePicker) { const handle = await window.showSaveFilePicker({ suggestedName: defaultName, types: [{ description: 'JSON Backup File', accept: { 'application/json': ['.json'] }, }], }); const writable = await handle.createWritable(); await writable.write(jsonStr); await writable.close(); } else { const { value: fileName } = await Swal.fire({ title: 'Backup File Name', input: 'text', inputValue: defaultName, text: 'Enter a name for your backup file:', showCancelButton: true }); if (!fileName) return; const blob = new Blob([jsonStr], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = fileName.endsWith('.json') ? fileName : fileName + '.json'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); } await dbSet('lastBackupDate', new Date().toISOString()); Swal.fire({ title: 'Backup Saved!', html: '<p>Backup file saved successfully. Ekhon file ti <b>Google Drive</b> e upload kore rakhun.</p>', icon: 'success', showCancelButton: true, confirmButtonText: 'Open Google Drive', cancelButtonText: 'Close' }).then((result) => { if (result.isConfirmed) { window.open('https://drive.google.com', '_blank'); } }); } catch (err) { if (err.name !== 'AbortError') { console.error(err); Swal.fire('Error', 'Failed to save backup.', 'error'); } } }
+        async function saveData() { await dbSet('students', students); await dbSet('attendance', attendance); await dbSet('fees', fees); await dbSet('reminders', reminders); await dbSet('studentSerialCounter', studentSerialCounter); }
+        function loadAllData() { renderDashboard(); loadStudentsList(); renderAttendance(); renderFees(); renderReminders(); }
+        async function exportData() { const data = { students, attendance, fees, reminders, studentSerialCounter }; const jsonStr = JSON.stringify(data); const defaultDate = new Date().toISOString().split('T')[0]; const defaultName = `music_class_backup_${defaultDate}.json`; try { if (window.showSaveFilePicker) { const handle = await window.showSaveFilePicker({ suggestedName: defaultName, types: [{ description: 'JSON Backup File', accept: { 'application/json': ['.json'] }, }], }); const writable = await handle.createWritable(); await writable.write(jsonStr); await writable.close(); } else { const { value: fileName } = await Swal.fire({ title: 'Backup File Name', input: 'text', inputValue: defaultName, text: 'Enter a name for your backup file:', showCancelButton: true }); if (!fileName) return; const blob = new Blob([jsonStr], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = fileName.endsWith('.json') ? fileName : fileName + '.json'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); } await dbSet('lastBackupDate', new Date().toISOString()); Swal.fire({ title: 'Backup Saved!', html: '<p>Backup file saved successfully. Ekhon file ti <b>Google Drive</b> e upload kore rakhun.</p>', icon: 'success', showCancelButton: true, confirmButtonText: 'Open Google Drive', cancelButtonText: 'Close' }).then((result) => { if (result.isConfirmed) { window.open('https://drive.google.com', '_blank'); } }); } catch (err) { if (err.name !== 'AbortError') { console.error(err); Swal.fire('Error', 'Failed to save backup.', 'error'); } } }
         function openTab(tabName) { 
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active')); 
             document.querySelectorAll('.nav-item').forEach(button => button.classList.remove('active')); 
@@ -737,6 +801,7 @@
             if(tabName === 'studentMgmt') loadStudentsList();
             if(tabName === 'attendance') renderAttendance();
             if(tabName === 'fees') renderFees();
+            if(tabName === 'reminders') renderReminders();
         }
         function migrateStudentData(student) { 
             if (!student.status) {
@@ -757,7 +822,7 @@
         function triggerCamera() { closeModal('photoSourceModal'); const id = photoSelectionContext === 'add' ? 'addStudentCamera' : 'editStudentCamera'; document.getElementById(id).click(); }
         function triggerGallery() { closeModal('photoSourceModal'); const id = photoSelectionContext === 'add' ? 'addStudentGallery' : 'editStudentGallery'; document.getElementById(id).click(); }
         function handlePhotoSelection(input, context) { const file = input.files[0]; if (file) { const reader = new FileReader(); reader.onload = function(e) { const img = new Image(); img.onload = function() { const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); const maxWidth = 150; const scaleSize = maxWidth / img.width; canvas.width = maxWidth; canvas.height = img.height * scaleSize; ctx.drawImage(img, 0, 0, canvas.width, canvas.height); const base64 = canvas.toDataURL('image/jpeg', 0.7); if (context === 'add') { currentPhotoBase64 = base64; document.getElementById('photoPreview').src = base64; document.getElementById('photoPreview').style.display = 'block'; document.getElementById('photoPlaceholder').style.display = 'none'; } else { currentEditPhotoBase64 = base64; document.getElementById('editPhotoPreview').src = base64; } }; img.src = e.target.result; }; reader.readAsDataURL(file); } }
-        async function importData(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { try { const json = e.target.result; let importedData = JSON.parse(json); if (!importedData || !Array.isArray(importedData.students)) { throw new Error("Invalid Data Format"); } Swal.fire({ title: 'Overwrite Data?', text: "This will replace all current data.", icon: 'warning', showCancelButton: true, confirmButtonText: 'Yes, Import' }).then(async (result) => { if (result.isConfirmed) { students = (importedData.students || []).map(migrateStudentData); attendance = importedData.attendance || {}; fees = importedData.fees || {}; studentSerialCounter = importedData.studentSerialCounter || (students.length + 1); await saveData(); loadAllData(); Swal.fire('Success', 'Data imported successfully!', 'success'); } }); } catch (error) { console.error(error); Swal.fire('Error', 'Failed to load backup file. Please check the file.', 'error'); } finally { event.target.value = null; } }; reader.readAsText(file); }
+        async function importData(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { try { const json = e.target.result; let importedData = JSON.parse(json); if (!importedData || !Array.isArray(importedData.students)) { throw new Error("Invalid Data Format"); } Swal.fire({ title: 'Overwrite Data?', text: "This will replace all current data.", icon: 'warning', showCancelButton: true, confirmButtonText: 'Yes, Import' }).then(async (result) => { if (result.isConfirmed) { students = (importedData.students || []).map(migrateStudentData); attendance = importedData.attendance || {}; fees = importedData.fees || {}; reminders = importedData.reminders || []; studentSerialCounter = importedData.studentSerialCounter || (students.length + 1); await saveData(); loadAllData(); Swal.fire('Success', 'Data imported successfully!', 'success'); } }); } catch (error) { console.error(error); Swal.fire('Error', 'Failed to load backup file. Please check the file.', 'error'); } finally { event.target.value = null; } }; reader.readAsText(file); }
         function openStatusChangeModal(id, toActive) { document.getElementById('statusChangeStudentId').value = id; document.getElementById('statusChangeToActive').value = toActive; document.getElementById('statusChangeTitle').textContent = toActive ? 'Activate Student' : 'Deactivate Student'; document.getElementById('statusDate').valueAsDate = new Date(); document.getElementById('statusNote').value = ''; document.getElementById('statusChangeModal').style.display = 'flex'; }
         async function saveStatusChange() { const id = parseInt(document.getElementById('statusChangeStudentId').value); const toActive = document.getElementById('statusChangeToActive').value === 'true'; const note = document.getElementById('statusNote').value.trim(); const statusDate = document.getElementById('statusDate').value; if (!statusDate) { Swal.fire('Error', 'Please select a date.', 'error'); return; } const student = students.find(s => s.id === id); if (student) { student.status.isActive = toActive; student.status.history.unshift({ status: toActive ? 'Active' : 'Inactive', date: statusDate, note: note || (toActive ? 'Re-activated' : 'Deactivated') }); await saveData(); loadAllData(); closeModal('statusChangeModal'); Swal.fire('Updated', `Status changed.`, 'success'); } }
         
@@ -785,6 +850,61 @@
         function showClassStudents(className) { document.getElementById('classStudentsTitle').textContent = `Students in ${className} Class`; const tableBody = document.querySelector('#classStudentsTable tbody'); tableBody.innerHTML = ''; const classStudents = students.filter(s => s.status?.isActive && (s.class || 'Unassigned') === className); classStudents.forEach(s => { tableBody.innerHTML += `<tr><td>${s.serial_no}</td><td>${getStudentHtml(s)}</td><td>${getContactButtons(s.id)}</td></tr>`; }); document.getElementById('classStudentsModal').style.display = 'flex'; }
         function showCategoryList(type) { const list = students.filter(s => type === 'active' ? s.status?.isActive : !s.status?.isActive); document.getElementById('classStudentsTitle').textContent = type === 'active' ? 'Active Students' : 'Inactive Students'; const tableBody = document.querySelector('#classStudentsTable tbody'); tableBody.innerHTML = ''; if(list.length === 0) { tableBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px;">No students found.</td></tr>'; } else { list.forEach(s => { tableBody.innerHTML += `<tr><td>${s.serial_no}</td><td>${getStudentHtml(s)}</td><td>${getAllContactButtons(s)}</td></tr>`; }); } document.getElementById('classStudentsModal').style.display = 'flex'; }
         function checkBirthday(dobString) { if (!dobString) return false; const today = new Date(); const dob = new Date(dobString); return today.getDate() === dob.getDate() && today.getMonth() === dob.getMonth(); }
+        
+        // --- REMINDER LOGIC ---
+        function updateReminderDay() {
+            const dateVal = document.getElementById('reminderDate').value;
+            if (dateVal) {
+                const date = new Date(dateVal);
+                const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                document.getElementById('reminderDay').value = days[date.getDay()];
+            }
+        }
+
+        async function addReminder() {
+            const text = document.getElementById('reminderText').value.trim();
+            const day = document.getElementById('reminderDay').value;
+            if(!text) { Swal.fire('Error', 'Please enter reminder text.', 'error'); return; }
+            reminders.push({ id: Date.now(), text: text, day: day });
+            await saveData();
+            document.getElementById('reminderText').value = '';
+            document.getElementById('reminderDate').value = '';
+            renderReminders();
+            Swal.fire('Added', 'Reminder added successfully.', 'success');
+        }
+
+        async function deleteReminder(id) {
+            reminders = reminders.filter(r => r.id !== id);
+            await saveData();
+            renderReminders();
+        }
+
+        function renderReminders() {
+            const listContainer = document.getElementById('reminderListContainer');
+            listContainer.innerHTML = '';
+            const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+            
+            days.forEach(day => {
+                const dayReminders = reminders.filter(r => r.day === day);
+                if(dayReminders.length > 0) {
+                    const dayHeader = document.createElement('h4');
+                    dayHeader.style.cssText = "margin: 10px 0 5px 0; color: var(--primary); font-size:12px; border-bottom:1px solid #eee;";
+                    dayHeader.textContent = day;
+                    listContainer.appendChild(dayHeader);
+
+                    dayReminders.forEach(r => {
+                        const div = document.createElement('div');
+                        div.className = 'reminder-item';
+                        div.innerHTML = `<span>${r.text}</span> <button class="btn-danger" style="padding:4px 8px;" onclick="deleteReminder(${r.id})"><i class="fas fa-trash"></i></button>`;
+                        listContainer.appendChild(div);
+                    });
+                }
+            });
+            if(reminders.length === 0) {
+                listContainer.innerHTML = '<p style="text-align:center; color:#999; font-size:12px; margin-top:20px;">No reminders set.</p>';
+            }
+        }
+
         function renderDashboard() { 
             const activeStudents = students.filter(s => s.status?.isActive); 
             document.getElementById('studentStatsSummary').innerHTML = `<div class="clickable-stat" onclick="showCategoryList('active')"><h4>Active</h4><p class="summary-collected">${activeStudents.length}</p></div><div class="clickable-stat" onclick="showCategoryList('inactive')"><h4>Inactive</h4><p class="summary-due">${students.length - activeStudents.length}</p></div><div><h4>Total</h4><p class="summary-total">${students.length}</p></div>`; 
@@ -792,6 +912,22 @@
             const classCounts = activeStudents.reduce((acc, student) => { const className = student.class || 'Unassigned'; acc[className] = (acc[className] || 0) + 1; return acc; }, {}); const classListEl = document.getElementById('classStrengthList'); classListEl.innerHTML = ''; Object.entries(classCounts).sort().forEach(([className, count]) => { classListEl.innerHTML += `<li onclick="showClassStudents('${className}')"><strong>${className}:</strong> <span>${count} students</span></li>`; }); 
             let monthlyCollected = 0, monthlyDueAmount = 0, yearlyCollected = 0, yearlyDueAmount = 0; const currentYear = new Date().getFullYear(), currentMonthStr = `${currentYear}-${(new Date().getMonth() + 1).toString().padStart(2, '0')}`; 
             
+            // Dashboard Reminder Logic
+            const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+            const todayName = days[new Date().getDay()];
+            const todaysReminders = reminders.filter(r => r.day === todayName);
+            const rBox = document.getElementById('dashboardRemindersBox');
+            const rList = document.getElementById('dashboardReminderList');
+            if(todaysReminders.length > 0) {
+                rList.innerHTML = '';
+                todaysReminders.forEach(r => {
+                    rList.innerHTML += `<div style="padding:8px; border-bottom:1px solid #fde68a; font-size:13px;">• ${r.text}</div>`;
+                });
+                rBox.style.display = 'block';
+            } else {
+                rBox.style.display = 'none';
+            }
+
             students.forEach(student => { 
                 if (!student.status?.isActive) return;
                 for (let i = 0; i < 12; i++) { 
@@ -899,8 +1035,9 @@
             addLine('Attendance Summary & Details', 14, 'bold', 8); 
             let presentDates = [], absentDates = [];
             Object.keys(attendance).sort().reverse().forEach(date => { 
-                const status = attendance[date]?.[student.id];
-                if (status) {
+                const entry = attendance[date]?.[student.id];
+                if (entry) {
+                    const status = (typeof entry === 'object' && entry !== null) ? entry.status : entry;
                     const d = new Date(date);
                     const formattedDate = `${d.toLocaleDateString('en-IN')} (${d.toLocaleDateString('en-IN', {weekday: 'long'})})`;
                     if (status === 'present') presentDates.push(formattedDate);
@@ -1284,7 +1421,9 @@
             if (!date) return; 
             
             students.filter(s => s.status?.isActive).forEach(student => { 
-                const status = attendance[date]?.[student.id];
+                const entry = attendance[date]?.[student.id];
+                const status = (typeof entry === 'object' && entry !== null) ? entry.status : entry; // Handle both string and object
+                
                 const statusText = status === 'present' ? 'Present' : (status === 'absent' ? 'Absent' : 'Not Marked');
                 const statusClass = status === 'present' ? 'status-present' : (status === 'absent' ? 'status-absent' : ''); 
                 
@@ -1337,16 +1476,32 @@
                 listBody.appendChild(row);
             }); 
         }
-        
-        function markAttendance(studentId, status) {
+       
+function markAttendance(studentId, status) {
             const date = document.getElementById('attendanceDate').value; 
             if (!date) { Swal.fire('Alert','Please select a date.', 'warning'); return; } 
+            
             if (!attendance[date]) attendance[date] = {}; 
-            if (status === 'clear') delete attendance[date][studentId]; 
-            else attendance[date][studentId] = status; 
+            
+            if (status === 'clear') {
+                delete attendance[date][studentId]; 
+            } else {
+                // UPDATED: Input Time or Current Time ONLY
+                const timeInput = document.getElementById('attendanceTime').value;
+                let timeToSave = timeInput;
+                
+                // If no manual time, take current system time
+                if (!timeToSave) {
+                     const now = new Date();
+                     const hours = now.getHours().toString().padStart(2, '0');
+                     const mins = now.getMinutes().toString().padStart(2, '0');
+                     timeToSave = `${hours}:${mins}`;
+                }
+
+                attendance[date][studentId] = { status: status, time: timeToSave }; 
+            }
             saveData().then(() => renderAttendance()); 
         }
-
         function unmarkFee(studentId, month) { 
             Swal.fire({ title: 'Unmark Payment?', text: "Mark fee as unpaid?", icon: 'warning', showCancelButton: true, confirmButtonText: 'Yes' }).then(async (result) => { 
                 if (result.isConfirmed && fees[month]?.[studentId]) { 
@@ -1453,11 +1608,29 @@
             presentList.innerHTML = absentList.innerHTML = ''; 
             
             Object.keys(attendance).sort().reverse().forEach(date => { 
-                const dateObj = new Date(date);
-                const dayName = dateObj.toLocaleDateString('en-IN', { weekday: 'long' });
-                const formattedDate = `${dateObj.toLocaleDateString('en-IN')} (${dayName})`;
-                if (attendance[date]?.[student.id] === 'present') { presentList.innerHTML += `<li style="padding:2px 0; border-bottom:1px solid #f9f9f9;">${formattedDate}</li>`; } 
-                else if (attendance[date]?.[student.id] === 'absent') { absentList.innerHTML += `<li style="padding:2px 0; border-bottom:1px solid #f9f9f9;">${formattedDate}</li>`; }
+                const entry = attendance[date]?.[student.id];
+                if(entry) {
+                    const dateObj = new Date(date);
+                    const dayName = dateObj.toLocaleDateString('en-IN', { weekday: 'long' });
+                    
+                    // Handle new time object format or legacy string format
+                    let timeStr = '';
+                    let status = entry;
+                    if(typeof entry === 'object' && entry !== null) {
+                        status = entry.status;
+                        if(entry.time) {
+                             const [h, m] = entry.time.split(':');
+                             const ampm = h >= 12 ? 'PM' : 'AM';
+                             const h12 = h % 12 || 12;
+                             timeStr = ` (${h12}:${m} ${ampm})`;
+                        }
+                    }
+
+                    const formattedDate = `${dateObj.toLocaleDateString('en-IN')} (${dayName})${timeStr}`;
+                    
+                    if (status === 'present') { presentList.innerHTML += `<li style="padding:2px 0; border-bottom:1px solid #f9f9f9;">${formattedDate}</li>`; } 
+                    else if (status === 'absent') { absentList.innerHTML += `<li style="padding:2px 0; border-bottom:1px solid #f9f9f9;">${formattedDate}</li>`; }
+                }
             }); 
             
             if(!presentList.innerHTML) presentList.innerHTML = '<li>No records found</li>'; 
