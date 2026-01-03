@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Music Classes Manager (Updated)</title>
+    <title>Music Classes Manager (Pro)</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4f46e5">
@@ -50,7 +49,6 @@
         .header-content { display: flex; align-items: center; gap: 12px; }
         #headerLogo { height: 40px; width: auto; border-radius: 6px; display: none; }
         header h1 { margin: 0; font-size: 16px; font-weight: 600; color: var(--primary); line-height: 1.2; }
-        /* Live Clock Style */
         #liveClock { font-size: 10px; color: var(--text-muted); font-weight: 500; text-align: right; }
 
         .container { width: 95%; max-width: 800px; margin: 15px auto; }
@@ -71,13 +69,14 @@
         .nav-item.active { color: var(--primary); }
         .nav-item.active i { transform: translateY(-2px); }
         .tab-buttons { display: none; } 
-
+        
         .tab-content { display: none; animation: fadeIn 0.3s ease; }
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
         .dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 15px; margin-top: 15px; }
         @media (min-width: 768px) { .dashboard-grid { grid-template-columns: repeat(2, 1fr); } }
+
         .dashboard-card {
             background: var(--bg-card); border-radius: var(--radius);
             padding: 20px; box-shadow: var(--shadow);
@@ -86,10 +85,11 @@
         h3 { margin-top: 0; font-size: 16px; margin-bottom: 15px; color: var(--text-main); border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; }
         
         .summary-box { display: flex; justify-content: space-between; background: #f8fafc; padding: 15px; border-radius: var(--radius); margin-top: 10px; gap: 10px; }
-        .summary-box > div { flex: 1; text-align: center; border-right: 1px solid #e2e8f0; }
+        .summary-box > div { flex: 1; text-align: center; border-right: 1px solid #e2e8f0; cursor: pointer; }
         .summary-box > div:last-child { border-right: none; }
         .summary-box h4 { font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin: 0 0 5px 0; }
         .summary-box p { font-size: 18px; font-weight: 700; margin: 0; }
+        
         .clickable-stat { cursor: pointer; } .clickable-stat:active { background-color: #e0e7ff; }
         .summary-collected { color: var(--success); } .summary-due { color: var(--danger); }
 
@@ -124,6 +124,7 @@
             td.action-buttons { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 5px; }
         }
         @media (min-width: 769px) { th { background: #f8fafc; padding: 12px; text-align: left; color: var(--text-muted); font-size: 12px; } td { padding: 12px; border-bottom: 1px solid #f1f5f9; } }
+
         .paid { border-left: 5px solid var(--success) !important; background-color: #ecfdf5 !important; }
         .unpaid { border-left: 5px solid var(--danger) !important; background-color: #fef2f2 !important; }
         .pending { border-left: 5px solid var(--warning) !important; }
@@ -138,14 +139,10 @@
         .student-time-sub { font-size: 11px; color: #666; display: block; }
         .status-present { color: var(--success); font-weight: bold; } .status-absent { color: var(--danger); font-weight: bold; }
 
-        /* Reminder List Styles */
         .reminder-item {
             background: #fff; padding: 12px; border-radius: 8px; margin-bottom: 8px;
             border-left: 4px solid var(--warning); display: flex; justify-content: space-between; align-items: center;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-        .reminder-day-badge {
-            font-size: 10px; background: #e2e8f0; padding: 2px 6px; border-radius: 4px; color: #475569; margin-right: 5px; text-transform: uppercase; font-weight: bold;
         }
 
         .modal {
@@ -175,6 +172,7 @@
         .search-bar { position: relative; margin-bottom: 20px; }
         .search-bar input { padding-left: 40px; border-radius: 50px; }
         .search-bar::before { content: '\f002'; font-family: "Font Awesome 6 Free"; font-weight: 900; position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+        
         #photoPreviewBox { width: 120px; height: 120px; border-radius: 50%; background: #f1f5f9; margin: 0 auto 15px auto; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px dashed #cbd5e1; cursor: pointer; }
         
         #securityOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; color: white; }
@@ -187,7 +185,6 @@
     </style>
 </head>
 <body>
-
     <div id="securityOverlay">
         <span class="close-pin" onclick="closePinScreen()" style="position: absolute; top: 30px; right: 20px; font-size: 30px; opacity: 0.7;">&times;</span>
         <div style="font-size: 20px; letter-spacing: 2px; margin-bottom: 20px; opacity: 0.9;">ENTER PIN</div>
@@ -243,8 +240,8 @@
                     <input type="date" id="attendanceDate" onchange="renderAttendance()">
                 </div>
                 <div style="flex: 1;">
-                    <label>Time (Optional)</label>
-                    <input type="time" id="attendanceTime" placeholder="Use default">
+                    <label>Time</label>
+                    <input type="time" id="attendanceTime" placeholder="Default: Current">
                 </div>
             </div>
             <div class="search-bar"><input type="search" id="searchAttendance" onkeyup="searchTable('searchAttendance', 'attendanceTable')" placeholder="Search Name, Address..."></div>
@@ -317,6 +314,7 @@
                 <h3>Dashboard</h3>
                 <button class="btn-primary" onclick="exportDashboardPDF()" style="font-size: 11px;"><i class="fas fa-download"></i> PDF</button>
             </div>
+            
             <div id="dashboardRemindersBox" class="dashboard-card" style="display: none; border-top-color: var(--warning); background-color: #fffbeb;">
                 <h3 style="color: #b45309; border:none; margin-bottom:5px;"><i class="fas fa-bell"></i> Reminders for Today</h3>
                 <div id="dashboardReminderList" style="padding-top:5px;"></div>
@@ -326,6 +324,7 @@
                 <h3 style="color: var(--pink); border:none;"><i class="fas fa-birthday-cake"></i> Birthdays Today!</h3>
                 <div id="birthdayList"></div>
             </div>
+
             <div class="dashboard-grid">
                 <div class="dashboard-card">
                     <h3>Financials</h3>
@@ -389,7 +388,7 @@
                 </div>
                 <div id="yearlyAverages" class="summary-box" style="margin-top: 15px; display:none;"></div>
             </div>
-
+            
             <div class="dashboard-card" style="border-top-color: var(--info);">
                 <h3>Compare Specific Months</h3>
                 <div class="form-group">
@@ -505,6 +504,12 @@
                 <p><strong>Addr:</strong> <span id="modalAddress"></span></p>
                 <p><strong>DOB:</strong> <span id="modalDOB"></span></p>
             </div>
+
+            <div style="display:flex; gap:10px; margin-bottom:10px; align-items:center; background:#f1f5f9; padding:10px; border-radius:8px;">
+                <select id="detailsFilterYear" style="flex:1; font-size:12px; padding:8px;" onchange="renderStudentDetailsHistory()"></select>
+                <select id="detailsFilterMonth" style="flex:1; font-size:12px; padding:8px;" onchange="renderStudentDetailsHistory()"></select>
+            </div>
+
             <div style="margin-bottom:20px;">
                 <h4 style="margin:0 0 10px 0;">Status History</h4>
                 <ul id="modalStatusHistory" class="scrollable-list"></ul>
@@ -589,15 +594,13 @@
 
     <script>
         if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./serviceWorker.js').then(r => console.log('SW reg:', r.scope)).catch(e => console.log('SW fail:', e)); }); }
-
         const DB_NAME = 'MusicClassManagerDB'; const DB_VERSION = 2; const STORE_NAME = 'appData'; let db;
         function openDB() { return new Promise((resolve, reject) => { const request = indexedDB.open(DB_NAME, DB_VERSION); request.onupgradeneeded = (event) => { db = event.target.result; if (!db.objectStoreNames.contains(STORE_NAME)) { db.createObjectStore(STORE_NAME); } }; request.onsuccess = (event) => { db = event.target.result; resolve(db); }; request.onerror = (event) => { reject('Database error: ' + event.target.errorCode); }; }); }
         function dbGet(key) { return new Promise((resolve, reject) => { const transaction = db.transaction([STORE_NAME], 'readonly'); const store = transaction.objectStore(STORE_NAME); const request = store.get(key); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); }); }
         function dbSet(key, value) { return new Promise((resolve, reject) => { const transaction = db.transaction([STORE_NAME], 'readwrite'); const store = transaction.objectStore(STORE_NAME); const request = store.put(value, key); request.onsuccess = () => resolve(); request.onerror = () => reject(request.error); }); }
         function dbDelete(key) { return new Promise((resolve, reject) => { const transaction = db.transaction([STORE_NAME], 'readwrite'); const store = transaction.objectStore(STORE_NAME); const request = store.delete(key); request.onsuccess = () => resolve(); request.onerror = () => reject(request.error); }); }
         function dbClear() { return new Promise((resolve, reject) => { const transaction = db.transaction([STORE_NAME], 'readwrite'); const store = transaction.objectStore(STORE_NAME); const request = store.clear(); request.onsuccess = () => resolve(); request.onerror = () => reject(request.error); }); }
-
-        // Start Clock Logic
+        
         function startClock() {
             setInterval(() => {
                 const now = new Date();
@@ -607,10 +610,16 @@
         }
 
         document.addEventListener('DOMContentLoaded', async () => { await openDB(); let existingPin = await dbGet('app_pin'); if (!existingPin) { const lsPin = localStorage.getItem('app_pin'); if(lsPin) { await dbSet('app_pin', lsPin); if(localStorage.getItem('students')) await dbSet('students', JSON.parse(localStorage.getItem('students'))); if(localStorage.getItem('attendance')) await dbSet('attendance', JSON.parse(localStorage.getItem('attendance'))); if(localStorage.getItem('fees')) await dbSet('fees', JSON.parse(localStorage.getItem('fees'))); if(localStorage.getItem('studentSerialCounter')) await dbSet('studentSerialCounter', localStorage.getItem('studentSerialCounter')); if(localStorage.getItem('instituteLogo')) await dbSet('instituteLogo', localStorage.getItem('instituteLogo')); if(localStorage.getItem('authorizedSignature')) await dbSet('authorizedSignature', localStorage.getItem('authorizedSignature')); if(localStorage.getItem('lastBackupDate')) await dbSet('lastBackupDate', localStorage.getItem('lastBackupDate')); Swal.fire('System Update', 'Data migrated.', 'success'); } else { await dbSet('app_pin', '1234'); } } await loadInstituteLogo(); await loadAuthSignature(); secureAction(() => { initApp(); checkBackupStatus(); startClock(); }, true); document.querySelector('.close-pin').style.display = 'none'; });
-
+        
         async function initApp() { 
             const now = new Date(); 
             document.getElementById('attendanceDate').valueAsDate = now; 
+            
+            // Set Default Time to Current (HH:mm format required for input type="time")
+            const hours = now.getHours().toString().padStart(2, '0');
+            const mins = now.getMinutes().toString().padStart(2, '0');
+            document.getElementById('attendanceTime').value = `${hours}:${mins}`;
+
             const currentMonthStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`; 
             
             const prevDate = new Date(now);
@@ -631,7 +640,7 @@
                 students = (sData || []).map(migrateStudentData); 
                 attendance = (await dbGet('attendance')) || {}; 
                 fees = (await dbGet('fees')) || {}; 
-                reminders = (await dbGet('reminders')) || []; // Load Reminders
+                reminders = (await dbGet('reminders')) || []; 
                 studentSerialCounter = parseInt(await dbGet('studentSerialCounter')) || 1; 
                 
                 loadAllData(); 
@@ -646,97 +655,53 @@
             comparePeriods(); 
             updateYearlyChart();
         }
-        
+
         async function checkBackupStatus() { const lastBackup = await dbGet('lastBackupDate'); if (!lastBackup) { Swal.fire({ title: 'Backup Warning', text: 'Backup not taken yet.', icon: 'warning', confirmButtonText: 'Okay' }); } else { const daysDiff = (new Date() - new Date(lastBackup)) / (1000 * 60 * 60 * 24); if (daysDiff > 7) { Swal.fire({ title: 'Backup Reminder', text: `Last backup was ${Math.floor(daysDiff)} days ago.`, icon: 'warning', confirmButtonText: 'Okay' }); } } }
 
         const INSTITUTE_NAME = "Guitar, Bass Guitar, Piano, Keyboard, Mandolin Classes"; const MY_NAME = "Srikanta Banerjee"; const DEFAULT_FEE = 500, DUE_DATE = 10; let students = [], attendance = {}, fees = {}, reminders = [], studentSerialCounter = 1; let financeChartInstance = null; let instituteLogo = null; let authorizedSignature = null;
         let analyticsChartInstance = null; 
+        
+        // Birthday Dismissal Memory
+        let dismissedBirthdays = JSON.parse(sessionStorage.getItem('dismissedBirthdays')) || [];
 
         async function saveInstituteLogo(input) { const file = input.files[0]; if (file) { const reader = new FileReader(); reader.onload = function(e) { const img = new Image(); img.onload = async function() { const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); const maxWidth = 200; const scaleSize = maxWidth / img.width; canvas.width = maxWidth; canvas.height = img.height * scaleSize; ctx.drawImage(img, 0, 0, canvas.width, canvas.height); const logoBase64 = canvas.toDataURL('image/jpeg', 0.8); await dbSet('instituteLogo', logoBase64); await loadInstituteLogo(); Swal.fire('Success', 'Logo saved!', 'success'); }; img.src = e.target.result; }; reader.readAsDataURL(file); } }
-        async function loadInstituteLogo() { 
-            instituteLogo = await dbGet('instituteLogo'); 
-            const img = document.getElementById('logoPreview'); 
-            const headerLogo = document.getElementById('headerLogo'); 
-            const btn = document.getElementById('removeLogoBtn'); 
-            if (instituteLogo) { 
-                img.src = instituteLogo; img.style.display = 'block'; 
-                btn.style.display = 'inline-block'; 
-                headerLogo.src = instituteLogo; 
-                headerLogo.style.display = 'block'; 
-            } else { 
-                img.style.display = 'none'; btn.style.display = 'none'; 
-                headerLogo.style.display = 'none'; 
-            } 
-        }
+        async function loadInstituteLogo() { instituteLogo = await dbGet('instituteLogo'); const img = document.getElementById('logoPreview'); const headerLogo = document.getElementById('headerLogo'); const btn = document.getElementById('removeLogoBtn'); if (instituteLogo) { img.src = instituteLogo; img.style.display = 'block'; btn.style.display = 'inline-block'; headerLogo.src = instituteLogo; headerLogo.style.display = 'block'; } else { img.style.display = 'none'; btn.style.display = 'none'; headerLogo.style.display = 'none'; } }
         async function removeLogo() { await dbDelete('instituteLogo'); instituteLogo = null; await loadInstituteLogo(); }
         async function saveAuthSignature(input) { const file = input.files[0]; if (file) { const reader = new FileReader(); reader.onload = function(e) { const img = new Image(); img.onload = async function() { const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); const maxWidth = 150; const scaleSize = maxWidth / img.width; canvas.width = maxWidth; canvas.height = img.height * scaleSize; ctx.drawImage(img, 0, 0, canvas.width, canvas.height); const sigBase64 = canvas.toDataURL('image/png'); await dbSet('authorizedSignature', sigBase64); await loadAuthSignature(); Swal.fire('Success', 'Signature saved!', 'success'); }; img.src = e.target.result; }; reader.readAsDataURL(file); } }
         async function loadAuthSignature() { authorizedSignature = await dbGet('authorizedSignature'); const img = document.getElementById('authSigPreview'); const btn = document.getElementById('removeAuthSigBtn'); if (authorizedSignature) { img.src = authorizedSignature; img.style.display = 'block'; btn.style.display = 'inline-block'; } else { img.style.display = 'none'; btn.style.display = 'none'; } }
         async function removeAuthSignature() { await dbDelete('authorizedSignature'); authorizedSignature = null; await loadAuthSignature(); }
-
-        function getFeeCalculationStartDate(student) { 
-            return new Date(student.joining_date); 
-        }
-
+        
+        function getFeeCalculationStartDate(student) { return new Date(student.joining_date); }
         function wasStudentActiveDuringMonth(student, monthStr) {
             const [year, month] = monthStr.split('-').map(Number);
             const monthStart = new Date(year, month - 1, 1);
             const monthEnd = new Date(year, month, 0, 23, 59, 59);
             const joinDate = new Date(student.joining_date);
-
             if (joinDate > monthEnd) return false;
-
             const history = (student.status.history || []).sort((a, b) => new Date(a.date) - new Date(b.date));
-            
             let statusAtStart = 'Active'; 
-            
-            for (let i = 0; i < history.length; i++) {
-                if (new Date(history[i].date) < monthStart) {
-                    statusAtStart = history[i].status;
-                }
-            }
-
-            let changesInMonth = history.filter(h => {
-                const d = new Date(h.date);
-                return d >= monthStart && d <= monthEnd;
-            });
-
-            if (changesInMonth.length === 0) {
-                return statusAtStart === 'Active';
-            }
-
+            for (let i = 0; i < history.length; i++) { if (new Date(history[i].date) < monthStart) { statusAtStart = history[i].status; } }
+            let changesInMonth = history.filter(h => { const d = new Date(h.date); return d >= monthStart && d <= monthEnd; });
+            if (changesInMonth.length === 0) { return statusAtStart === 'Active'; }
             const lastChangeInMonth = changesInMonth[changesInMonth.length - 1];
             const changeDate = new Date(lastChangeInMonth.date);
-
-            if (lastChangeInMonth.status === 'Inactive') {
-                if (changeDate.getDate() <= 10) {
-                    return false; 
-                } else {
-                    return true;
-                }
-            } else {
-                return true;
-            }
+            if (lastChangeInMonth.status === 'Inactive') { return changeDate.getDate() > 10; } else { return true; }
         }
 
         function checkGlobalDues(studentId) { 
             const s = students.find(x => x.id === studentId); 
             if (!s) return false; 
-            
             const now = new Date();
             const currentYear = now.getFullYear();
             const currentMonthIndex = now.getMonth();
             const today = now.getDate();
-            
             let iterDate = new Date(s.joining_date);
             if(isNaN(iterDate.getTime())) return false;
-
             iterDate.setDate(1);
-
             while (iterDate <= now) { 
                 const y = iterDate.getFullYear(); 
                 const m = iterDate.getMonth() + 1; 
                 const monthStr = `${y}-${m.toString().padStart(2, '0')}`; 
-                
                 if (wasStudentActiveDuringMonth(s, monthStr)) { 
                     if (y < currentYear || (y === currentYear && m - 1 < currentMonthIndex)) { 
                         if (fees[monthStr]?.[studentId]?.status !== 'paid') return true; 
@@ -756,14 +721,11 @@
             const now = new Date(); 
             let iterDate = new Date(s.joining_date);
             if(isNaN(iterDate.getTime())) return [];
-
             iterDate.setDate(1);
-
             while (iterDate <= now) { 
                 const y = iterDate.getFullYear(); 
                 const m = iterDate.getMonth() + 1; 
                 const monthStr = `${y}-${m.toString().padStart(2, '0')}`; 
-                
                 if (wasStudentActiveDuringMonth(s, monthStr) && isMonthDue(monthStr) && fees[monthStr]?.[studentId]?.status !== 'paid') { 
                     dueMonths.push(formatMonthYear(monthStr)); 
                 } 
@@ -774,9 +736,16 @@
 
         function getDueMsg(student, month) { const amount = student.fee_amount || DEFAULT_FEE; const monthName = formatMonthYear(month); const cls = student.class || 'Music'; return `Dear ${student.name}, This is a friendly reminder that your fee of ₹${amount} for ${monthName} for your ${cls} class is due. Please pay as soon as possible. Thank you. From ${MY_NAME} (${INSTITUTE_NAME}).`; }
         function getPaidMsg(student, month, amount, txnId) { const monthName = formatMonthYear(month); const cls = student.class || 'Music'; let msg = `Dear ${student.name}, Your fee of ₹${amount} for ${monthName} for your ${cls} class has been received by ${MY_NAME} (${INSTITUTE_NAME}).`; if(txnId) { msg += ` Transaction ID: ${txnId}.`; } msg += ` Thank you.`; return msg; }
+        
         function sendMsg(type, studentId, month, amount = 0, isDue = true) { const student = students.find(s => s.id === studentId); if(!student) return; let txnId = ""; if (!isDue && fees[month] && fees[month][studentId]) { txnId = fees[month][studentId].transactionId || ""; } const msgBody = isDue ? getDueMsg(student, month) : getPaidMsg(student, month, amount, txnId); if(type === 'wa') { let cleanPhone = student.phone.replace(/[^0-9]/g, ''); if(cleanPhone.length === 10) cleanPhone = '91' + cleanPhone; window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msgBody)}`, '_blank'); } else if (type === 'sms') { window.open(`sms:${student.phone}?body=${encodeURIComponent(msgBody)}`, '_self'); } else if (type === 'mail') { const subject = isDue ? "Fee Reminder" : "Payment Receipt"; window.open(`mailto:${student.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(msgBody)}`, '_self'); } }
         function sendGeneralMsg(type, studentId) { const student = students.find(s => s.id === studentId); if(!student) return; const msgBody = `Hello ${student.name}, Hope you are doing well. Just connecting regarding the music classes updates. From Srikanta Banerjee (Guitar, Bass Guitar, Piano, Keyboard, Mandolin Classes.)`; if(type === 'wa') { let cleanPhone = student.phone.replace(/[^0-9]/g, ''); if(cleanPhone.length === 10) cleanPhone = '91' + cleanPhone; window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msgBody)}`, '_blank'); } else if (type === 'sms') { window.open(`sms:${student.phone}?body=${encodeURIComponent(msgBody)}`, '_self'); } else if (type === 'mail') { window.open(`mailto:${student.email}?subject=${encodeURIComponent("Music Class Info")}&body=${encodeURIComponent(msgBody)}`, '_self'); } }
+        
         function sendBirthdayWish(type, studentId) { const student = students.find(s => s.id === studentId); if(!student) return; const msgBody = `Happy Birthday ${student.name}! Wishing you a fantastic day filled with music and joy. Best wishes from Srikanta Banerjee (Guitar, Bass Guitar, Piano, Keyboard, Mandolin Classes).`; if(type === 'wa') { let cleanPhone = student.phone.replace(/[^0-9]/g, ''); if(cleanPhone.length === 10) cleanPhone = '91' + cleanPhone; window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msgBody)}`, '_blank'); } else if (type === 'sms') { window.open(`sms:${student.phone}?body=${encodeURIComponent(msgBody)}`, '_self'); } else if (type === 'mail') { window.open(`mailto:${student.email}?subject=${encodeURIComponent("Happy Birthday!")}&body=${encodeURIComponent(msgBody)}`, '_self'); } }
+        function dismissBirthday(studentId) {
+            dismissedBirthdays.push(studentId);
+            sessionStorage.setItem('dismissedBirthdays', JSON.stringify(dismissedBirthdays));
+            renderDashboard();
+        }
 
         let pendingAction = null, pinInput = "";
         function secureAction(callback, isInit = false) { pendingAction = callback; pinInput = ""; updatePinDots(); document.querySelector('.close-pin').style.display = isInit ? 'none' : 'block'; document.getElementById('securityOverlay').style.display = 'flex'; }
@@ -785,11 +754,71 @@
         function updatePinDots() { document.querySelectorAll('.pin-dot').forEach((dot, index) => { index < pinInput.length ? dot.classList.add('filled') : dot.classList.remove('filled'); }); }
         async function submitPin() { const currentPin = await dbGet('app_pin'); if (pinInput === currentPin) { document.getElementById('securityOverlay').style.display = 'none'; if (pendingAction) pendingAction(); pendingAction = null; pinInput = ""; } else { alert("Incorrect PIN"); pinInput = ""; updatePinDots(); } }
         async function changeAppPin() { const newPin = document.getElementById('newAppPin').value; if (newPin.length === 4 && !isNaN(newPin)) { await dbSet('app_pin', newPin); Swal.fire('Success', 'PIN changed successfully.', 'success'); document.getElementById('newAppPin').value = ''; } else { Swal.fire('Error', 'PIN must be 4 digits.', 'error'); } }
+        
+function sendWelcomeMsg(type, studentId) {
+            const student = students.find(s => s.id === studentId);
+            if (!student) return;
 
-        async function addStudent() { const name = document.getElementById('studentName').value; const className = document.getElementById('studentClass').value; const day = document.getElementById('studentDay').value; const time = document.getElementById('studentTime').value; const fee = parseFloat(document.getElementById('studentFee').value) || DEFAULT_FEE; const email = document.getElementById('studentEmail').value; const guardian = document.getElementById('guardianName').value; const phone = document.getElementById('phone').value; const address = document.getElementById('address').value; const dob = document.getElementById('studentDOB').value; if (name.trim() === '') { Swal.fire('Error', 'Name is required.', 'error'); return; } const newStudent = { id: Date.now(), serial_no: studentSerialCounter++, name, class: className, class_day: day, class_time: time, fee_amount: fee, email, guardian, phone, address, dob: dob, photo: currentPhotoBase64, joining_date: new Date().toISOString().split('T')[0], status: { isActive: true, history: [{ status: 'Active', date: new Date().toISOString().split('T')[0], note: 'Joined' }] } }; students.push(newStudent); await saveData(); document.getElementById('studentName').value = ''; document.getElementById('studentClass').value = ''; document.getElementById('studentFee').value = ''; document.getElementById('studentEmail').value = ''; document.getElementById('guardianName').value = ''; document.getElementById('phone').value = ''; document.getElementById('address').value = ''; document.getElementById('studentDOB').value = ''; document.getElementById('studentDay').value = ''; document.getElementById('studentTime').value = ''; document.getElementById('photoPreview').style.display = 'none'; document.getElementById('photoPlaceholder').style.display = 'block'; currentPhotoBase64 = null; document.getElementById('addStudentCamera').value = ''; document.getElementById('addStudentGallery').value = ''; loadAllData(); Swal.fire('Success', 'Student added successfully!', 'success'); }
+            // এই লাইনটি আপনার রিকোয়ারমেন্ট অনুযায়ী পরিবর্তন করা হয়েছে
+            // আমি এখানে formatTime12H ফাংশনটি ব্যবহার করেছি যাতে সময়টা 17:00 এর বদলে 5:00 PM দেখায়
+            const msgBody = `Welcome ${student.name} to the ${student.class || 'Music'} class! We are glad to have you with us. Your classes are on ${student.class_day || 'scheduled day'} at ${student.class_time ? formatTime12H(student.class_time) : 'scheduled time'}. Regards, Srikanta Banerjee (Guitar, Bass Guitar, Piano, Keyboard & Mandolin Classes)`;
+            
+            if (type === 'wa') {
+                let cleanPhone = student.phone.replace(/[^0-9]/g, '');
+                if (cleanPhone.length === 10) cleanPhone = '91' + cleanPhone;
+                window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msgBody)}`, '_blank');
+            } else if (type === 'sms') {
+                window.open(`sms:${student.phone}?body=${encodeURIComponent(msgBody)}`, '_self');
+            } else if (type === 'mail') {
+                window.open(`mailto:${student.email}?subject=${encodeURIComponent("Welcome to Music Classes")}&body=${encodeURIComponent(msgBody)}`, '_self');
+            }
+        }
+        async function addStudent() { 
+            const name = document.getElementById('studentName').value; const className = document.getElementById('studentClass').value; const day = document.getElementById('studentDay').value; const time = document.getElementById('studentTime').value; const fee = parseFloat(document.getElementById('studentFee').value) || DEFAULT_FEE; const email = document.getElementById('studentEmail').value; const guardian = document.getElementById('guardianName').value; const phone = document.getElementById('phone').value; const address = document.getElementById('address').value; const dob = document.getElementById('studentDOB').value; 
+            if (name.trim() === '') { Swal.fire('Error', 'Name is required.', 'error'); return; } 
+            
+            const newStudent = { id: Date.now(), serial_no: studentSerialCounter++, name, class: className, class_day: day, class_time: time, fee_amount: fee, email, guardian, phone, address, dob: dob, photo: currentPhotoBase64, joining_date: new Date().toISOString().split('T')[0], status: { isActive: true, history: [{ status: 'Active', date: new Date().toISOString().split('T')[0], note: 'Joined' }] } }; 
+            students.push(newStudent); 
+            await saveData(); 
+            
+            document.getElementById('studentName').value = ''; document.getElementById('studentClass').value = ''; document.getElementById('studentFee').value = ''; document.getElementById('studentEmail').value = ''; document.getElementById('guardianName').value = ''; document.getElementById('phone').value = ''; document.getElementById('address').value = ''; document.getElementById('studentDOB').value = ''; document.getElementById('studentDay').value = ''; document.getElementById('studentTime').value = ''; 
+            document.getElementById('photoPreview').style.display = 'none'; document.getElementById('photoPlaceholder').style.display = 'block'; currentPhotoBase64 = null; 
+            document.getElementById('addStudentCamera').value = ''; document.getElementById('addStudentGallery').value = ''; 
+            loadAllData(); 
+            
+            // New Multi-Option Welcome Message Logic
+            Swal.fire({
+                title: 'Student Added Successfully!',
+                html: `
+                    <p>Send Welcome Message via:</p>
+                    <div style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:15px;">
+                        <button class="btn-whatsapp btn-like" onclick="sendWelcomeMsg('wa', ${newStudent.id})"><i class="fab fa-whatsapp"></i> WhatsApp</button>
+                        <button class="btn-sms btn-like" onclick="sendWelcomeMsg('sms', ${newStudent.id})"><i class="fas fa-sms"></i> SMS</button>
+                        <button class="btn-mail btn-like" onclick="sendWelcomeMsg('mail', ${newStudent.id})"><i class="fas fa-envelope"></i> Email</button>
+                    </div>
+                `,
+                icon: 'success',
+                showConfirmButton: true,
+                confirmButtonText: 'Done / Close'
+            });
+        }
+
         async function saveData() { await dbSet('students', students); await dbSet('attendance', attendance); await dbSet('fees', fees); await dbSet('reminders', reminders); await dbSet('studentSerialCounter', studentSerialCounter); }
         function loadAllData() { renderDashboard(); loadStudentsList(); renderAttendance(); renderFees(); renderReminders(); }
-        async function exportData() { const data = { students, attendance, fees, reminders, studentSerialCounter }; const jsonStr = JSON.stringify(data); const defaultDate = new Date().toISOString().split('T')[0]; const defaultName = `music_class_backup_${defaultDate}.json`; try { if (window.showSaveFilePicker) { const handle = await window.showSaveFilePicker({ suggestedName: defaultName, types: [{ description: 'JSON Backup File', accept: { 'application/json': ['.json'] }, }], }); const writable = await handle.createWritable(); await writable.write(jsonStr); await writable.close(); } else { const { value: fileName } = await Swal.fire({ title: 'Backup File Name', input: 'text', inputValue: defaultName, text: 'Enter a name for your backup file:', showCancelButton: true }); if (!fileName) return; const blob = new Blob([jsonStr], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = fileName.endsWith('.json') ? fileName : fileName + '.json'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); } await dbSet('lastBackupDate', new Date().toISOString()); Swal.fire({ title: 'Backup Saved!', html: '<p>Backup file saved successfully. Ekhon file ti <b>Google Drive</b> e upload kore rakhun.</p>', icon: 'success', showCancelButton: true, confirmButtonText: 'Open Google Drive', cancelButtonText: 'Close' }).then((result) => { if (result.isConfirmed) { window.open('https://drive.google.com', '_blank'); } }); } catch (err) { if (err.name !== 'AbortError') { console.error(err); Swal.fire('Error', 'Failed to save backup.', 'error'); } } }
+        
+        async function exportData() { 
+            // Include images in backup
+            const logo = await dbGet('instituteLogo');
+            const sig = await dbGet('authorizedSignature');
+            
+            const data = { 
+                students, attendance, fees, reminders, studentSerialCounter,
+                instituteLogo: logo,
+                authorizedSignature: sig
+            }; 
+            const jsonStr = JSON.stringify(data); const defaultDate = new Date().toISOString().split('T')[0]; const defaultName = `music_class_backup_${defaultDate}.json`; try { if (window.showSaveFilePicker) { const handle = await window.showSaveFilePicker({ suggestedName: defaultName, types: [{ description: 'JSON Backup File', accept: { 'application/json': ['.json'] }, }], }); const writable = await handle.createWritable(); await writable.write(jsonStr); await writable.close(); } else { const { value: fileName } = await Swal.fire({ title: 'Backup File Name', input: 'text', inputValue: defaultName, text: 'Enter a name for your backup file:', showCancelButton: true }); if (!fileName) return; const blob = new Blob([jsonStr], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = fileName.endsWith('.json') ? fileName : fileName + '.json'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); } await dbSet('lastBackupDate', new Date().toISOString()); Swal.fire({ title: 'Backup Saved!', html: '<p>Backup file saved successfully. Ekhon file ti <b>Google Drive</b> e upload kore rakhun.</p>', icon: 'success', showCancelButton: true, confirmButtonText: 'Open Google Drive', cancelButtonText: 'Close' }).then((result) => { if (result.isConfirmed) { window.open('https://drive.google.com', '_blank'); } }); } catch (err) { if (err.name !== 'AbortError') { console.error(err); Swal.fire('Error', 'Failed to save backup.', 'error'); } } 
+        }
+
         function openTab(tabName) { 
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active')); 
             document.querySelectorAll('.nav-item').forEach(button => button.classList.remove('active')); 
@@ -799,37 +828,65 @@
             if(tabName === 'dashboard') renderDashboard(); 
             if(tabName === 'analytics') updateYearlyChart(); 
             if(tabName === 'studentMgmt') loadStudentsList();
-            if(tabName === 'attendance') renderAttendance();
+            if(tabName === 'attendance') {
+                // Ensure time is set to current when tab opens
+                const now = new Date();
+                const hours = now.getHours().toString().padStart(2, '0');
+                const mins = now.getMinutes().toString().padStart(2, '0');
+                document.getElementById('attendanceTime').value = `${hours}:${mins}`;
+                renderAttendance();
+            }
             if(tabName === 'fees') renderFees();
             if(tabName === 'reminders') renderReminders();
         }
+
         function migrateStudentData(student) { 
-            if (!student.status) {
-                student.status = { isActive: true, history: [] };
-            }
-            if (student.status && !student.status.history) { 
-                const oldNote = student.status.note || 'Legacy data'; 
-                const oldDate = student.status.isActive ? (student.status.last_active_date || student.joining_date) : (student.status.last_inactive_date || student.joining_date); 
-                student.status.history = [{ status: student.status.isActive ? 'Active' : 'Inactive', date: oldDate, note: oldNote }]; 
-            } 
+            if (!student.status) { student.status = { isActive: true, history: [] }; }
+            if (student.status && !student.status.history) { const oldNote = student.status.note || 'Legacy data'; const oldDate = student.status.isActive ? (student.status.last_active_date || student.joining_date) : (student.status.last_inactive_date || student.joining_date); student.status.history = [{ status: student.status.isActive ? 'Active' : 'Inactive', date: oldDate, note: oldNote }]; } 
             if (student.fee_amount === undefined) student.fee_amount = DEFAULT_FEE; 
             if (!student.photo) student.photo = null; 
             if (!student.dob) student.dob = null; 
             return student; 
         }
+
         let currentPhotoBase64 = null; let currentEditPhotoBase64 = null; let photoSelectionContext = 'add';
         function openPhotoSourceModal(context) { photoSelectionContext = context; document.getElementById('photoSourceModal').style.display = 'flex'; }
         function triggerCamera() { closeModal('photoSourceModal'); const id = photoSelectionContext === 'add' ? 'addStudentCamera' : 'editStudentCamera'; document.getElementById(id).click(); }
         function triggerGallery() { closeModal('photoSourceModal'); const id = photoSelectionContext === 'add' ? 'addStudentGallery' : 'editStudentGallery'; document.getElementById(id).click(); }
         function handlePhotoSelection(input, context) { const file = input.files[0]; if (file) { const reader = new FileReader(); reader.onload = function(e) { const img = new Image(); img.onload = function() { const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); const maxWidth = 150; const scaleSize = maxWidth / img.width; canvas.width = maxWidth; canvas.height = img.height * scaleSize; ctx.drawImage(img, 0, 0, canvas.width, canvas.height); const base64 = canvas.toDataURL('image/jpeg', 0.7); if (context === 'add') { currentPhotoBase64 = base64; document.getElementById('photoPreview').src = base64; document.getElementById('photoPreview').style.display = 'block'; document.getElementById('photoPlaceholder').style.display = 'none'; } else { currentEditPhotoBase64 = base64; document.getElementById('editPhotoPreview').src = base64; } }; img.src = e.target.result; }; reader.readAsDataURL(file); } }
-        async function importData(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { try { const json = e.target.result; let importedData = JSON.parse(json); if (!importedData || !Array.isArray(importedData.students)) { throw new Error("Invalid Data Format"); } Swal.fire({ title: 'Overwrite Data?', text: "This will replace all current data.", icon: 'warning', showCancelButton: true, confirmButtonText: 'Yes, Import' }).then(async (result) => { if (result.isConfirmed) { students = (importedData.students || []).map(migrateStudentData); attendance = importedData.attendance || {}; fees = importedData.fees || {}; reminders = importedData.reminders || []; studentSerialCounter = importedData.studentSerialCounter || (students.length + 1); await saveData(); loadAllData(); Swal.fire('Success', 'Data imported successfully!', 'success'); } }); } catch (error) { console.error(error); Swal.fire('Error', 'Failed to load backup file. Please check the file.', 'error'); } finally { event.target.value = null; } }; reader.readAsText(file); }
+
+        async function importData(event) { 
+            const file = event.target.files[0]; if (!file) return; 
+            const reader = new FileReader(); reader.onload = function(e) { try { const json = e.target.result; let importedData = JSON.parse(json); if (!importedData || !Array.isArray(importedData.students)) { throw new Error("Invalid Data Format"); } Swal.fire({ title: 'Overwrite Data?', text: "This will replace all current data.", icon: 'warning', showCancelButton: true, confirmButtonText: 'Yes, Import' }).then(async (result) => { if (result.isConfirmed) { 
+                students = (importedData.students || []).map(migrateStudentData); 
+                attendance = importedData.attendance || {}; 
+                fees = importedData.fees || {}; 
+                reminders = importedData.reminders || []; 
+                studentSerialCounter = importedData.studentSerialCounter || (students.length + 1); 
+                
+                // Import Images
+                if(importedData.instituteLogo) await dbSet('instituteLogo', importedData.instituteLogo);
+                if(importedData.authorizedSignature) await dbSet('authorizedSignature', importedData.authorizedSignature);
+
+                await saveData(); await loadInstituteLogo(); await loadAuthSignature(); loadAllData(); Swal.fire('Success', 'Data imported successfully!', 'success'); } }); } catch (error) { console.error(error); Swal.fire('Error', 'Failed to load backup file. Please check the file.', 'error'); } finally { event.target.value = null; } }; reader.readAsText(file); 
+        }
+
         function openStatusChangeModal(id, toActive) { document.getElementById('statusChangeStudentId').value = id; document.getElementById('statusChangeToActive').value = toActive; document.getElementById('statusChangeTitle').textContent = toActive ? 'Activate Student' : 'Deactivate Student'; document.getElementById('statusDate').valueAsDate = new Date(); document.getElementById('statusNote').value = ''; document.getElementById('statusChangeModal').style.display = 'flex'; }
         async function saveStatusChange() { const id = parseInt(document.getElementById('statusChangeStudentId').value); const toActive = document.getElementById('statusChangeToActive').value === 'true'; const note = document.getElementById('statusNote').value.trim(); const statusDate = document.getElementById('statusDate').value; if (!statusDate) { Swal.fire('Error', 'Please select a date.', 'error'); return; } const student = students.find(s => s.id === id); if (student) { student.status.isActive = toActive; student.status.history.unshift({ status: toActive ? 'Active' : 'Inactive', date: statusDate, note: note || (toActive ? 'Re-activated' : 'Deactivated') }); await saveData(); loadAllData(); closeModal('statusChangeModal'); Swal.fire('Updated', `Status changed.`, 'success'); } }
-        
+
+        function formatTime12H(timeStr) {
+            if(!timeStr) return '';
+            const [h, m] = timeStr.split(':');
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            const h12 = h % 12 || 12;
+            return `${h12}:${m} ${ampm}`;
+        }
+
         function getStudentHtml(student) { 
             const photoSrc = student.photo ? student.photo : 'https://via.placeholder.com/40?text=S'; 
             const phoneText = student.phone ? `<span class="student-phone-sub">${student.phone}</span>` : ''; 
-            const dayText = student.class_day ? `<span class="student-time-sub">${student.class_day}</span>` : ''; 
+            const formattedTime = student.class_time ? formatTime12H(student.class_time) : '';
+            const dayText = student.class_day ? `<span class="student-time-sub">${student.class_day} ${formattedTime}</span>` : ''; 
             const hiddenAddress = `<span style="display:none;">${student.address || ''}</span>`;
             return `
             <div class="student-cell">
@@ -842,512 +899,86 @@
                 </div>
             </div>`; 
         }
-
         function isMonthDue(monthStr) { const now = new Date(); now.setHours(0,0,0,0); const [year, month] = monthStr.split('-').map(Number); const firstDayOfMonth = new Date(year, month - 1, 1); if (firstDayOfMonth > now) return false; const currentYear = now.getFullYear(), currentMonthIndex = now.getMonth(), currentDay = now.getDate(); if (year < currentYear) return true; if (year === currentYear && month - 1 < currentMonthIndex) return true; return year === currentYear && month - 1 === currentMonthIndex && currentDay > DUE_DATE; }
         function formatMonthYear(monthStr) { const [year, month] = monthStr.split('-'); const date = new Date(year, month - 1); return date.toLocaleString('en-US', { month: 'long', year: 'numeric' }); }
         function getContactButtons(studentId, month) { const student = students.find(s => s.id === studentId); if (!student) return 'N/A'; let b = ''; const isDue = month && isMonthDue(month) && wasStudentActiveDuringMonth(student, month) && !(fees[month]?.[student.id]?.status === 'paid'); if (student.phone || student.email) { if(isDue) { b += `<button class="btn-whatsapp" onclick="sendMsg('wa', ${student.id}, '${month}')">WhatsApp</button>`; b += `<button class="btn-sms" onclick="sendMsg('sms', ${student.id}, '${month}')">SMS</button>`; b += `<button class="btn-mail" onclick="sendMsg('mail', ${student.id}, '${month}')">Email</button>`; b += `<a href="tel:${student.phone}" class="btn-like btn-call">Call</a>`; } else { b += `<a href="tel:${student.phone}" class="btn-like btn-call">Call</a>`; } } return b || 'N/A'; }
         function getAllContactButtons(student) { let b = ''; if (student.phone) { b += `<a href="tel:${student.phone}" class="btn-like btn-call">Call</a>`; b += `<button class="btn-whatsapp" onclick="sendGeneralMsg('wa', ${student.id})">WhatsApp</button>`; b += `<button class="btn-sms" onclick="sendGeneralMsg('sms', ${student.id})">SMS</button>`; } if (student.email) { b += `<button class="btn-mail" onclick="sendGeneralMsg('mail', ${student.id})">Mail</button>`; } return b || 'N/A'; }
+        
+        // Fee Breakdown Modals
+        function showFeeBreakdown(type) {
+            const selectedMonth = document.getElementById('feeMonth').value;
+            if(!selectedMonth) return;
+            const monthIsDue = isMonthDue(selectedMonth);
+            
+            const list = students.filter(s => {
+                if(!s.status?.isActive || !wasStudentActiveDuringMonth(s, selectedMonth)) return false;
+                const feeRecord = fees[selectedMonth]?.[s.id];
+                const isPaid = feeRecord?.status === 'paid';
+                if (type === 'collected') return isPaid;
+                if (type === 'due') return !isPaid && monthIsDue;
+                return false;
+            });
+            
+            document.getElementById('classStudentsTitle').textContent = type === 'collected' ? `Paid Students (${formatMonthYear(selectedMonth)})` : `Due Students (${formatMonthYear(selectedMonth)})`;
+            const tableBody = document.querySelector('#classStudentsTable tbody');
+            tableBody.innerHTML = '';
+            
+            if(list.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px;">No students found.</td></tr>';
+            } else {
+                list.forEach(s => {
+                    const feeRecord = fees[selectedMonth]?.[s.id];
+                    let info = '';
+                    if(type === 'collected') info = `<br><span style="font-size:10px; color:green;">₹${feeRecord.amount} on ${new Date(feeRecord.date).toLocaleDateString()}</span>`;
+                    else info = `<br><span style="font-size:10px; color:red;">Due: ₹${s.fee_amount || DEFAULT_FEE}</span>`;
+                    
+                    tableBody.innerHTML += `<tr><td>${s.serial_no}</td><td>${getStudentHtml(s)}${info}</td><td>${type === 'due' ? getContactButtons(s.id, selectedMonth) : getAllContactButtons(s)}</td></tr>`;
+                });
+            }
+            document.getElementById('classStudentsModal').style.display = 'flex';
+        }
+
         function showClassStudents(className) { document.getElementById('classStudentsTitle').textContent = `Students in ${className} Class`; const tableBody = document.querySelector('#classStudentsTable tbody'); tableBody.innerHTML = ''; const classStudents = students.filter(s => s.status?.isActive && (s.class || 'Unassigned') === className); classStudents.forEach(s => { tableBody.innerHTML += `<tr><td>${s.serial_no}</td><td>${getStudentHtml(s)}</td><td>${getContactButtons(s.id)}</td></tr>`; }); document.getElementById('classStudentsModal').style.display = 'flex'; }
         function showCategoryList(type) { const list = students.filter(s => type === 'active' ? s.status?.isActive : !s.status?.isActive); document.getElementById('classStudentsTitle').textContent = type === 'active' ? 'Active Students' : 'Inactive Students'; const tableBody = document.querySelector('#classStudentsTable tbody'); tableBody.innerHTML = ''; if(list.length === 0) { tableBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px;">No students found.</td></tr>'; } else { list.forEach(s => { tableBody.innerHTML += `<tr><td>${s.serial_no}</td><td>${getStudentHtml(s)}</td><td>${getAllContactButtons(s)}</td></tr>`; }); } document.getElementById('classStudentsModal').style.display = 'flex'; }
-        function checkBirthday(dobString) { if (!dobString) return false; const today = new Date(); const dob = new Date(dobString); return today.getDate() === dob.getDate() && today.getMonth() === dob.getMonth(); }
         
-        // --- REMINDER LOGIC ---
-        function updateReminderDay() {
-            const dateVal = document.getElementById('reminderDate').value;
-            if (dateVal) {
-                const date = new Date(dateVal);
-                const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                document.getElementById('reminderDay').value = days[date.getDay()];
-            }
-        }
-
-        async function addReminder() {
-            const text = document.getElementById('reminderText').value.trim();
-            const day = document.getElementById('reminderDay').value;
-            if(!text) { Swal.fire('Error', 'Please enter reminder text.', 'error'); return; }
-            reminders.push({ id: Date.now(), text: text, day: day });
-            await saveData();
-            document.getElementById('reminderText').value = '';
-            document.getElementById('reminderDate').value = '';
-            renderReminders();
-            Swal.fire('Added', 'Reminder added successfully.', 'success');
-        }
-
-        async function deleteReminder(id) {
-            reminders = reminders.filter(r => r.id !== id);
-            await saveData();
-            renderReminders();
-        }
-
-        function renderReminders() {
-            const listContainer = document.getElementById('reminderListContainer');
-            listContainer.innerHTML = '';
-            const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-            
-            days.forEach(day => {
-                const dayReminders = reminders.filter(r => r.day === day);
-                if(dayReminders.length > 0) {
-                    const dayHeader = document.createElement('h4');
-                    dayHeader.style.cssText = "margin: 10px 0 5px 0; color: var(--primary); font-size:12px; border-bottom:1px solid #eee;";
-                    dayHeader.textContent = day;
-                    listContainer.appendChild(dayHeader);
-
-                    dayReminders.forEach(r => {
-                        const div = document.createElement('div');
-                        div.className = 'reminder-item';
-                        div.innerHTML = `<span>${r.text}</span> <button class="btn-danger" style="padding:4px 8px;" onclick="deleteReminder(${r.id})"><i class="fas fa-trash"></i></button>`;
-                        listContainer.appendChild(div);
-                    });
-                }
-            });
-            if(reminders.length === 0) {
-                listContainer.innerHTML = '<p style="text-align:center; color:#999; font-size:12px; margin-top:20px;">No reminders set.</p>';
-            }
-        }
+        function checkBirthday(dobString) { if (!dobString) return false; const today = new Date(); const dob = new Date(dobString); return today.getDate() === dob.getDate() && today.getMonth() === dob.getMonth(); }
+        function updateReminderDay() { const dateVal = document.getElementById('reminderDate').value; if (dateVal) { const date = new Date(dateVal); const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']; document.getElementById('reminderDay').value = days[date.getDay()]; } }
+        async function addReminder() { const text = document.getElementById('reminderText').value.trim(); const day = document.getElementById('reminderDay').value; if(!text) { Swal.fire('Error', 'Please enter reminder text.', 'error'); return; } reminders.push({ id: Date.now(), text: text, day: day }); await saveData(); document.getElementById('reminderText').value = ''; document.getElementById('reminderDate').value = ''; renderReminders(); Swal.fire('Added', 'Reminder added successfully.', 'success'); }
+        async function deleteReminder(id) { reminders = reminders.filter(r => r.id !== id); await saveData(); renderReminders(); }
+        function renderReminders() { const listContainer = document.getElementById('reminderListContainer'); listContainer.innerHTML = ''; const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]; days.forEach(day => { const dayReminders = reminders.filter(r => r.day === day); if(dayReminders.length > 0) { const dayHeader = document.createElement('h4'); dayHeader.style.cssText = "margin: 10px 0 5px 0; color: var(--primary); font-size:12px; border-bottom:1px solid #eee;"; dayHeader.textContent = day; listContainer.appendChild(dayHeader); dayReminders.forEach(r => { const div = document.createElement('div'); div.className = 'reminder-item'; div.innerHTML = `<span>${r.text}</span> <button class="btn-danger" style="padding:4px 8px;" onclick="deleteReminder(${r.id})"><i class="fas fa-trash"></i></button>`; listContainer.appendChild(div); }); } }); if(reminders.length === 0) { listContainer.innerHTML = '<p style="text-align:center; color:#999; font-size:12px; margin-top:20px;">No reminders set.</p>'; } }
 
         function renderDashboard() { 
             const activeStudents = students.filter(s => s.status?.isActive); 
             document.getElementById('studentStatsSummary').innerHTML = `<div class="clickable-stat" onclick="showCategoryList('active')"><h4>Active</h4><p class="summary-collected">${activeStudents.length}</p></div><div class="clickable-stat" onclick="showCategoryList('inactive')"><h4>Inactive</h4><p class="summary-due">${students.length - activeStudents.length}</p></div><div><h4>Total</h4><p class="summary-total">${students.length}</p></div>`; 
-            const birthdayBox = document.getElementById('birthdayAlertBox'); const birthdayList = document.getElementById('birthdayList'); const birthdayStudents = activeStudents.filter(s => checkBirthday(s.dob)); if (birthdayStudents.length > 0) { birthdayList.innerHTML = ''; birthdayStudents.forEach(s => { birthdayList.innerHTML += `<div style="display:flex; align-items:center; justify-content:space-between; background:#fff; padding:10px; border-radius:8px; margin-bottom:5px; border:1px solid #ffe4e6;"><div style="display:flex; align-items:center;"><img src="${s.photo || 'https://via.placeholder.com/40?text=S'}" style="width:40px; height:40px; border-radius:50%; margin-right:10px; object-fit:cover;"><div><strong>${s.name}</strong><br><span style="font-size:11px; color:#666;">${s.class || 'Student'}</span></div></div><div style="display:flex; gap:5px;"><button class="btn-whatsapp btn-like" onclick="sendBirthdayWish('wa', ${s.id})"><i class="fab fa-whatsapp"></i></button><button class="btn-sms btn-like" onclick="sendBirthdayWish('sms', ${s.id})"><i class="fas fa-sms"></i></button><button class="btn-mail btn-like" onclick="sendBirthdayWish('mail', ${s.id})"><i class="fas fa-envelope"></i></button></div></div>`; }); birthdayBox.style.display = 'block'; } else { birthdayBox.style.display = 'none'; }
+            const birthdayBox = document.getElementById('birthdayAlertBox'); const birthdayList = document.getElementById('birthdayList'); 
+            const birthdayStudents = activeStudents.filter(s => checkBirthday(s.dob) && !dismissedBirthdays.includes(s.id)); 
+            if (birthdayStudents.length > 0) { birthdayList.innerHTML = ''; birthdayStudents.forEach(s => { birthdayList.innerHTML += `<div style="display:flex; align-items:center; justify-content:space-between; background:#fff; padding:10px; border-radius:8px; margin-bottom:5px; border:1px solid #ffe4e6;"><div style="display:flex; align-items:center;"><img src="${s.photo || 'https://via.placeholder.com/40?text=S'}" style="width:40px; height:40px; border-radius:50%; margin-right:10px; object-fit:cover;"><div><strong>${s.name}</strong><br><span style="font-size:11px; color:#666;">${s.class || 'Student'}</span></div></div><div style="display:flex; gap:5px;"><button class="btn-whatsapp btn-like" onclick="sendBirthdayWish('wa', ${s.id})"><i class="fab fa-whatsapp"></i></button><button class="btn-sms btn-like" onclick="sendBirthdayWish('sms', ${s.id})"><i class="fas fa-sms"></i></button><button class="btn-success btn-like" onclick="dismissBirthday(${s.id})" title="Dismiss"><i class="fas fa-check"></i></button></div></div>`; }); birthdayBox.style.display = 'block'; } else { birthdayBox.style.display = 'none'; }
             const classCounts = activeStudents.reduce((acc, student) => { const className = student.class || 'Unassigned'; acc[className] = (acc[className] || 0) + 1; return acc; }, {}); const classListEl = document.getElementById('classStrengthList'); classListEl.innerHTML = ''; Object.entries(classCounts).sort().forEach(([className, count]) => { classListEl.innerHTML += `<li onclick="showClassStudents('${className}')"><strong>${className}:</strong> <span>${count} students</span></li>`; }); 
             let monthlyCollected = 0, monthlyDueAmount = 0, yearlyCollected = 0, yearlyDueAmount = 0; const currentYear = new Date().getFullYear(), currentMonthStr = `${currentYear}-${(new Date().getMonth() + 1).toString().padStart(2, '0')}`; 
             
-            // Dashboard Reminder Logic
-            const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-            const todayName = days[new Date().getDay()];
-            const todaysReminders = reminders.filter(r => r.day === todayName);
-            const rBox = document.getElementById('dashboardRemindersBox');
-            const rList = document.getElementById('dashboardReminderList');
-            if(todaysReminders.length > 0) {
-                rList.innerHTML = '';
-                todaysReminders.forEach(r => {
-                    rList.innerHTML += `<div style="padding:8px; border-bottom:1px solid #fde68a; font-size:13px;">• ${r.text}</div>`;
-                });
-                rBox.style.display = 'block';
-            } else {
-                rBox.style.display = 'none';
-            }
-
-            students.forEach(student => { 
-                if (!student.status?.isActive) return;
-                for (let i = 0; i < 12; i++) { 
-                    const monthStr = `${currentYear}-${(i + 1).toString().padStart(2, '0')}`; 
-                    if (wasStudentActiveDuringMonth(student, monthStr)) { 
-                        if (fees[monthStr]?.[student.id]?.status === 'paid') { 
-                            if (monthStr === currentMonthStr) monthlyCollected += fees[monthStr][student.id].amount; 
-                            yearlyCollected += fees[monthStr][student.id].amount; 
-                        } else if (isMonthDue(monthStr)) { 
-                            const studentFee = student.fee_amount || DEFAULT_FEE; 
-                            if (monthStr === currentMonthStr) monthlyDueAmount += studentFee; 
-                            yearlyDueAmount += studentFee; 
-                        } 
-                    } 
-                } 
-            });
-
-            document.getElementById('dashboardYearlySummary').innerHTML = `<div><h4>Yearly Collected</h4><p class="summary-collected">₹${yearlyCollected}</p></div><div><h4>Yearly Due (Active)</h4><p class="summary-due">₹${yearlyDueAmount}</p></div>`; 
-            document.getElementById('financeOverviewNumbers').innerHTML = `<div><h4>Collected</h4><p class="summary-collected">₹${monthlyCollected}</p></div><div><h4>Due</h4><p class="summary-due">₹${monthlyDueAmount}</p></div>`;
-            
-            const dueTableBody = document.querySelector('#dueFeeTable tbody'); const dueMessageEl = document.getElementById('dueFeeMessage'); dueTableBody.innerHTML = ''; 
-            const defaulters = students.filter(s => s.status?.isActive).map(s => { return { student: s, months: getDueMonthsList(s.id) }; }).filter(item => item.months.length > 0); 
-            
-            if (defaulters.length === 0) { dueMessageEl.textContent = "No pending dues."; } else { dueMessageEl.textContent = `(${defaulters.length}) students have pending dues.`; defaulters.forEach(item => { const monthsStr = item.months.join(", "); const studentHtml = getStudentHtml(item.student); const dueDisplay = `<div style="margin-top:5px; font-size:11px; color:#dc2626; font-weight:600; line-height:1.4;">Due: ${monthsStr}</div>`; const latestDueMonth = item.months.length > 0 ? getMonthStrFromFormat(item.months[0]) : currentMonthStr; dueTableBody.innerHTML += `<tr><td>${studentHtml}${dueDisplay}</td><td class="action-buttons">${getContactButtons(item.student.id, latestDueMonth)}</td></tr>`; }); }
-            const ctx = document.getElementById('financeChart').getContext('2d'); if (financeChartInstance) financeChartInstance.destroy(); financeChartInstance = new Chart(ctx, { type: 'doughnut', data: { labels: ['Collected', 'Due'], datasets: [{ data: [monthlyCollected, monthlyDueAmount], backgroundColor: ['#28a745', '#dc3545'], hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' }, title: { display: true, text: `Summary for ${formatMonthYear(currentMonthStr)}` } } } });
-        }
-        function getMonthStrFromFormat(formattedMonth) { const parts = formattedMonth.split(' '); if (parts.length !== 2) return null; const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]; const monthIndex = monthNames.findIndex(name => name === parts[0]); if (monthIndex === -1) return null; const month = (monthIndex + 1).toString().padStart(2, '0'); const year = parts[1]; return `${year}-${month}`; }
-        
-        function addWatermarkAndSignatureToPdf(doc) {
-            const pageCount = doc.getNumberOfPages();
-            const pageWidth = doc.internal.pageSize.getWidth();
-            const pageHeight = doc.internal.pageSize.getHeight();
-            for (let i = 1; i <= pageCount; i++) {
-                doc.setPage(i);
-                if (instituteLogo) {
-                    doc.saveGraphicsState();
-                    doc.setGState(new doc.GState({ opacity: 0.1 }));
-                    const imgSize = Math.min(pageWidth, pageHeight) * 0.85; 
-                    const x = (pageWidth - imgSize) / 2;
-                    const y = (pageHeight - imgSize) / 2;
-                    doc.addImage(instituteLogo, 'JPEG', x, y, imgSize, imgSize);
-                    doc.restoreGraphicsState();
-                }
-                const sigY = pageHeight - 35;
-                if (authorizedSignature) {
-                    doc.addImage(authorizedSignature, 'PNG', pageWidth - 55, sigY, 40, 15);
-                }
-                doc.setFontSize(10); doc.setFont("helvetica", "italic");
-                doc.text("Authorized Signature", pageWidth - 15, sigY + 20, { align: "right" });
-                doc.text("(Srikanta Banerjee)", pageWidth - 15, sigY + 25, { align: "right" });
-            }
-        }
-        
-        function exportStudentDetailsAsPDF(studentId) { 
-            const student = students.find(s => s.id === studentId); 
-            if (!student) return; 
-            const { jsPDF } = window.jspdf; 
-            const doc = new jsPDF(); 
-            let y = 15; 
-            const addLine = (text, size, weight, margin) => { 
-                doc.setFontSize(size); 
-                doc.setFont('helvetica', weight); 
-                doc.text(text, 15, y); 
-                y += margin; 
-                if (y > 280) { doc.addPage(); y = 15; } 
-            }; 
-            
-            doc.setFontSize(22); doc.setFont('helvetica', 'bold'); doc.text(`${INSTITUTE_NAME}`, 105, y, { align: 'center' }); y += 8; 
-            if (student.photo) { doc.addImage(student.photo, 'JPEG', 160, 15, 30, 30); } 
-            doc.setFontSize(14); doc.text('Student Report', 105, y, { align: 'center' }); y += 12; 
-            
-            addLine(`Student Name: ${student.name}`, 16, 'bold', 8); 
-            addLine(`Serial No: ${student.serial_no}`, 11, 'normal', 6); 
-            addLine(`Class: ${student.class || 'N/A'}`, 11, 'normal', 6); 
-            addLine(`Monthly Fee: ₹${student.fee_amount || DEFAULT_FEE}`, 11, 'normal', 6); 
-            addLine(`Joining Date: ${new Date(student.joining_date).toLocaleDateString('en-IN')}`, 11, 'normal', 10); 
-            
-            addLine('Contact Information', 14, 'bold', 8); 
-            addLine(`Guardian: ${student.guardian || 'N/A'}`, 11, 'normal', 6); 
-            addLine(`Phone: ${student.phone || 'N/A'}`, 11, 'normal', 6); 
-            addLine(`Email: ${student.email || 'N/A'}`, 11, 'normal', 6); 
-            addLine(`Address: ${student.address || 'N/A'}`, 11, 'normal', 10); 
-            
-            addLine('Status History', 14, 'bold', 8); 
-            if (student.status.history && student.status.history.length > 0) { 
-                student.status.history.forEach(entry => { addLine(`${entry.status} on ${new Date(entry.date).toLocaleDateString('en-IN')} - Note: ${entry.note || 'N/A'}`, 10, 'normal', 6); }); 
-            } else { addLine('No status history found.', 10, 'italic', 6); } 
-            y += 4; 
-            
-            addLine('Fee Payment History', 14, 'bold', 8); 
-            let feesFound = false; 
-            Object.keys(fees).sort().forEach(month => { 
-                if(wasStudentActiveDuringMonth(student, month)) { 
-                    const feeRecord = fees[month]?.[student.id]; 
-                    if (feeRecord?.status === 'paid') { 
-                        addLine(`${month}: ₹${feeRecord.amount} (Paid on ${new Date(feeRecord.date).toLocaleDateString('en-IN')} - ${feeRecord.mode || 'Cash'} ${feeRecord.transactionId ? '- Txn: '+feeRecord.transactionId : ''})`, 10, 'normal', 6); feesFound = true; 
-                    } else if (isMonthDue(month)) { 
-                        addLine(`${month}: Due`, 10, 'normal', 6); feesFound = true; 
-                    } 
-                } 
-            }); 
-            if (!feesFound) { addLine('No records found.', 10, 'italic', 6); } 
-            y += 4; 
-            
-            addLine('Attendance Summary & Details', 14, 'bold', 8); 
-            let presentDates = [], absentDates = [];
-            Object.keys(attendance).sort().reverse().forEach(date => { 
-                const entry = attendance[date]?.[student.id];
-                if (entry) {
-                    const status = (typeof entry === 'object' && entry !== null) ? entry.status : entry;
-                    const d = new Date(date);
-                    const formattedDate = `${d.toLocaleDateString('en-IN')} (${d.toLocaleDateString('en-IN', {weekday: 'long'})})`;
-                    if (status === 'present') presentDates.push(formattedDate);
-                    if (status === 'absent') absentDates.push(formattedDate);
-                }
-            }); 
-            
-            addLine(`Total Present: ${presentDates.length}`, 11, 'bold', 6); 
-            addLine(`Total Absent: ${absentDates.length}`, 11, 'bold', 8); 
-            
-            if(presentDates.length > 0) {
-                addLine('Present Days (Recent):', 10, 'bold', 6);
-                presentDates.forEach(d => addLine(`- ${d}`, 9, 'normal', 5));
-                y+=2;
-            }
-            if(absentDates.length > 0) {
-                addLine('Absent Days (Recent):', 10, 'bold', 6);
-                absentDates.forEach(d => addLine(`- ${d}`, 9, 'normal', 5));
-            }
-
-            addWatermarkAndSignatureToPdf(doc);
-            doc.save(`${student.name}_report.pdf`); 
-        }
-
-        function calculateMonthStats(monthStr) {
-            let income = 0; let studentCount = 0;
-            if(fees[monthStr]) { Object.values(fees[monthStr]).forEach(record => { if(record.status === 'paid') income += record.amount; }); }
-            students.forEach(student => { if(wasStudentActiveDuringMonth(student, monthStr)) { studentCount++; } });
-            return { income, studentCount };
-        }
-
-        function updateYearlyChart() {
-            const year1 = document.getElementById('analyticsYear').value;
-            const year2 = document.getElementById('compareYear').value;
-            
-            if(!year1) return;
-
-            const labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-            
-            const inc1 = []; const stu1 = [];
-            let sumInc1 = 0; let sumStu1 = 0;
-
-            for(let i=1; i<=12; i++) {
-                const m = `${year1}-${i.toString().padStart(2, '0')}`;
-                const s = calculateMonthStats(m);
-                inc1.push(s.income); stu1.push(s.studentCount);
-                sumInc1 += s.income; sumStu1 += s.studentCount;
-            }
-
-            const avgInc1 = sumInc1 / 12;
-            const avgStu1 = sumStu1 / 12;
-            const statsDiv = document.getElementById('yearlyAverages');
-            let statsHtml = `<div><h4>Avg Income (${year1})</h4><p class="summary-collected">₹${avgInc1.toFixed(0)}</p></div><div><h4>Avg Students (${year1})</h4><p class="summary-total">${Math.round(avgStu1)}</p></div>`;
-
-            const datasets = [
-                { 
-                    label: `Income ${year1}`, data: inc1, 
-                    backgroundColor: 'rgba(16, 185, 129, 0.6)', borderColor: '#10b981', borderWidth: 1, type: 'bar', yAxisID: 'y' 
-                },
-                { 
-                    label: `Students ${year1}`, data: stu1, 
-                    borderColor: '#3b82f6', borderWidth: 2, type: 'line', tension: 0.3, yAxisID: 'y1' 
-                }
-            ];
-
-            if (year2) {
-                const inc2 = []; const stu2 = [];
-                let sumInc2 = 0; let sumStu2 = 0;
-
-                for(let i=1; i<=12; i++) {
-                    const m = `${year2}-${i.toString().padStart(2, '0')}`;
-                    const s = calculateMonthStats(m);
-                    inc2.push(s.income); stu2.push(s.studentCount);
-                    sumInc2 += s.income; sumStu2 += s.studentCount;
-                }
-                
-                const avgInc2 = sumInc2 / 12;
-                const avgStu2 = sumStu2 / 12;
-                statsHtml += `<div><h4>Avg Income (${year2})</h4><p class="summary-collected">₹${avgInc2.toFixed(0)}</p></div><div><h4>Avg Students (${year2})</h4><p class="summary-total">${Math.round(avgStu2)}</p></div>`;
-
-                datasets.push({
-                    label: `Income ${year2}`, data: inc2,
-                    backgroundColor: 'rgba(239, 68, 68, 0.6)', borderColor: '#ef4444', borderWidth: 1, type: 'bar', yAxisID: 'y'
-                });
-                datasets.push({
-                    label: `Students ${year2}`, data: stu2,
-                    borderColor: '#f97316', borderWidth: 2, 
-                    type: 'line', tension: 0.3, pointRadius: 3, yAxisID: 'y1'
-                });
-            }
-
-            statsDiv.innerHTML = statsHtml;
-            statsDiv.style.display = 'flex';
-
-            const ctx = document.getElementById('yearlyChart').getContext('2d');
-            if(analyticsChartInstance) analyticsChartInstance.destroy();
-
-            analyticsChartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: { labels: labels, datasets: datasets },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    interaction: { mode: 'index', intersect: false },
-                    plugins: {
-                        legend: { position: 'bottom' },
-                        title: { display: true, text: year2 ? `${year1} vs ${year2}` : `Overview ${year1}` }
-                    },
-                    scales: {
-                        y: { beginAtZero: true, position: 'left', title: {display:true, text:'Income (₹)'} },
-                        y1: { beginAtZero: true, position: 'right', grid: {drawOnChartArea: false}, title: {display:true, text:'Students'} }
-                    }
-                }
-            });
-        }
-
-        function comparePeriods() {
-            const m1 = document.getElementById('compMonth1').value;
-            const m2 = document.getElementById('compMonth2').value;
-            if(!m1 || !m2) { return; } 
-            const s1 = calculateMonthStats(m1);
-            const s2 = calculateMonthStats(m2);
-            document.getElementById('compIncome1').textContent = `₹${s1.income}`;
-            document.getElementById('compIncome2').textContent = `₹${s2.income}`;
-            document.getElementById('compStudent1').textContent = s1.studentCount;
-            document.getElementById('compStudent2').textContent = s2.studentCount;
-            const incDiff = s2.income - s1.income;
-            const stuDiff = s2.studentCount - s1.studentCount;
-            const incDiffEl = document.getElementById('compIncomeDiff');
-            incDiffEl.innerHTML = incDiff > 0 ? `<i class="fas fa-arrow-up"></i> ₹${incDiff}` : (incDiff < 0 ? `<i class="fas fa-arrow-down"></i> ₹${Math.abs(incDiff)}` : '-');
-            incDiffEl.className = 'comp-diff ' + (incDiff >= 0 ? 'diff-up' : 'diff-down');
-            const stuDiffEl = document.getElementById('compStudentDiff');
-            stuDiffEl.innerHTML = stuDiff > 0 ? `<i class="fas fa-arrow-up"></i> ${stuDiff}` : (stuDiff < 0 ? `<i class="fas fa-arrow-down"></i> ${Math.abs(stuDiff)}` : '-');
-            stuDiffEl.className = 'comp-diff ' + (stuDiff >= 0 ? 'diff-up' : 'diff-down');
-            document.getElementById('comparisonResults').style.display = 'block';
-        }
-
-        function exportDashboardPDF() { 
-            const activeStudents = students.filter(s => s.status?.isActive); 
-            const currentYear = new Date().getFullYear(); 
-            const currentMonthStr = `${currentYear}-${(new Date().getMonth() + 1).toString().padStart(2, '0')}`; 
-            let monthlyCollected = 0, monthlyDueAmount = 0, yearlyCollected = 0, yearlyDueAmount = 0; 
+            const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]; const todayName = days[new Date().getDay()]; const todaysReminders = reminders.filter(r => r.day === todayName); const rBox = document.getElementById('dashboardRemindersBox'); const rList = document.getElementById('dashboardReminderList'); if(todaysReminders.length > 0) { rList.innerHTML = ''; todaysReminders.forEach(r => { rList.innerHTML += `<div style="padding:8px; border-bottom:1px solid #fde68a; font-size:13px;">• ${r.text}</div>`; }); rBox.style.display = 'block'; } else { rBox.style.display = 'none'; }
             students.forEach(student => { 
                 if (!student.status?.isActive) return;
                 for (let i = 0; i < 12; i++) { const monthStr = `${currentYear}-${(i + 1).toString().padStart(2, '0')}`; if (wasStudentActiveDuringMonth(student, monthStr)) { if (fees[monthStr]?.[student.id]?.status === 'paid') { if (monthStr === currentMonthStr) monthlyCollected += fees[monthStr][student.id].amount; yearlyCollected += fees[monthStr][student.id].amount; } else if (isMonthDue(monthStr)) { const studentFee = student.fee_amount || DEFAULT_FEE; if (monthStr === currentMonthStr) monthlyDueAmount += studentFee; yearlyDueAmount += studentFee; } } } 
-            }); 
-            const classCounts = activeStudents.reduce((acc, student) => { const className = student.class || 'Unassigned'; acc[className] = (acc[className] || 0) + 1; return acc; }, {}); 
-            const { jsPDF } = window.jspdf; const doc = new jsPDF(); let y = 20; 
-            doc.setFontSize(18); doc.setFont("helvetica", "bold"); doc.text(INSTITUTE_NAME, 105, y, {align: "center"}); y += 10; 
-            doc.setFontSize(14); doc.text("Complete Dashboard Report", 105, y, {align: "center"}); y += 8; 
-            doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.text(`Generated: ${new Date().toLocaleDateString('en-IN')}`, 105, y, {align: "center"}); y += 15; 
-            doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.text("Student Statistics", 15, y); y += 7; 
-            doc.setFontSize(11); doc.setFont("helvetica", "normal"); doc.text(`Total Students: ${students.length}`, 20, y); y += 6; doc.text(`Active Students: ${activeStudents.length}`, 20, y); y += 6; doc.text(`Inactive Students: ${students.length - activeStudents.length}`, 20, y); y += 12; 
-            doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.text("Financial Overview", 15, y); y += 7; 
-            doc.setFontSize(11); doc.setFont("helvetica", "normal"); doc.text(`Current Month (${formatMonthYear(currentMonthStr)}) Collected: Rs. ${monthlyCollected}`, 20, y); y += 6; doc.text(`Current Month Due: Rs. ${monthlyDueAmount}`, 20, y); y += 6; doc.text(`Yearly Collected: Rs. ${yearlyCollected}`, 20, y); y += 6; doc.text(`Yearly Due: Rs. ${yearlyDueAmount}`, 20, y); y += 12; 
-            doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.text("Class Strength", 15, y); y += 7; 
-            doc.setFontSize(11); doc.setFont("helvetica", "normal"); Object.entries(classCounts).sort().forEach(([className, count]) => { doc.text(`${className}: ${count} students`, 20, y); y += 6; }); 
-            
-            addWatermarkAndSignatureToPdf(doc);
-            doc.save(`Dashboard_Full_Report_${currentMonthStr}.pdf`); 
+            });
+            document.getElementById('dashboardYearlySummary').innerHTML = `<div><h4>Yearly Collected</h4><p class="summary-collected">₹${yearlyCollected}</p></div><div><h4>Yearly Due (Active)</h4><p class="summary-due">₹${yearlyDueAmount}</p></div>`; 
+            document.getElementById('financeOverviewNumbers').innerHTML = `<div onclick="showFeeBreakdown('collected')"><h4>Collected</h4><p class="summary-collected">₹${monthlyCollected}</p></div><div onclick="showFeeBreakdown('due')"><h4>Due</h4><p class="summary-due">₹${monthlyDueAmount}</p></div>`;
+
+            const dueTableBody = document.querySelector('#dueFeeTable tbody'); const dueMessageEl = document.getElementById('dueFeeMessage'); dueTableBody.innerHTML = ''; 
+            const defaulters = students.filter(s => s.status?.isActive).map(s => { return { student: s, months: getDueMonthsList(s.id) }; }).filter(item => item.months.length > 0); 
+            if (defaulters.length === 0) { dueMessageEl.textContent = "No pending dues."; } else { dueMessageEl.textContent = `(${defaulters.length}) students have pending dues.`; defaulters.forEach(item => { const monthsStr = item.months.join(", "); const studentHtml = getStudentHtml(item.student); const dueDisplay = `<div style="margin-top:5px; font-size:11px; color:#dc2626; font-weight:600; line-height:1.4;">Due: ${monthsStr}</div>`; const latestDueMonth = item.months.length > 0 ? getMonthStrFromFormat(item.months[0]) : currentMonthStr; dueTableBody.innerHTML += `<tr><td>${studentHtml}${dueDisplay}</td><td class="action-buttons">${getContactButtons(item.student.id, latestDueMonth)}</td></tr>`; }); }
+            const ctx = document.getElementById('financeChart').getContext('2d'); if (financeChartInstance) financeChartInstance.destroy(); financeChartInstance = new Chart(ctx, { type: 'doughnut', data: { labels: ['Collected', 'Due'], datasets: [{ data: [monthlyCollected, monthlyDueAmount], backgroundColor: ['#28a745', '#dc3545'], hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' }, title: { display: true, text: `Summary for ${formatMonthYear(currentMonthStr)}` } } } });
         }
 
-        // UPDATED: Logic to hide inactive students
-        function generateReport() { 
-            const type = document.getElementById('reportType').value; 
-            const summaryEl = document.getElementById('reportSummary'); 
-            const tableEl = document.getElementById('reportTable'); 
-            const tableHead = tableEl.querySelector('thead'); 
-            const tableBody = tableEl.querySelector('tbody'); 
-            const exportBtn = document.getElementById('exportReportBtn'); 
-            
-            tableHead.innerHTML = ''; tableBody.innerHTML = ''; 
-            summaryEl.style.display = 'flex'; tableEl.style.display = 'table'; 
-            exportBtn.style.display = 'inline-block'; 
-            
-            let totalCollected = 0, totalDue = 0; 
-            
-            if (type === 'monthly') { 
-                const month = document.getElementById('reportMonth').value; 
-                if (!month) return; 
-                
-                tableHead.innerHTML = `<tr><th>Student Name</th><th>Status</th><th>Amount</th><th>Action</th></tr>`; 
-                const monthIsDue = isMonthDue(month); 
-                
-                students.forEach(student => { 
-                    if (!student.status?.isActive) return;
-
-                    if (!wasStudentActiveDuringMonth(student, month)) return; 
-                    
-                    const feeRecord = fees[month]?.[student.id]; 
-                    let status = 'Pending', amount = `₹0`, rowClass = 'pending'; 
-                    
-                    if (feeRecord?.status === 'paid') { 
-                        status = `Paid on ${new Date(feeRecord.date).toLocaleDateString('en-IN')}`; 
-                        amount = `₹${feeRecord.amount}`; 
-                        rowClass = 'paid'; 
-                        totalCollected += feeRecord.amount; 
-                    } else if (monthIsDue) { 
-                        status = 'Due'; 
-                        const studentFee = student.fee_amount || DEFAULT_FEE; 
-                        amount = `₹${studentFee}`; 
-                        rowClass = 'unpaid'; 
-                        totalDue += studentFee; 
-                    } 
-                    
-                    tableBody.innerHTML += `<tr class="${rowClass}"><td>${getStudentHtml(student)}</td><td>${status}</td><td>${amount}</td><td class="action-buttons">${status === 'Due' ? getContactButtons(student.id, month) : ''}</td></tr>`; 
-                }); 
-                
-                summaryEl.innerHTML = `<div><h4>Total Collected</h4><p class="summary-collected">₹${totalCollected}</p></div><div><h4>Total Due</h4><p class="summary-due">₹${totalDue}</p></div>`; 
-                
-            } else if (type === 'yearly') { 
-                const year = document.getElementById('reportYear').value; 
-                if (!year) return; 
-                
-                tableHead.innerHTML = `<tr><th>Student Name</th><th>Total Paid</th><th>Due Months</th></tr>`; 
-                
-                students.forEach(student => { 
-                    if (!student.status?.isActive) return;
-
-                    let studentTotalPaid = 0;
-                    let dueMonthsList = [];
-                    let hasActivityInYear = false;
-
-                    for(let i=1; i<=12; i++) { 
-                        const monthStr = `${year}-${i.toString().padStart(2, '0')}`; 
-                        if (wasStudentActiveDuringMonth(student, monthStr)) { 
-                            hasActivityInYear = true;
-                            if (fees[monthStr]?.[student.id]?.status === 'paid') { 
-                                studentTotalPaid += fees[monthStr][student.id].amount; 
-                            } else if (isMonthDue(monthStr)) { 
-                                dueMonthsList.push(new Date(year, i-1).toLocaleString('default', { month: 'short' }));
-                            } 
-                        } 
-                    } 
-                    
-                    if(hasActivityInYear) {
-                        totalCollected += studentTotalPaid; 
-                        totalDue += dueMonthsList.length * (student.fee_amount || DEFAULT_FEE); 
-                        const dueDisplay = dueMonthsList.length > 0 ? `<span style="color:#ef4444; font-weight:bold;">${dueMonthsList.join(", ")}</span>` : '<span style="color:#10b981;">Clear</span>';
-                        tableBody.innerHTML += `<tr><td>${getStudentHtml(student)}</td><td>₹${studentTotalPaid}</td><td>${dueDisplay}</td></tr>`; 
-                    }
-                }); 
-                
-                summaryEl.innerHTML = `<div><h4>Total Collected</h4><p class="summary-collected">₹${totalCollected}</p></div><div><h4>Total Due</h4><p class="summary-due">₹${totalDue}</p></div>`; 
-            } 
-        }
-        
-        function exportReportPDF() { 
-            const type = document.getElementById('reportType').value; const { jsPDF } = window.jspdf; const doc = new jsPDF(); let y = 20; 
-            doc.setFontSize(16); doc.setFont("helvetica", "bold"); doc.text(INSTITUTE_NAME, 105, y, {align: "center"}); y += 10; 
-            
-            if (type === 'monthly') { 
-                const month = document.getElementById('reportMonth').value; if(!month) return; 
-                doc.setFontSize(12); doc.text(`Monthly Report: ${formatMonthYear(month)}`, 105, y, {align: "center"}); y += 15; 
-                doc.setFontSize(10); doc.setFont("helvetica", "bold"); 
-                doc.text("Student Name", 15, y); doc.text("Status", 80, y); doc.text("Amount", 150, y); 
-                doc.line(15, y+2, 195, y+2); y += 8; 
-                const monthIsDue = isMonthDue(month); let totalCollected = 0, totalDue = 0; 
-                doc.setFont("helvetica", "normal"); 
-                
-                students.forEach(student => { 
-                    if (!student.status?.isActive) return;
-                    if (!wasStudentActiveDuringMonth(student, month)) return; 
-                    const feeRecord = fees[month]?.[student.id]; 
-                    let status = 'Pending', amount = '0'; 
-                    if (feeRecord?.status === 'paid') { 
-                        status = `Paid (${feeRecord.mode || 'Cash'})`; amount = `${feeRecord.amount}`; totalCollected += feeRecord.amount; 
-                    } else if (monthIsDue) { 
-                        status = 'Due'; const f = student.fee_amount || DEFAULT_FEE; amount = `${f}`; totalDue += f; 
-                    } 
-                    doc.text(student.name, 15, y); doc.text(status, 80, y); doc.text(amount, 150, y); y += 6; 
-                    if(y > 280) { doc.addPage(); y = 20; } 
-                }); 
-                
-                y += 5; doc.line(15, y, 195, y); y += 8; doc.setFont("helvetica", "bold"); 
-                doc.text(`Total Collected: ${totalCollected}`, 15, y); doc.text(`Total Due: ${totalDue}`, 80, y); 
-                addWatermarkAndSignatureToPdf(doc); doc.save(`Monthly_Report_${month}.pdf`); 
-            
-            } else if (type === 'yearly') { 
-                const year = document.getElementById('reportYear').value; if(!year) return; 
-                doc.setFontSize(12); doc.text(`Yearly Report: ${year}`, 105, y, {align: "center"}); y += 15; 
-                doc.setFontSize(10); doc.setFont("helvetica", "bold"); 
-                doc.text("Student Name", 15, y); doc.text("Total Paid", 90, y); doc.text("Due Months", 140, y); 
-                doc.line(15, y+2, 195, y+2); y += 8; 
-                let totalCollected = 0; 
-                doc.setFont("helvetica", "normal"); 
-                
-                students.forEach(student => { 
-                    if (!student.status?.isActive) return;
-                    let studentTotal = 0; let dueMonthsList = []; let hasActivity = false;
-                    for(let i=1; i<=12; i++) { 
-                        const m = `${year}-${i.toString().padStart(2, '0')}`; 
-                        if (wasStudentActiveDuringMonth(student, m)) { 
-                            hasActivity = true;
-                            if(fees[m]?.[student.id]?.status === 'paid') studentTotal += fees[m][student.id].amount; 
-                            else if(isMonthDue(m)) dueMonthsList.push(new Date(year, i-1).toLocaleString('default', { month: 'short' })); 
-                        } 
-                    } 
-                    if(hasActivity) {
-                        totalCollected += studentTotal; 
-                        const dueText = dueMonthsList.length > 0 ? dueMonthsList.join(", ") : "None";
-                        doc.text(student.name, 15, y); doc.text(`${studentTotal}`, 90, y); doc.text(dueText, 140, y); y += 6; 
-                        if(y > 280) { doc.addPage(); y = 20; } 
-                    }
-                }); 
-                
-                y += 5; doc.line(15, y, 195, y); y += 8; doc.setFont("helvetica", "bold"); 
-                doc.text(`Grand Total Collected: ${totalCollected}`, 15, y); 
-                addWatermarkAndSignatureToPdf(doc); doc.save(`Yearly_Report_${year}.pdf`); 
-            } 
-        }
+        function getMonthStrFromFormat(formattedMonth) { const parts = formattedMonth.split(' '); if (parts.length !== 2) return null; const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]; const monthIndex = monthNames.findIndex(name => name === parts[0]); if (monthIndex === -1) return null; const month = (monthIndex + 1).toString().padStart(2, '0'); const year = parts[1]; return `${year}-${month}`; }
+        function addWatermarkAndSignatureToPdf(doc) { const pageCount = doc.getNumberOfPages(); const pageWidth = doc.internal.pageSize.getWidth(); const pageHeight = doc.internal.pageSize.getHeight(); for (let i = 1; i <= pageCount; i++) { doc.setPage(i); if (instituteLogo) { doc.saveGraphicsState(); doc.setGState(new doc.GState({ opacity: 0.1 })); const imgSize = Math.min(pageWidth, pageHeight) * 0.85; const x = (pageWidth - imgSize) / 2; const y = (pageHeight - imgSize) / 2; doc.addImage(instituteLogo, 'JPEG', x, y, imgSize, imgSize); doc.restoreGraphicsState(); } const sigY = pageHeight - 35; if (authorizedSignature) { doc.addImage(authorizedSignature, 'PNG', pageWidth - 55, sigY, 40, 15); } doc.setFontSize(10); doc.setFont("helvetica", "italic"); doc.text("Authorized Signature", pageWidth - 15, sigY + 20, { align: "right" }); doc.text("(Srikanta Banerjee)", pageWidth - 15, sigY + 25, { align: "right" }); } }
+        function exportStudentDetailsAsPDF(studentId) { const student = students.find(s => s.id === studentId); if (!student) return; const { jsPDF } = window.jspdf; const doc = new jsPDF(); let y = 15; const addLine = (text, size, weight, margin) => { doc.setFontSize(size); doc.setFont('helvetica', weight); doc.text(text, 15, y); y += margin; if (y > 280) { doc.addPage(); y = 15; } }; doc.setFontSize(22); doc.setFont('helvetica', 'bold'); doc.text(`${INSTITUTE_NAME}`, 105, y, { align: 'center' }); y += 8; if (student.photo) { doc.addImage(student.photo, 'JPEG', 160, 15, 30, 30); } doc.setFontSize(14); doc.text('Student Report', 105, y, { align: 'center' }); y += 12; addLine(`Student Name: ${student.name}`, 16, 'bold', 8); addLine(`Serial No: ${student.serial_no}`, 11, 'normal', 6); addLine(`Class: ${student.class || 'N/A'}`, 11, 'normal', 6); addLine(`Monthly Fee: ₹${student.fee_amount || DEFAULT_FEE}`, 11, 'normal', 6); addLine(`Joining Date: ${new Date(student.joining_date).toLocaleDateString('en-IN')}`, 11, 'normal', 10); addLine('Contact Information', 14, 'bold', 8); addLine(`Guardian: ${student.guardian || 'N/A'}`, 11, 'normal', 6); addLine(`Phone: ${student.phone || 'N/A'}`, 11, 'normal', 6); addLine(`Email: ${student.email || 'N/A'}`, 11, 'normal', 6); addLine(`Address: ${student.address || 'N/A'}`, 11, 'normal', 10); addLine('Status History', 14, 'bold', 8); if (student.status.history && student.status.history.length > 0) { student.status.history.forEach(entry => { addLine(`${entry.status} on ${new Date(entry.date).toLocaleDateString('en-IN')} - Note: ${entry.note || 'N/A'}`, 10, 'normal', 6); }); } else { addLine('No status history found.', 10, 'italic', 6); } y += 4; addLine('Fee Payment History', 14, 'bold', 8); let feesFound = false; Object.keys(fees).sort().forEach(month => { if(wasStudentActiveDuringMonth(student, month)) { const feeRecord = fees[month]?.[student.id]; if (feeRecord?.status === 'paid') { addLine(`${month}: ₹${feeRecord.amount} (Paid on ${new Date(feeRecord.date).toLocaleDateString('en-IN')} - ${feeRecord.mode || 'Cash'} ${feeRecord.transactionId ? '- Txn: '+feeRecord.transactionId : ''})`, 10, 'normal', 6); feesFound = true; } else if (isMonthDue(month)) { addLine(`${month}: Due`, 10, 'normal', 6); feesFound = true; } } }); if (!feesFound) { addLine('No records found.', 10, 'italic', 6); } y += 4; addLine('Attendance Summary & Details', 14, 'bold', 8); let presentDates = [], absentDates = []; Object.keys(attendance).sort().reverse().forEach(date => { const entry = attendance[date]?.[student.id]; if (entry) { const status = (typeof entry === 'object' && entry !== null) ? entry.status : entry; const d = new Date(date); const formattedDate = `${d.toLocaleDateString('en-IN')} (${d.toLocaleDateString('en-IN', {weekday: 'long'})})`; if (status === 'present') presentDates.push(formattedDate); if (status === 'absent') absentDates.push(formattedDate); } }); addLine(`Total Present: ${presentDates.length}`, 11, 'bold', 6); addLine(`Total Absent: ${absentDates.length}`, 11, 'bold', 8); if(presentDates.length > 0) { addLine('Present Days (Recent):', 10, 'bold', 6); presentDates.forEach(d => addLine(`- ${d}`, 9, 'normal', 5)); y+=2; } if(absentDates.length > 0) { addLine('Absent Days (Recent):', 10, 'bold', 6); absentDates.forEach(d => addLine(`- ${d}`, 9, 'normal', 5)); } addWatermarkAndSignatureToPdf(doc); doc.save(`${student.name}_report.pdf`); }
+        function calculateMonthStats(monthStr) { let income = 0; let studentCount = 0; if(fees[monthStr]) { Object.values(fees[monthStr]).forEach(record => { if(record.status === 'paid') income += record.amount; }); } students.forEach(student => { if(wasStudentActiveDuringMonth(student, monthStr)) { studentCount++; } }); return { income, studentCount }; }
+        function updateYearlyChart() { const year1 = document.getElementById('analyticsYear').value; const year2 = document.getElementById('compareYear').value; if(!year1) return; const labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]; const inc1 = []; const stu1 = []; let sumInc1 = 0; let sumStu1 = 0; for(let i=1; i<=12; i++) { const m = `${year1}-${i.toString().padStart(2, '0')}`; const s = calculateMonthStats(m); inc1.push(s.income); stu1.push(s.studentCount); sumInc1 += s.income; sumStu1 += s.studentCount; } const avgInc1 = sumInc1 / 12; const avgStu1 = sumStu1 / 12; const statsDiv = document.getElementById('yearlyAverages'); let statsHtml = `<div><h4>Avg Income (${year1})</h4><p class="summary-collected">₹${avgInc1.toFixed(0)}</p></div><div><h4>Avg Students (${year1})</h4><p class="summary-total">${Math.round(avgStu1)}</p></div>`; const datasets = [ { label: `Income ${year1}`, data: inc1, backgroundColor: 'rgba(16, 185, 129, 0.6)', borderColor: '#10b981', borderWidth: 1, type: 'bar', yAxisID: 'y' }, { label: `Students ${year1}`, data: stu1, borderColor: '#3b82f6', borderWidth: 2, type: 'line', tension: 0.3, yAxisID: 'y1' } ]; if (year2) { const inc2 = []; const stu2 = []; let sumInc2 = 0; let sumStu2 = 0; for(let i=1; i<=12; i++) { const m = `${year2}-${i.toString().padStart(2, '0')}`; const s = calculateMonthStats(m); inc2.push(s.income); stu2.push(s.studentCount); sumInc2 += s.income; sumStu2 += s.studentCount; } const avgInc2 = sumInc2 / 12; const avgStu2 = sumStu2 / 12; statsHtml += `<div><h4>Avg Income (${year2})</h4><p class="summary-collected">₹${avgInc2.toFixed(0)}</p></div><div><h4>Avg Students (${year2})</h4><p class="summary-total">${Math.round(avgStu2)}</p></div>`; datasets.push({ label: `Income ${year2}`, data: inc2, backgroundColor: 'rgba(239, 68, 68, 0.6)', borderColor: '#ef4444', borderWidth: 1, type: 'bar', yAxisID: 'y' }); datasets.push({ label: `Students ${year2}`, data: stu2, borderColor: '#f97316', borderWidth: 2, type: 'line', tension: 0.3, pointRadius: 3, yAxisID: 'y1' }); } statsDiv.innerHTML = statsHtml; statsDiv.style.display = 'flex'; const ctx = document.getElementById('yearlyChart').getContext('2d'); if(analyticsChartInstance) analyticsChartInstance.destroy(); analyticsChartInstance = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: datasets }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { position: 'bottom' }, title: { display: true, text: year2 ? `${year1} vs ${year2}` : `Overview ${year1}` } }, scales: { y: { beginAtZero: true, position: 'left', title: {display:true, text:'Income (₹)'} }, y1: { beginAtZero: true, position: 'right', grid: {drawOnChartArea: false}, title: {display:true, text:'Students'} } } } }); }
+        function comparePeriods() { const m1 = document.getElementById('compMonth1').value; const m2 = document.getElementById('compMonth2').value; if(!m1 || !m2) { return; } const s1 = calculateMonthStats(m1); const s2 = calculateMonthStats(m2); document.getElementById('compIncome1').textContent = `₹${s1.income}`; document.getElementById('compIncome2').textContent = `₹${s2.income}`; document.getElementById('compStudent1').textContent = s1.studentCount; document.getElementById('compStudent2').textContent = s2.studentCount; const incDiff = s2.income - s1.income; const stuDiff = s2.studentCount - s1.studentCount; const incDiffEl = document.getElementById('compIncomeDiff'); incDiffEl.innerHTML = incDiff > 0 ? `<i class="fas fa-arrow-up"></i> ₹${incDiff}` : (incDiff < 0 ? `<i class="fas fa-arrow-down"></i> ₹${Math.abs(incDiff)}` : '-'); incDiffEl.className = 'comp-diff ' + (incDiff >= 0 ? 'diff-up' : 'diff-down'); const stuDiffEl = document.getElementById('compStudentDiff'); stuDiffEl.innerHTML = stuDiff > 0 ? `<i class="fas fa-arrow-up"></i> ${stuDiff}` : (stuDiff < 0 ? `<i class="fas fa-arrow-down"></i> ${Math.abs(stuDiff)}` : '-'); stuDiffEl.className = 'comp-diff ' + (stuDiff >= 0 ? 'diff-up' : 'diff-down'); document.getElementById('comparisonResults').style.display = 'block'; }
+        function exportDashboardPDF() { const activeStudents = students.filter(s => s.status?.isActive); const currentYear = new Date().getFullYear(); const currentMonthStr = `${currentYear}-${(new Date().getMonth() + 1).toString().padStart(2, '0')}`; let monthlyCollected = 0, monthlyDueAmount = 0, yearlyCollected = 0, yearlyDueAmount = 0; students.forEach(student => { if (!student.status?.isActive) return; for (let i = 0; i < 12; i++) { const monthStr = `${currentYear}-${(i + 1).toString().padStart(2, '0')}`; if (wasStudentActiveDuringMonth(student, monthStr)) { if (fees[monthStr]?.[student.id]?.status === 'paid') { if (monthStr === currentMonthStr) monthlyCollected += fees[monthStr][student.id].amount; yearlyCollected += fees[monthStr][student.id].amount; } else if (isMonthDue(monthStr)) { const studentFee = student.fee_amount || DEFAULT_FEE; if (monthStr === currentMonthStr) monthlyDueAmount += studentFee; yearlyDueAmount += studentFee; } } } }); const classCounts = activeStudents.reduce((acc, student) => { const className = student.class || 'Unassigned'; acc[className] = (acc[className] || 0) + 1; return acc; }, {}); const { jsPDF } = window.jspdf; const doc = new jsPDF(); let y = 20; doc.setFontSize(18); doc.setFont("helvetica", "bold"); doc.text(INSTITUTE_NAME, 105, y, {align: "center"}); y += 10; doc.setFontSize(14); doc.text("Complete Dashboard Report", 105, y, {align: "center"}); y += 8; doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.text(`Generated: ${new Date().toLocaleDateString('en-IN')}`, 105, y, {align: "center"}); y += 15; doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.text("Student Statistics", 15, y); y += 7; doc.setFontSize(11); doc.setFont("helvetica", "normal"); doc.text(`Total Students: ${students.length}`, 20, y); y += 6; doc.text(`Active Students: ${activeStudents.length}`, 20, y); y += 6; doc.text(`Inactive Students: ${students.length - activeStudents.length}`, 20, y); y += 12; doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.text("Financial Overview", 15, y); y += 7; doc.setFontSize(11); doc.setFont("helvetica", "normal"); doc.text(`Current Month (${formatMonthYear(currentMonthStr)}) Collected: Rs. ${monthlyCollected}`, 20, y); y += 6; doc.text(`Current Month Due: Rs. ${monthlyDueAmount}`, 20, y); y += 6; doc.text(`Yearly Collected: Rs. ${yearlyCollected}`, 20, y); y += 6; doc.text(`Yearly Due: Rs. ${yearlyDueAmount}`, 20, y); y += 12; doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.text("Class Strength", 15, y); y += 7; doc.setFontSize(11); doc.setFont("helvetica", "normal"); Object.entries(classCounts).sort().forEach(([className, count]) => { doc.text(`${className}: ${count} students`, 20, y); y += 6; }); addWatermarkAndSignatureToPdf(doc); doc.save(`Dashboard_Full_Report_${currentMonthStr}.pdf`); }
+        function generateReport() { const type = document.getElementById('reportType').value; const summaryEl = document.getElementById('reportSummary'); const tableEl = document.getElementById('reportTable'); const tableHead = tableEl.querySelector('thead'); const tableBody = tableEl.querySelector('tbody'); const exportBtn = document.getElementById('exportReportBtn'); tableHead.innerHTML = ''; tableBody.innerHTML = ''; summaryEl.style.display = 'flex'; tableEl.style.display = 'table'; exportBtn.style.display = 'inline-block'; let totalCollected = 0, totalDue = 0; if (type === 'monthly') { const month = document.getElementById('reportMonth').value; if (!month) return; tableHead.innerHTML = `<tr><th>Student Name</th><th>Status</th><th>Amount</th><th>Action</th></tr>`; const monthIsDue = isMonthDue(month); students.forEach(student => { if (!student.status?.isActive) return; if (!wasStudentActiveDuringMonth(student, month)) return; const feeRecord = fees[month]?.[student.id]; let status = 'Pending', amount = `₹0`, rowClass = 'pending'; if (feeRecord?.status === 'paid') { status = `Paid on ${new Date(feeRecord.date).toLocaleDateString('en-IN')}`; amount = `₹${feeRecord.amount}`; rowClass = 'paid'; totalCollected += feeRecord.amount; } else if (monthIsDue) { status = 'Due'; const studentFee = student.fee_amount || DEFAULT_FEE; amount = `₹${studentFee}`; rowClass = 'unpaid'; totalDue += studentFee; } tableBody.innerHTML += `<tr class="${rowClass}"><td>${getStudentHtml(student)}</td><td>${status}</td><td>${amount}</td><td class="action-buttons">${status === 'Due' ? getContactButtons(student.id, month) : ''}</td></tr>`; }); summaryEl.innerHTML = `<div><h4>Total Collected</h4><p class="summary-collected">₹${totalCollected}</p></div><div><h4>Total Due</h4><p class="summary-due">₹${totalDue}</p></div>`; } else if (type === 'yearly') { const year = document.getElementById('reportYear').value; if (!year) return; tableHead.innerHTML = `<tr><th>Student Name</th><th>Total Paid</th><th>Due Months</th></tr>`; students.forEach(student => { if (!student.status?.isActive) return; let studentTotalPaid = 0; let dueMonthsList = []; let hasActivityInYear = false; for(let i=1; i<=12; i++) { const monthStr = `${year}-${i.toString().padStart(2, '0')}`; if (wasStudentActiveDuringMonth(student, monthStr)) { hasActivityInYear = true; if (fees[monthStr]?.[student.id]?.status === 'paid') { studentTotalPaid += fees[monthStr][student.id].amount; } else if (isMonthDue(monthStr)) { dueMonthsList.push(new Date(year, i-1).toLocaleString('default', { month: 'short' })); } } } if(hasActivityInYear) { totalCollected += studentTotalPaid; totalDue += dueMonthsList.length * (student.fee_amount || DEFAULT_FEE); const dueDisplay = dueMonthsList.length > 0 ? `<span style="color:#ef4444; font-weight:bold;">${dueMonthsList.join(", ")}</span>` : '<span style="color:#10b981;">Clear</span>'; tableBody.innerHTML += `<tr><td>${getStudentHtml(student)}</td><td>₹${studentTotalPaid}</td><td>${dueDisplay}</td></tr>`; } }); summaryEl.innerHTML = `<div><h4>Total Collected</h4><p class="summary-collected">₹${totalCollected}</p></div><div><h4>Total Due</h4><p class="summary-due">₹${totalDue}</p></div>`; } }
+        function exportReportPDF() { const type = document.getElementById('reportType').value; const { jsPDF } = window.jspdf; const doc = new jsPDF(); let y = 20; doc.setFontSize(16); doc.setFont("helvetica", "bold"); doc.text(INSTITUTE_NAME, 105, y, {align: "center"}); y += 10; if (type === 'monthly') { const month = document.getElementById('reportMonth').value; if(!month) return; doc.setFontSize(12); doc.text(`Monthly Report: ${formatMonthYear(month)}`, 105, y, {align: "center"}); y += 15; doc.setFontSize(10); doc.setFont("helvetica", "bold"); doc.text("Student Name", 15, y); doc.text("Status", 80, y); doc.text("Amount", 150, y); doc.line(15, y+2, 195, y+2); y += 8; const monthIsDue = isMonthDue(month); let totalCollected = 0, totalDue = 0; doc.setFont("helvetica", "normal"); students.forEach(student => { if (!student.status?.isActive) return; if (!wasStudentActiveDuringMonth(student, month)) return; const feeRecord = fees[month]?.[student.id]; let status = 'Pending', amount = '0'; if (feeRecord?.status === 'paid') { status = `Paid (${feeRecord.mode || 'Cash'})`; amount = `${feeRecord.amount}`; totalCollected += feeRecord.amount; } else if (monthIsDue) { status = 'Due'; const f = student.fee_amount || DEFAULT_FEE; amount = `${f}`; totalDue += f; } doc.text(student.name, 15, y); doc.text(status, 80, y); doc.text(amount, 150, y); y += 6; if(y > 280) { doc.addPage(); y = 20; } }); y += 5; doc.line(15, y, 195, y); y += 8; doc.setFont("helvetica", "bold"); doc.text(`Total Collected: ${totalCollected}`, 15, y); doc.text(`Total Due: ${totalDue}`, 80, y); addWatermarkAndSignatureToPdf(doc); doc.save(`Monthly_Report_${month}.pdf`); } else if (type === 'yearly') { const year = document.getElementById('reportYear').value; if(!year) return; doc.setFontSize(12); doc.text(`Yearly Report: ${year}`, 105, y, {align: "center"}); y += 15; doc.setFontSize(10); doc.setFont("helvetica", "bold"); doc.text("Student Name", 15, y); doc.text("Total Paid", 90, y); doc.text("Due Months", 140, y); doc.line(15, y+2, 195, y+2); y += 8; let totalCollected = 0; doc.setFont("helvetica", "normal"); students.forEach(student => { if (!student.status?.isActive) return; let studentTotal = 0; let dueMonthsList = []; let hasActivity = false; for(let i=1; i<=12; i++) { const m = `${year}-${i.toString().padStart(2, '0')}`; if (wasStudentActiveDuringMonth(student, m)) { hasActivity = true; if(fees[m]?.[student.id]?.status === 'paid') studentTotal += fees[m][student.id].amount; else if(isMonthDue(m)) dueMonthsList.push(new Date(year, i-1).toLocaleString('default', { month: 'short' })); } } if(hasActivity) { totalCollected += studentTotal; const dueText = dueMonthsList.length > 0 ? dueMonthsList.join(", ") : "None"; doc.text(student.name, 15, y); doc.text(`${studentTotal}`, 90, y); doc.text(dueText, 140, y); y += 6; if(y > 280) { doc.addPage(); y = 20; } } }); y += 5; doc.line(15, y, 195, y); y += 8; doc.setFont("helvetica", "bold"); doc.text(`Grand Total Collected: ${totalCollected}`, 15, y); addWatermarkAndSignatureToPdf(doc); doc.save(`Yearly_Report_${year}.pdf`); } }
         function searchTable(inputId, tableId) { const input = document.getElementById(inputId), filter = input.value.toUpperCase(), table = document.getElementById(tableId), tr = table.getElementsByTagName("tr"); for (let i = 1; i < tr.length; i++) { const rowText = tr[i].textContent || tr[i].innerText; if (rowText.toUpperCase().indexOf(filter) > -1) { tr[i].style.display = ""; } else { tr[i].style.display = "none"; } } }
         async function saveFee() { 
             const studentId = parseInt(document.getElementById('feeStudentId').value);
@@ -1356,162 +987,84 @@
             const date = document.getElementById('feeDate').value;
             const mode = document.getElementById('paymentMode').value;
             const txnId = document.getElementById('transactionId').value.trim(); 
-            
             if (isNaN(amount) || amount <= 0) { Swal.fire('Error','Invalid amount.', 'error'); return; } 
             if (!date) { Swal.fire('Error','Select date.', 'error'); return; } 
             if (!fees[month]) fees[month] = {}; 
-            
             let receiptNo = fees[month][studentId]?.receiptNo;
-            if (!receiptNo) {
-                receiptNo = Date.now().toString().slice(-6); 
-            }
-
+            if (!receiptNo) { receiptNo = Date.now().toString().slice(-6); }
             fees[month][studentId] = { status: 'paid', amount, date, mode: mode, transactionId: txnId, receiptNo: receiptNo }; 
             await saveData(); 
             closeModal('feeModal'); 
             Swal.fire({ title: 'Payment Recorded!', html: `<p>What would you like to do?</p><div style="display:flex; gap:5px; justify-content:center; flex-wrap:wrap;"><button class="btn-like btn-receipt" onclick="generatePaymentReceipt(${studentId}, '${month}')">Receipt</button><button class="btn-like btn-whatsapp" onclick="sendMsg('wa', ${studentId}, '${month}', ${amount}, false)">WhatsApp</button><button class="btn-like btn-sms" onclick="sendMsg('sms', ${studentId}, '${month}', ${amount}, false)">SMS</button><button class="btn-like btn-mail" onclick="sendMsg('mail', ${studentId}, '${month}', ${amount}, false)">Email</button></div>`, icon: 'success', showConfirmButton: false, showCloseButton: true }); 
             loadAllData(); 
         }
-
-        // UPDATED: Logic to hide inactive students
-        function renderFees() { const selectedMonth = document.getElementById('feeMonth').value, tableBody = document.querySelector('#feeTable tbody'); tableBody.innerHTML = ''; if (!selectedMonth) return; let totalCollected = 0, totalDueAmount = 0, dueCount = 0; const monthIsDue = isMonthDue(selectedMonth); students.forEach(student => { if (!student.status?.isActive) return; const wasActive = wasStudentActiveDuringMonth(student, selectedMonth); if (!wasActive) return; const feeRecord = fees[selectedMonth]?.[student.id], isPaid = feeRecord?.status === 'paid'; const hasGlobalDue = checkGlobalDues(student.id); let rowClass = 'pending', statusText = 'Pending'; if (isPaid) { totalCollected += feeRecord.amount; rowClass = 'paid'; statusText = `Paid (₹${feeRecord.amount})`; } else if (monthIsDue) { dueCount++; totalDueAmount += student.fee_amount || DEFAULT_FEE; rowClass = 'unpaid'; statusText = 'Due'; } if (hasGlobalDue) rowClass += ' has-dues-alert'; const row = document.createElement('tr'); row.className = rowClass; let actionButtons = isPaid ? `<button class="btn-receipt" onclick="generatePaymentReceipt(${student.id}, '${selectedMonth}')">Receipt</button> <button class="btn-warning" onclick="openFeeModal(${student.id}, '${selectedMonth}', true)">Edit</button><button class="btn-danger" onclick="unmarkFee(${student.id}, '${selectedMonth}')">Unmark</button>` : `<button class="btn-success" onclick="openFeeModal(${student.id}, '${selectedMonth}')">Record Payment</button>` + (monthIsDue ? getContactButtons(student.id, selectedMonth) : ''); row.innerHTML = `<td>${getStudentHtml(student)}</td><td>${statusText}</td><td class="action-buttons">${actionButtons}</td>`; tableBody.appendChild(row); }); document.getElementById('feeSummary').innerHTML = `<div><h4>Collected</h4><p class="summary-collected">₹${totalCollected}</p></div><div><h4>Due (${dueCount} students)</h4><p class="summary-due">₹${totalDueAmount}</p></div>`; searchTable('searchFees', 'feeTable'); }
-        async function generatePaymentReceipt(studentId, monthStr) { 
-            const student = students.find(s => s.id === studentId); 
-            const feeRecord = fees[monthStr]?.[studentId]; 
-            if (!student || !feeRecord) return; 
-            
-            const { jsPDF } = window.jspdf; 
-            const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [105, 148] }); 
-            
-            if (instituteLogo) {
-                doc.saveGraphicsState();
-                doc.setGState(new doc.GState({ opacity: 0.1 }));
-                const imgDim = 80; // Size for A6
-                const pageWidth = 105;
-                const pageHeight = 148;
-                doc.addImage(instituteLogo, 'JPEG', (pageWidth - imgDim) / 2, (pageHeight - imgDim) / 2, imgDim, imgDim);
-                doc.restoreGraphicsState();
-            }
-            
-            doc.setDrawColor(0); doc.setLineWidth(0.5); doc.rect(5, 5, 95, 138); let y = 15; 
-            if (instituteLogo) { doc.addImage(instituteLogo, 'JPEG', 42.5, 10, 20, 20); y = 35; } 
-            
-            doc.setFontSize(14); doc.setFont("helvetica", "bold"); 
-            const titleLines = doc.splitTextToSize(INSTITUTE_NAME, 90); 
-            doc.text(titleLines, 52.5, y, {align: "center"}); y += (titleLines.length * 6); 
-            
-            doc.setFontSize(12); doc.setFont("helvetica", "normal"); doc.text("PAYMENT RECEIPT", 52.5, y, {align: "center"}); doc.line(30, y+1, 75, y+1); y += 15; 
-            doc.setFontSize(10); const lineH = 8; 
-            
-            doc.text(`Receipt No:`, 10, y); 
-            const rNo = feeRecord.receiptNo || "LEGACY-" + Math.floor(new Date(feeRecord.date).getTime()/10000).toString().slice(-4);
-            doc.text(`${rNo}`, 40, y); y += lineH; 
-            
-            doc.text(`Date:`, 10, y); 
-            const paymentDate = feeRecord.date ? new Date(feeRecord.date).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN');
-            doc.text(`${paymentDate}`, 40, y); 
-            
-            y += lineH; doc.text(`Student Name:`, 10, y); doc.setFont("helvetica", "bold"); doc.text(student.name, 40, y); doc.setFont("helvetica", "normal"); y += lineH; doc.text(`Class:`, 10, y); doc.text(student.class || 'N/A', 40, y); y += lineH; doc.text(`Month:`, 10, y); doc.setFont("helvetica", "bold"); doc.text(formatMonthYear(monthStr), 40, y); doc.setFont("helvetica", "normal"); y += lineH; doc.text(`Payment Mode:`, 10, y); doc.text(feeRecord.mode || 'Cash', 40, y); y += lineH; if (feeRecord.transactionId) { doc.text(`Txn ID:`, 10, y); doc.text(feeRecord.transactionId, 40, y); y += lineH; } y += 5; doc.setFontSize(12); doc.text(`Amount Received:`, 10, y); doc.setFontSize(16); doc.setFont("helvetica", "bold"); doc.text(`Rs. ${feeRecord.amount}/-`, 50, y); y += 20; if (authorizedSignature) { doc.addImage(authorizedSignature, 'PNG', 50, y - 15, 40, 15); } doc.setFontSize(9); doc.setFont("helvetica", "italic"); doc.text(`Authorized Signature`, 70, y, {align:"center"}); doc.text(`(${MY_NAME})`, 70, y+5, {align:"center"}); const fileName = `Receipt_${student.name.replace(/\s+/g, '_')}_${monthStr}.pdf`; if (navigator.canShare && navigator.share) { const pdfBlob = doc.output('blob'); const file = new File([pdfBlob], fileName, { type: 'application/pdf' }); if (navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], title: 'Fee Receipt', text: `Payment receipt for ${student.name}` }); } catch (err) { doc.save(fileName); } } else { doc.save(fileName); } } else { doc.save(fileName); } }
+        function renderFees() { const selectedMonth = document.getElementById('feeMonth').value, tableBody = document.querySelector('#feeTable tbody'); tableBody.innerHTML = ''; if (!selectedMonth) return; let totalCollected = 0, totalDueAmount = 0, dueCount = 0; const monthIsDue = isMonthDue(selectedMonth); students.forEach(student => { if (!student.status?.isActive) return; const wasActive = wasStudentActiveDuringMonth(student, selectedMonth); if (!wasActive) return; const feeRecord = fees[selectedMonth]?.[student.id], isPaid = feeRecord?.status === 'paid'; const hasGlobalDue = checkGlobalDues(student.id); let rowClass = 'pending', statusText = 'Pending'; if (isPaid) { totalCollected += feeRecord.amount; rowClass = 'paid'; statusText = `Paid (₹${feeRecord.amount})`; } else if (monthIsDue) { dueCount++; totalDueAmount += student.fee_amount || DEFAULT_FEE; rowClass = 'unpaid'; statusText = 'Due'; } if (hasGlobalDue) rowClass += ' has-dues-alert'; const row = document.createElement('tr'); row.className = rowClass; let actionButtons = isPaid ? `<button class="btn-receipt" onclick="generatePaymentReceipt(${student.id}, '${selectedMonth}')">Receipt</button> <button class="btn-warning" onclick="openFeeModal(${student.id}, '${selectedMonth}', true)">Edit</button><button class="btn-danger" onclick="unmarkFee(${student.id}, '${selectedMonth}')">Unmark</button>` : `<button class="btn-success" onclick="openFeeModal(${student.id}, '${selectedMonth}')">Record Payment</button>` + (monthIsDue ? getContactButtons(student.id, selectedMonth) : ''); row.innerHTML = `<td>${getStudentHtml(student)}</td><td>${statusText}</td><td class="action-buttons">${actionButtons}</td>`; tableBody.appendChild(row); }); document.getElementById('feeSummary').innerHTML = `<div onclick="showFeeBreakdown('collected')"><h4>Collected</h4><p class="summary-collected">₹${totalCollected}</p></div><div onclick="showFeeBreakdown('due')"><h4>Due (${dueCount} students)</h4><p class="summary-due">₹${totalDueAmount}</p></div>`; searchTable('searchFees', 'feeTable'); }
+        async function generatePaymentReceipt(studentId, monthStr) { const student = students.find(s => s.id === studentId); const feeRecord = fees[monthStr]?.[studentId]; if (!student || !feeRecord) return; const { jsPDF } = window.jspdf; const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [105, 148] }); if (instituteLogo) { doc.saveGraphicsState(); doc.setGState(new doc.GState({ opacity: 0.1 })); const imgDim = 80; const pageWidth = 105; const pageHeight = 148; doc.addImage(instituteLogo, 'JPEG', (pageWidth - imgDim) / 2, (pageHeight - imgDim) / 2, imgDim, imgDim); doc.restoreGraphicsState(); } doc.setDrawColor(0); doc.setLineWidth(0.5); doc.rect(5, 5, 95, 138); let y = 15; if (instituteLogo) { doc.addImage(instituteLogo, 'JPEG', 42.5, 10, 20, 20); y = 35; } doc.setFontSize(14); doc.setFont("helvetica", "bold"); const titleLines = doc.splitTextToSize(INSTITUTE_NAME, 90); doc.text(titleLines, 52.5, y, {align: "center"}); y += (titleLines.length * 6); doc.setFontSize(12); doc.setFont("helvetica", "normal"); doc.text("PAYMENT RECEIPT", 52.5, y, {align: "center"}); doc.line(30, y+1, 75, y+1); y += 15; doc.setFontSize(10); const lineH = 8; doc.text(`Receipt No:`, 10, y); const rNo = feeRecord.receiptNo || "LEGACY-" + Math.floor(new Date(feeRecord.date).getTime()/10000).toString().slice(-4); doc.text(`${rNo}`, 40, y); y += lineH; doc.text(`Date:`, 10, y); const paymentDate = feeRecord.date ? new Date(feeRecord.date).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN'); doc.text(`${paymentDate}`, 40, y); y += lineH; doc.text(`Student Name:`, 10, y); doc.setFont("helvetica", "bold"); doc.text(student.name, 40, y); doc.setFont("helvetica", "normal"); y += lineH; doc.text(`Class:`, 10, y); doc.text(student.class || 'N/A', 40, y); y += lineH; doc.text(`Month:`, 10, y); doc.setFont("helvetica", "bold"); doc.text(formatMonthYear(monthStr), 40, y); doc.setFont("helvetica", "normal"); y += lineH; doc.text(`Payment Mode:`, 10, y); doc.text(feeRecord.mode || 'Cash', 40, y); y += lineH; if (feeRecord.transactionId) { doc.text(`Txn ID:`, 10, y); doc.text(feeRecord.transactionId, 40, y); y += lineH; } y += 5; doc.setFontSize(12); doc.text(`Amount Received:`, 10, y); doc.setFontSize(16); doc.setFont("helvetica", "bold"); doc.text(`Rs. ${feeRecord.amount}/-`, 50, y); y += 20; if (authorizedSignature) { doc.addImage(authorizedSignature, 'PNG', 50, y - 15, 40, 15); } doc.setFontSize(9); doc.setFont("helvetica", "italic"); doc.text(`Authorized Signature`, 70, y, {align:"center"}); doc.text(`(${MY_NAME})`, 70, y+5, {align:"center"}); const fileName = `Receipt_${student.name.replace(/\s+/g, '_')}_${monthStr}.pdf`; if (navigator.canShare && navigator.share) { const pdfBlob = doc.output('blob'); const file = new File([pdfBlob], fileName, { type: 'application/pdf' }); if (navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], title: 'Fee Receipt', text: `Payment receipt for ${student.name}` }); } catch (err) { doc.save(fileName); } } else { doc.save(fileName); } } else { doc.save(fileName); } }
         async function generateIDCard() { const name = document.getElementById('modalStudentName').textContent; const serial = document.getElementById('modalSerialNo').textContent; const student = students.find(s => s.serial_no == serial); if (!student) return; const issueDateInput = document.getElementById('idCardIssueDate').value; const endDateInput = document.getElementById('idCardEndDate').value; const issueDateStr = issueDateInput ? new Date(issueDateInput).toLocaleDateString('en-IN') : 'N/A'; const endDateStr = endDateInput ? new Date(endDateInput).toLocaleDateString('en-IN') : null; const dobStr = student.dob ? new Date(student.dob).toLocaleDateString('en-IN') : '-'; const { jsPDF } = window.jspdf; const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [86, 54] }); doc.setFillColor(24, 90, 157); doc.rect(0, 0, 30, 54, 'F'); if (student.photo) { doc.addImage(student.photo, 'JPEG', 5, 12, 20, 20); } else { doc.setFillColor(200, 200, 200); doc.circle(15, 22, 10, 'F'); doc.setFontSize(8); doc.text("No Photo", 15, 22, {align: 'center'}); } if (instituteLogo) { doc.saveGraphicsState(); doc.setGState(new doc.GState({ opacity: 0.1 })); doc.addImage(instituteLogo, 'JPEG', 40, 9, 36, 36); doc.restoreGraphicsState(); } doc.setTextColor(0, 0, 0); doc.setFontSize(7); doc.setFont("helvetica", "bold"); const headerLines = doc.splitTextToSize(INSTITUTE_NAME, 50); doc.text(headerLines, 58, 5, {align: "center"}); doc.setDrawColor(24, 90, 157); doc.line(35, 12, 80, 12); let yText = 16; const labelX = 35; const valX = 48; doc.setFontSize(7); doc.setFont("helvetica", "bold"); doc.text("Name:", labelX, yText); doc.setFont("helvetica", "normal"); doc.text(student.name, valX, yText); yText += 3.5; doc.setFont("helvetica", "bold"); doc.text("ID No:", labelX, yText); doc.setFont("helvetica", "normal"); doc.text(student.serial_no.toString(), valX, yText); yText += 3.5; doc.setFont("helvetica", "bold"); doc.text("Class:", labelX, yText); doc.setFont("helvetica", "normal"); doc.text(student.class || '-', valX, yText); yText += 3.5; doc.setFont("helvetica", "bold"); doc.text("Phone:", labelX, yText); doc.setFont("helvetica", "normal"); doc.text(student.phone || '-', valX, yText); yText += 3.5; doc.setFont("helvetica", "bold"); doc.text("Addr:", labelX, yText); doc.setFont("helvetica", "normal"); const addrLines = doc.splitTextToSize(student.address || '-', 35); doc.text(addrLines, valX, yText); yText += (addrLines.length * 3) + 1; doc.setFont("helvetica", "bold"); doc.text("DOB:", labelX, yText); doc.setFont("helvetica", "normal"); doc.text(dobStr, valX, yText); yText += 3.5; doc.setFontSize(6); doc.setFont("helvetica", "bold"); let validText = `Issued: ${issueDateStr}`; if (endDateStr) validText += ` | Valid: ${endDateStr}`; doc.text(validText, 35, yText); if (authorizedSignature) { doc.addImage(authorizedSignature, 'PNG', 65, 38, 18, 6); } doc.setFontSize(6); doc.setFont("helvetica", "bold"); doc.text("Auth. Signature:", 83, 44, {align: "right"}); doc.setFont("helvetica", "italic"); doc.text("Srikanta Banerjee", 83, 47, {align: "right"}); doc.setFillColor(67, 206, 162); doc.rect(30, 49, 56, 5, 'F'); doc.setTextColor(255, 255, 255); doc.setFontSize(6); doc.setFont("helvetica", "bold"); doc.text("AUTHORIZED STUDENT CARD", 58, 52.5, {align: "center"}); const fileName = `ID_Card_${student.name}.pdf`; if (navigator.canShare && navigator.share) { const pdfBlob = doc.output('blob'); const file = new File([pdfBlob], fileName, { type: 'application/pdf' }); if (navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], title: 'Student ID Card', text: `ID Card for ${student.name}` }); } catch (err) { doc.save(fileName); } } else { doc.save(fileName); } } else { doc.save(fileName); } }
-
-        // UPDATED: Logic to hide inactive students
         function renderAttendance() { 
             const date = document.getElementById('attendanceDate').value, tableBody = document.querySelector('#attendanceTable tbody'); 
             tableBody.innerHTML = ''; 
             if (!date) return; 
             
+            // Set Default Time if empty (visual only)
+            const timeInput = document.getElementById('attendanceTime');
+            if(!timeInput.value) {
+                const now = new Date();
+                const hours = now.getHours().toString().padStart(2, '0');
+                const mins = now.getMinutes().toString().padStart(2, '0');
+                timeInput.value = `${hours}:${mins}`;
+            }
+
             students.filter(s => s.status?.isActive).forEach(student => { 
                 const entry = attendance[date]?.[student.id];
-                const status = (typeof entry === 'object' && entry !== null) ? entry.status : entry; // Handle both string and object
-                
+                const status = (typeof entry === 'object' && entry !== null) ? entry.status : entry; 
                 const statusText = status === 'present' ? 'Present' : (status === 'absent' ? 'Absent' : 'Not Marked');
                 const statusClass = status === 'present' ? 'status-present' : (status === 'absent' ? 'status-absent' : ''); 
-                
                 const hasGlobalDue = checkGlobalDues(student.id); 
                 const rowClass = hasGlobalDue ? 'has-dues-alert' : ''; 
-                
                 const row = document.createElement('tr');
                 if (rowClass) row.className = rowClass;
-                
                 row.innerHTML = `<td>${getStudentHtml(student)}</td><td class="${statusClass}">${statusText}</td><td class="action-buttons"><button class="btn-success" onclick="markAttendance(${student.id}, 'present')">P</button><button class="btn-danger" onclick="markAttendance(${student.id}, 'absent')">A</button><button class="btn-secondary" onclick="markAttendance(${student.id}, 'clear')">X</button></td>`;
                 tableBody.appendChild(row);
             }); 
             searchTable('searchAttendance', 'attendanceTable'); 
         }
-
         function loadStudentsList() { 
-            const listBody = document.getElementById('allStudentsList'); 
-            listBody.innerHTML = ''; 
-            
+            const listBody = document.getElementById('allStudentsList'); listBody.innerHTML = ''; 
             students.forEach(student => { 
                 const statusBtnText = student.status?.isActive ? 'Deactivate' : 'Activate'; 
                 const hasGlobalDue = checkGlobalDues(student.id); 
                 let rowClass = student.status?.isActive ? '' : 'inactive-student'; 
                 if (student.status?.isActive && hasGlobalDue) rowClass += ' has-dues-alert'; 
-                
                 let timeDisplay = ''; 
-                if(student.class_time) { 
-                    const [h, m] = student.class_time.split(':'); 
-                    const ampm = h >= 12 ? 'PM' : 'AM'; 
-                    const h12 = h % 12 || 12; 
-                    timeDisplay = `${h12}:${m} ${ampm}`; 
-                } 
+                if(student.class_time) { timeDisplay = formatTime12H(student.class_time); } 
                 const dayTimeStr = (student.class_day || student.class_time) ? `<br><span class="student-time-sub">${student.class_day || ''} ${timeDisplay}</span>` : ''; 
-                
                 const row = document.createElement('tr');
                 if (rowClass) row.className = rowClass;
-                
-                row.innerHTML = `
-                    <td>${student.serial_no}</td>
-                    <td>${getStudentHtml(student)}</td>
-                    <td>${student.class || 'N/A'}${dayTimeStr}</td>
-                    <td>₹${student.fee_amount || DEFAULT_FEE}</td>
-                    <td style="min-width: 160px;">${getAllContactButtons(student)}</td>
-                    <td>${student.status?.isActive ? 'Active' : 'Inactive'}</td>
-                    <td class="action-buttons">
-                        <button class="${student.status?.isActive ? 'btn-info' : 'btn-success'}" onclick="openStatusChangeModal(${student.id}, ${!student.status?.isActive})">${statusBtnText}</button> 
-                        <button class="btn-warning" onclick="openEditStudentModal(${student.id})">Edit</button>
-                    </td>`;
-                
+                row.innerHTML = `<td>${student.serial_no}</td><td>${getStudentHtml(student)}</td><td>${student.class || 'N/A'}${dayTimeStr}</td><td>₹${student.fee_amount || DEFAULT_FEE}</td><td style="min-width: 160px;">${getAllContactButtons(student)}</td><td>${student.status?.isActive ? 'Active' : 'Inactive'}</td><td class="action-buttons"><button class="${student.status?.isActive ? 'btn-info' : 'btn-success'}" onclick="openStatusChangeModal(${student.id}, ${!student.status?.isActive})">${statusBtnText}</button> <button class="btn-warning" onclick="openEditStudentModal(${student.id})">Edit</button></td>`;
                 listBody.appendChild(row);
             }); 
         }
-       
-function markAttendance(studentId, status) {
+        function markAttendance(studentId, status) {
             const date = document.getElementById('attendanceDate').value; 
             if (!date) { Swal.fire('Alert','Please select a date.', 'warning'); return; } 
-            
             if (!attendance[date]) attendance[date] = {}; 
-            
             if (status === 'clear') {
                 delete attendance[date][studentId]; 
             } else {
-                // UPDATED: Input Time or Current Time ONLY
                 const timeInput = document.getElementById('attendanceTime').value;
                 let timeToSave = timeInput;
-                
-                // If no manual time, take current system time
                 if (!timeToSave) {
-                     const now = new Date();
-                     const hours = now.getHours().toString().padStart(2, '0');
-                     const mins = now.getMinutes().toString().padStart(2, '0');
-                     timeToSave = `${hours}:${mins}`;
+                      const now = new Date();
+                      const hours = now.getHours().toString().padStart(2, '0');
+                      const mins = now.getMinutes().toString().padStart(2, '0');
+                      timeToSave = `${hours}:${mins}`;
                 }
-
                 attendance[date][studentId] = { status: status, time: timeToSave }; 
             }
             saveData().then(() => renderAttendance()); 
         }
-        function unmarkFee(studentId, month) { 
-            Swal.fire({ title: 'Unmark Payment?', text: "Mark fee as unpaid?", icon: 'warning', showCancelButton: true, confirmButtonText: 'Yes' }).then(async (result) => { 
-                if (result.isConfirmed && fees[month]?.[studentId]) { 
-                    delete fees[month][studentId]; 
-                    await saveData(); 
-                    loadAllData(); 
-                    Swal.fire('Success', 'Payment removed.', 'success'); 
-                } 
-            }); 
-        }
+        function unmarkFee(studentId, month) { Swal.fire({ title: 'Unmark Payment?', text: "Mark fee as unpaid?", icon: 'warning', showCancelButton: true, confirmButtonText: 'Yes' }).then(async (result) => { if (result.isConfirmed && fees[month]?.[studentId]) { delete fees[month][studentId]; await saveData(); loadAllData(); Swal.fire('Success', 'Payment removed.', 'success'); } }); }
         
         function openFeeModal(studentId, month, isEdit = false) { 
             const modal = document.getElementById('feeModal'), amountInput = document.getElementById('feeAmount'), dateInput = document.getElementById('feeDate'); 
@@ -1554,7 +1107,6 @@ function markAttendance(studentId, status) {
             else { document.getElementById('editPhotoPreview').src = 'https://via.placeholder.com/100?text=No+Photo'; } 
             document.getElementById('editStudentModal').style.display = 'flex'; 
         }
-        
         async function saveStudentChanges() { 
             const id = parseInt(document.getElementById('editStudentId').value), student = students.find(s => s.id === id); 
             if(!student) return; 
@@ -1575,14 +1127,21 @@ function markAttendance(studentId, status) {
             loadAllData(); 
             Swal.fire('Saved', 'Student details updated.', 'success'); 
         }
-        
+
+        let currentlyViewingStudentId = null;
+
         function showStudentDetails(studentId) { 
             const student = students.find(s => s.id === studentId); 
             if (!student) return; 
+            currentlyViewingStudentId = studentId;
+
             document.getElementById('modalStudentName').textContent = student.name; 
             document.getElementById('modalSerialNo').textContent = student.serial_no; 
             document.getElementById('modalClass').textContent = student.class || 'N/A'; 
-            document.getElementById('modalDayTime').textContent = (student.class_day || '') + " " + (student.class_time || ''); 
+            
+            const fmtTime = student.class_time ? formatTime12H(student.class_time) : '';
+            document.getElementById('modalDayTime').textContent = (student.class_day || '') + " " + fmtTime; 
+            
             document.getElementById('modalFeeAmount').textContent = `₹${student.fee_amount || DEFAULT_FEE}`; 
             document.getElementById('modalGuardianName').textContent = student.guardian || 'N/A'; 
             document.getElementById('modalPhone').innerHTML = student.phone ? `${student.phone}` : 'N/A'; 
@@ -1604,32 +1163,63 @@ function markAttendance(studentId, status) {
                 }); 
             } else { historyList.innerHTML = '<li>No history found.</li>'; } 
             
+            // Populate Filters
+            const yearSelect = document.getElementById('detailsFilterYear');
+            const monthSelect = document.getElementById('detailsFilterMonth');
+            yearSelect.innerHTML = ''; monthSelect.innerHTML = '';
+            
+            const currentYear = new Date().getFullYear();
+            const joinYear = new Date(student.joining_date).getFullYear();
+            
+            for(let y = currentYear; y >= joinYear; y--) {
+                const opt = document.createElement('option');
+                opt.value = y; opt.text = y;
+                yearSelect.appendChild(opt);
+            }
+
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            monthNames.forEach((m, idx) => {
+                const opt = document.createElement('option');
+                opt.value = idx + 1; opt.text = m;
+                if(idx === new Date().getMonth()) opt.selected = true;
+                monthSelect.appendChild(opt);
+            });
+
+            renderStudentDetailsHistory();
+            
+            document.getElementById('exportPdfBtn').onclick = () => exportStudentDetailsAsPDF(studentId); 
+            document.getElementById('studentDetailsModal').style.display = 'flex'; 
+        }
+
+        function renderStudentDetailsHistory() {
+            if(!currentlyViewingStudentId) return;
+            const student = students.find(s => s.id === currentlyViewingStudentId);
+            if(!student) return;
+
+            const selectedYear = parseInt(document.getElementById('detailsFilterYear').value);
+            const selectedMonth = parseInt(document.getElementById('detailsFilterMonth').value);
+
             const presentList = document.getElementById('modalPresentList'), absentList = document.getElementById('modalAbsentList'); 
             presentList.innerHTML = absentList.innerHTML = ''; 
             
+            // Filter Attendance by Month/Year
             Object.keys(attendance).sort().reverse().forEach(date => { 
-                const entry = attendance[date]?.[student.id];
-                if(entry) {
-                    const dateObj = new Date(date);
-                    const dayName = dateObj.toLocaleDateString('en-IN', { weekday: 'long' });
-                    
-                    // Handle new time object format or legacy string format
-                    let timeStr = '';
-                    let status = entry;
-                    if(typeof entry === 'object' && entry !== null) {
-                        status = entry.status;
-                        if(entry.time) {
-                             const [h, m] = entry.time.split(':');
-                             const ampm = h >= 12 ? 'PM' : 'AM';
-                             const h12 = h % 12 || 12;
-                             timeStr = ` (${h12}:${m} ${ampm})`;
+                const d = new Date(date);
+                if(d.getFullYear() === selectedYear && (d.getMonth() + 1) === selectedMonth) {
+                    const entry = attendance[date]?.[student.id];
+                    if(entry) {
+                        const dayName = d.toLocaleDateString('en-IN', { weekday: 'long' });
+                        let timeStr = '';
+                        let status = entry;
+                        if(typeof entry === 'object' && entry !== null) {
+                            status = entry.status;
+                            if(entry.time) { timeStr = ` (${formatTime12H(entry.time)})`; }
                         }
+                        const formattedDate = `${d.toLocaleDateString('en-IN')} (${dayName})${timeStr}`;
+                        
+                        if (status === 'present') { presentList.innerHTML += `<li style="padding:2px 0; border-bottom:1px solid #f9f9f9;">${formattedDate}</li>`; } 
+                        else if (status === 'absent') { absentList.innerHTML += `<li style="padding:2px 0; border-bottom:1px solid #f9f9f9;">${formattedDate}</li>`; }
                     }
-
-                    const formattedDate = `${dateObj.toLocaleDateString('en-IN')} (${dayName})${timeStr}`;
-                    
-                    if (status === 'present') { presentList.innerHTML += `<li style="padding:2px 0; border-bottom:1px solid #f9f9f9;">${formattedDate}</li>`; } 
-                    else if (status === 'absent') { absentList.innerHTML += `<li style="padding:2px 0; border-bottom:1px solid #f9f9f9;">${formattedDate}</li>`; }
                 }
             }); 
             
@@ -1638,22 +1228,23 @@ function markAttendance(studentId, status) {
             
             const paidList = document.getElementById('modalPaidList'); 
             paidList.innerHTML = ''; 
-            Object.keys(fees).sort().reverse().forEach(month => { 
-                if(wasStudentActiveDuringMonth(student, month)) {
-                    const feeRecord = fees[month]?.[student.id]; 
-                    if (feeRecord?.status === 'paid') { 
-                        let txnDisplay = feeRecord.transactionId ? ` <br><span style="font-size:0.85em; color:#666;">Txn ID: ${feeRecord.transactionId}</span>` : ''; 
-                        paidList.innerHTML += `<li style="padding:2px 0; border-bottom:1px solid #f9f9f9;">${month}: ₹${feeRecord.amount} (${feeRecord.mode || 'Cash'}) - ${new Date(feeRecord.date).toLocaleDateString('en-IN')}${txnDisplay}</li>`; 
-                    } 
-                    else if (isMonthDue(month)) { paidList.innerHTML += `<li class="unpaid" style="padding:2px 0;">${month}: Due</li>`; }
-                }
-            }); 
-            if(!paidList.innerHTML) paidList.innerHTML = '<li>No records found</li>'; 
             
-            document.getElementById('exportPdfBtn').onclick = () => exportStudentDetailsAsPDF(studentId); 
-            document.getElementById('studentDetailsModal').style.display = 'flex'; 
+            // Filter Fees (Show logic: if active in that month, check status)
+            const monthStr = `${selectedYear}-${selectedMonth.toString().padStart(2, '0')}`;
+            
+            if(wasStudentActiveDuringMonth(student, monthStr)) {
+                 const feeRecord = fees[monthStr]?.[student.id]; 
+                 if (feeRecord?.status === 'paid') { 
+                     let txnDisplay = feeRecord.transactionId ? ` <br><span style="font-size:0.85em; color:#666;">Txn ID: ${feeRecord.transactionId}</span>` : ''; 
+                     paidList.innerHTML += `<li style="padding:2px 0; border-bottom:1px solid #f9f9f9;">${formatMonthYear(monthStr)}: ₹${feeRecord.amount} (${feeRecord.mode || 'Cash'}) - ${new Date(feeRecord.date).toLocaleDateString('en-IN')}${txnDisplay}</li>`; 
+                 } 
+                 else if (isMonthDue(monthStr)) { paidList.innerHTML += `<li class="unpaid" style="padding:2px 0;">${formatMonthYear(monthStr)}: Due</li>`; }
+                 else { paidList.innerHTML = `<li>${formatMonthYear(monthStr)}: Not Due/Pending</li>`; }
+            } else {
+                paidList.innerHTML = `<li>Not active in this period</li>`;
+            }
         }
-        
+
         function resetApp() { 
             Swal.fire({ 
                 title: 'Are you sure?', 
@@ -1672,7 +1263,6 @@ function markAttendance(studentId, status) {
                 } 
             }) 
         }
-
         function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
         window.onclick = (event) => { if (event.target.classList.contains('modal')) { event.target.style.display = 'none'; } };
     </script>
