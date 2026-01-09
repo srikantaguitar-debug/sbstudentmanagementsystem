@@ -612,8 +612,8 @@
         document.addEventListener('DOMContentLoaded', async () => { await openDB(); let existingPin = await dbGet('app_pin'); if (!existingPin) { const lsPin = localStorage.getItem('app_pin'); if(lsPin) { await dbSet('app_pin', lsPin); if(localStorage.getItem('students')) await dbSet('students', JSON.parse(localStorage.getItem('students'))); if(localStorage.getItem('attendance')) await dbSet('attendance', JSON.parse(localStorage.getItem('attendance'))); if(localStorage.getItem('fees')) await dbSet('fees', JSON.parse(localStorage.getItem('fees'))); if(localStorage.getItem('studentSerialCounter')) await dbSet('studentSerialCounter', localStorage.getItem('studentSerialCounter')); if(localStorage.getItem('instituteLogo')) await dbSet('instituteLogo', localStorage.getItem('instituteLogo')); if(localStorage.getItem('authorizedSignature')) await dbSet('authorizedSignature', localStorage.getItem('authorizedSignature')); if(localStorage.getItem('lastBackupDate')) await dbSet('lastBackupDate', localStorage.getItem('lastBackupDate')); Swal.fire('System Update', 'Data migrated.', 'success'); } else { await dbSet('app_pin', '1234'); } } await loadInstituteLogo(); await loadAuthSignature(); secureAction(() => { initApp(); checkBackupStatus(); startClock(); }, true); document.querySelector('.close-pin').style.display = 'none'; });
         
         async function initApp() { 
-            const now = new Date(); 
-            document.getElementById('attendanceDate').valueAsDate = now; 
+            const now = new Date();
+            document.getElementById('attendanceDate').valueAsDate = now;
             
             // Set Default Time to Current (HH:mm format required for input type="time")
             const hours = now.getHours().toString().padStart(2, '0');
@@ -672,20 +672,38 @@
         async function removeAuthSignature() { await dbDelete('authorizedSignature'); authorizedSignature = null; await loadAuthSignature(); }
         
         function getFeeCalculationStartDate(student) { return new Date(student.joining_date); }
+        
         function wasStudentActiveDuringMonth(student, monthStr) {
             const [year, month] = monthStr.split('-').map(Number);
             const monthStart = new Date(year, month - 1, 1);
             const monthEnd = new Date(year, month, 0, 23, 59, 59);
             const joinDate = new Date(student.joining_date);
             if (joinDate > monthEnd) return false;
+            
             const history = (student.status.history || []).sort((a, b) => new Date(a.date) - new Date(b.date));
+            
             let statusAtStart = 'Active'; 
-            for (let i = 0; i < history.length; i++) { if (new Date(history[i].date) < monthStart) { statusAtStart = history[i].status; } }
-            let changesInMonth = history.filter(h => { const d = new Date(h.date); return d >= monthStart && d <= monthEnd; });
+            for (let i = 0; i < history.length; i++) { 
+                if (new Date(history[i].date) < monthStart) { 
+                    statusAtStart = history[i].status; 
+                } 
+            }
+            
+            let changesInMonth = history.filter(h => { 
+                const d = new Date(h.date); 
+                return d >= monthStart && d <= monthEnd; 
+            });
+            
             if (changesInMonth.length === 0) { return statusAtStart === 'Active'; }
+            
             const lastChangeInMonth = changesInMonth[changesInMonth.length - 1];
             const changeDate = new Date(lastChangeInMonth.date);
-            if (lastChangeInMonth.status === 'Inactive') { return changeDate.getDate() > 10; } else { return true; }
+            
+            if (lastChangeInMonth.status === 'Inactive') { 
+                return changeDate.getDate() > 10; 
+            } else { 
+                return true; 
+            }
         }
 
         function checkGlobalDues(studentId) { 
@@ -755,12 +773,10 @@
         async function submitPin() { const currentPin = await dbGet('app_pin'); if (pinInput === currentPin) { document.getElementById('securityOverlay').style.display = 'none'; if (pendingAction) pendingAction(); pendingAction = null; pinInput = ""; } else { alert("Incorrect PIN"); pinInput = ""; updatePinDots(); } }
         async function changeAppPin() { const newPin = document.getElementById('newAppPin').value; if (newPin.length === 4 && !isNaN(newPin)) { await dbSet('app_pin', newPin); Swal.fire('Success', 'PIN changed successfully.', 'success'); document.getElementById('newAppPin').value = ''; } else { Swal.fire('Error', 'PIN must be 4 digits.', 'error'); } }
         
-function sendWelcomeMsg(type, studentId) {
+        function sendWelcomeMsg(type, studentId) {
             const student = students.find(s => s.id === studentId);
             if (!student) return;
 
-            // এই লাইনটি আপনার রিকোয়ারমেন্ট অনুযায়ী পরিবর্তন করা হয়েছে
-            // আমি এখানে formatTime12H ফাংশনটি ব্যবহার করেছি যাতে সময়টা 17:00 এর বদলে 5:00 PM দেখায়
             const msgBody = `Welcome ${student.name} to the ${student.class || 'Music'} class! We are glad to have you with us. Your classes are on ${student.class_day || 'scheduled day'} at ${student.class_time ? formatTime12H(student.class_time) : 'scheduled time'}. Regards, Srikanta Banerjee (Guitar, Bass Guitar, Piano, Keyboard & Mandolin Classes)`;
             
             if (type === 'wa') {
@@ -786,7 +802,6 @@ function sendWelcomeMsg(type, studentId) {
             document.getElementById('addStudentCamera').value = ''; document.getElementById('addStudentGallery').value = ''; 
             loadAllData(); 
             
-            // New Multi-Option Welcome Message Logic
             Swal.fire({
                 title: 'Student Added Successfully!',
                 html: `
@@ -807,7 +822,6 @@ function sendWelcomeMsg(type, studentId) {
         function loadAllData() { renderDashboard(); loadStudentsList(); renderAttendance(); renderFees(); renderReminders(); }
         
         async function exportData() { 
-            // Include images in backup
             const logo = await dbGet('instituteLogo');
             const sig = await dbGet('authorizedSignature');
             
@@ -829,7 +843,6 @@ function sendWelcomeMsg(type, studentId) {
             if(tabName === 'analytics') updateYearlyChart(); 
             if(tabName === 'studentMgmt') loadStudentsList();
             if(tabName === 'attendance') {
-                // Ensure time is set to current when tab opens
                 const now = new Date();
                 const hours = now.getHours().toString().padStart(2, '0');
                 const mins = now.getMinutes().toString().padStart(2, '0');
@@ -864,7 +877,6 @@ function sendWelcomeMsg(type, studentId) {
                 reminders = importedData.reminders || []; 
                 studentSerialCounter = importedData.studentSerialCounter || (students.length + 1); 
                 
-                // Import Images
                 if(importedData.instituteLogo) await dbSet('instituteLogo', importedData.instituteLogo);
                 if(importedData.authorizedSignature) await dbSet('authorizedSignature', importedData.authorizedSignature);
 
@@ -904,14 +916,14 @@ function sendWelcomeMsg(type, studentId) {
         function getContactButtons(studentId, month) { const student = students.find(s => s.id === studentId); if (!student) return 'N/A'; let b = ''; const isDue = month && isMonthDue(month) && wasStudentActiveDuringMonth(student, month) && !(fees[month]?.[student.id]?.status === 'paid'); if (student.phone || student.email) { if(isDue) { b += `<button class="btn-whatsapp" onclick="sendMsg('wa', ${student.id}, '${month}')">WhatsApp</button>`; b += `<button class="btn-sms" onclick="sendMsg('sms', ${student.id}, '${month}')">SMS</button>`; b += `<button class="btn-mail" onclick="sendMsg('mail', ${student.id}, '${month}')">Email</button>`; b += `<a href="tel:${student.phone}" class="btn-like btn-call">Call</a>`; } else { b += `<a href="tel:${student.phone}" class="btn-like btn-call">Call</a>`; } } return b || 'N/A'; }
         function getAllContactButtons(student) { let b = ''; if (student.phone) { b += `<a href="tel:${student.phone}" class="btn-like btn-call">Call</a>`; b += `<button class="btn-whatsapp" onclick="sendGeneralMsg('wa', ${student.id})">WhatsApp</button>`; b += `<button class="btn-sms" onclick="sendGeneralMsg('sms', ${student.id})">SMS</button>`; } if (student.email) { b += `<button class="btn-mail" onclick="sendGeneralMsg('mail', ${student.id})">Mail</button>`; } return b || 'N/A'; }
         
-        // Fee Breakdown Modals
         function showFeeBreakdown(type) {
             const selectedMonth = document.getElementById('feeMonth').value;
             if(!selectedMonth) return;
             const monthIsDue = isMonthDue(selectedMonth);
             
+            // Logic change: removed strict active check, using wasStudentActiveDuringMonth instead
             const list = students.filter(s => {
-                if(!s.status?.isActive || !wasStudentActiveDuringMonth(s, selectedMonth)) return false;
+                if(!wasStudentActiveDuringMonth(s, selectedMonth)) return false;
                 const feeRecord = fees[selectedMonth]?.[s.id];
                 const isPaid = feeRecord?.status === 'paid';
                 if (type === 'collected') return isPaid;
@@ -957,9 +969,23 @@ function sendWelcomeMsg(type, studentId) {
             let monthlyCollected = 0, monthlyDueAmount = 0, yearlyCollected = 0, yearlyDueAmount = 0; const currentYear = new Date().getFullYear(), currentMonthStr = `${currentYear}-${(new Date().getMonth() + 1).toString().padStart(2, '0')}`; 
             
             const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]; const todayName = days[new Date().getDay()]; const todaysReminders = reminders.filter(r => r.day === todayName); const rBox = document.getElementById('dashboardRemindersBox'); const rList = document.getElementById('dashboardReminderList'); if(todaysReminders.length > 0) { rList.innerHTML = ''; todaysReminders.forEach(r => { rList.innerHTML += `<div style="padding:8px; border-bottom:1px solid #fde68a; font-size:13px;">• ${r.text}</div>`; }); rBox.style.display = 'block'; } else { rBox.style.display = 'none'; }
+            
+            // Logic change: removed strict !student.status?.isActive check to allow historical data for inactives
             students.forEach(student => { 
-                if (!student.status?.isActive) return;
-                for (let i = 0; i < 12; i++) { const monthStr = `${currentYear}-${(i + 1).toString().padStart(2, '0')}`; if (wasStudentActiveDuringMonth(student, monthStr)) { if (fees[monthStr]?.[student.id]?.status === 'paid') { if (monthStr === currentMonthStr) monthlyCollected += fees[monthStr][student.id].amount; yearlyCollected += fees[monthStr][student.id].amount; } else if (isMonthDue(monthStr)) { const studentFee = student.fee_amount || DEFAULT_FEE; if (monthStr === currentMonthStr) monthlyDueAmount += studentFee; yearlyDueAmount += studentFee; } } } 
+                // Removed: if (!student.status?.isActive) return;
+                for (let i = 0; i < 12; i++) { 
+                    const monthStr = `${currentYear}-${(i + 1).toString().padStart(2, '0')}`; 
+                    if (wasStudentActiveDuringMonth(student, monthStr)) { 
+                        if (fees[monthStr]?.[student.id]?.status === 'paid') { 
+                            if (monthStr === currentMonthStr) monthlyCollected += fees[monthStr][student.id].amount; 
+                            yearlyCollected += fees[monthStr][student.id].amount; 
+                        } else if (isMonthDue(monthStr)) { 
+                            const studentFee = student.fee_amount || DEFAULT_FEE; 
+                            if (monthStr === currentMonthStr) monthlyDueAmount += studentFee; 
+                            yearlyDueAmount += studentFee; 
+                        } 
+                    } 
+                } 
             });
             document.getElementById('dashboardYearlySummary').innerHTML = `<div><h4>Yearly Collected</h4><p class="summary-collected">₹${yearlyCollected}</p></div><div><h4>Yearly Due (Active)</h4><p class="summary-due">₹${yearlyDueAmount}</p></div>`; 
             document.getElementById('financeOverviewNumbers').innerHTML = `<div onclick="showFeeBreakdown('collected')"><h4>Collected</h4><p class="summary-collected">₹${monthlyCollected}</p></div><div onclick="showFeeBreakdown('due')"><h4>Due</h4><p class="summary-due">₹${monthlyDueAmount}</p></div>`;
@@ -976,95 +1002,404 @@ function sendWelcomeMsg(type, studentId) {
         function calculateMonthStats(monthStr) { let income = 0; let studentCount = 0; if(fees[monthStr]) { Object.values(fees[monthStr]).forEach(record => { if(record.status === 'paid') income += record.amount; }); } students.forEach(student => { if(wasStudentActiveDuringMonth(student, monthStr)) { studentCount++; } }); return { income, studentCount }; }
         function updateYearlyChart() { const year1 = document.getElementById('analyticsYear').value; const year2 = document.getElementById('compareYear').value; if(!year1) return; const labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]; const inc1 = []; const stu1 = []; let sumInc1 = 0; let sumStu1 = 0; for(let i=1; i<=12; i++) { const m = `${year1}-${i.toString().padStart(2, '0')}`; const s = calculateMonthStats(m); inc1.push(s.income); stu1.push(s.studentCount); sumInc1 += s.income; sumStu1 += s.studentCount; } const avgInc1 = sumInc1 / 12; const avgStu1 = sumStu1 / 12; const statsDiv = document.getElementById('yearlyAverages'); let statsHtml = `<div><h4>Avg Income (${year1})</h4><p class="summary-collected">₹${avgInc1.toFixed(0)}</p></div><div><h4>Avg Students (${year1})</h4><p class="summary-total">${Math.round(avgStu1)}</p></div>`; const datasets = [ { label: `Income ${year1}`, data: inc1, backgroundColor: 'rgba(16, 185, 129, 0.6)', borderColor: '#10b981', borderWidth: 1, type: 'bar', yAxisID: 'y' }, { label: `Students ${year1}`, data: stu1, borderColor: '#3b82f6', borderWidth: 2, type: 'line', tension: 0.3, yAxisID: 'y1' } ]; if (year2) { const inc2 = []; const stu2 = []; let sumInc2 = 0; let sumStu2 = 0; for(let i=1; i<=12; i++) { const m = `${year2}-${i.toString().padStart(2, '0')}`; const s = calculateMonthStats(m); inc2.push(s.income); stu2.push(s.studentCount); sumInc2 += s.income; sumStu2 += s.studentCount; } const avgInc2 = sumInc2 / 12; const avgStu2 = sumStu2 / 12; statsHtml += `<div><h4>Avg Income (${year2})</h4><p class="summary-collected">₹${avgInc2.toFixed(0)}</p></div><div><h4>Avg Students (${year2})</h4><p class="summary-total">${Math.round(avgStu2)}</p></div>`; datasets.push({ label: `Income ${year2}`, data: inc2, backgroundColor: 'rgba(239, 68, 68, 0.6)', borderColor: '#ef4444', borderWidth: 1, type: 'bar', yAxisID: 'y' }); datasets.push({ label: `Students ${year2}`, data: stu2, borderColor: '#f97316', borderWidth: 2, type: 'line', tension: 0.3, pointRadius: 3, yAxisID: 'y1' }); } statsDiv.innerHTML = statsHtml; statsDiv.style.display = 'flex'; const ctx = document.getElementById('yearlyChart').getContext('2d'); if(analyticsChartInstance) analyticsChartInstance.destroy(); analyticsChartInstance = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: datasets }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { position: 'bottom' }, title: { display: true, text: year2 ? `${year1} vs ${year2}` : `Overview ${year1}` } }, scales: { y: { beginAtZero: true, position: 'left', title: {display:true, text:'Income (₹)'} }, y1: { beginAtZero: true, position: 'right', grid: {drawOnChartArea: false}, title: {display:true, text:'Students'} } } } }); }
         function comparePeriods() { const m1 = document.getElementById('compMonth1').value; const m2 = document.getElementById('compMonth2').value; if(!m1 || !m2) { return; } const s1 = calculateMonthStats(m1); const s2 = calculateMonthStats(m2); document.getElementById('compIncome1').textContent = `₹${s1.income}`; document.getElementById('compIncome2').textContent = `₹${s2.income}`; document.getElementById('compStudent1').textContent = s1.studentCount; document.getElementById('compStudent2').textContent = s2.studentCount; const incDiff = s2.income - s1.income; const stuDiff = s2.studentCount - s1.studentCount; const incDiffEl = document.getElementById('compIncomeDiff'); incDiffEl.innerHTML = incDiff > 0 ? `<i class="fas fa-arrow-up"></i> ₹${incDiff}` : (incDiff < 0 ? `<i class="fas fa-arrow-down"></i> ₹${Math.abs(incDiff)}` : '-'); incDiffEl.className = 'comp-diff ' + (incDiff >= 0 ? 'diff-up' : 'diff-down'); const stuDiffEl = document.getElementById('compStudentDiff'); stuDiffEl.innerHTML = stuDiff > 0 ? `<i class="fas fa-arrow-up"></i> ${stuDiff}` : (stuDiff < 0 ? `<i class="fas fa-arrow-down"></i> ${Math.abs(stuDiff)}` : '-'); stuDiffEl.className = 'comp-diff ' + (stuDiff >= 0 ? 'diff-up' : 'diff-down'); document.getElementById('comparisonResults').style.display = 'block'; }
-        function exportDashboardPDF() { const activeStudents = students.filter(s => s.status?.isActive); const currentYear = new Date().getFullYear(); const currentMonthStr = `${currentYear}-${(new Date().getMonth() + 1).toString().padStart(2, '0')}`; let monthlyCollected = 0, monthlyDueAmount = 0, yearlyCollected = 0, yearlyDueAmount = 0; students.forEach(student => { if (!student.status?.isActive) return; for (let i = 0; i < 12; i++) { const monthStr = `${currentYear}-${(i + 1).toString().padStart(2, '0')}`; if (wasStudentActiveDuringMonth(student, monthStr)) { if (fees[monthStr]?.[student.id]?.status === 'paid') { if (monthStr === currentMonthStr) monthlyCollected += fees[monthStr][student.id].amount; yearlyCollected += fees[monthStr][student.id].amount; } else if (isMonthDue(monthStr)) { const studentFee = student.fee_amount || DEFAULT_FEE; if (monthStr === currentMonthStr) monthlyDueAmount += studentFee; yearlyDueAmount += studentFee; } } } }); const classCounts = activeStudents.reduce((acc, student) => { const className = student.class || 'Unassigned'; acc[className] = (acc[className] || 0) + 1; return acc; }, {}); const { jsPDF } = window.jspdf; const doc = new jsPDF(); let y = 20; doc.setFontSize(18); doc.setFont("helvetica", "bold"); doc.text(INSTITUTE_NAME, 105, y, {align: "center"}); y += 10; doc.setFontSize(14); doc.text("Complete Dashboard Report", 105, y, {align: "center"}); y += 8; doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.text(`Generated: ${new Date().toLocaleDateString('en-IN')}`, 105, y, {align: "center"}); y += 15; doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.text("Student Statistics", 15, y); y += 7; doc.setFontSize(11); doc.setFont("helvetica", "normal"); doc.text(`Total Students: ${students.length}`, 20, y); y += 6; doc.text(`Active Students: ${activeStudents.length}`, 20, y); y += 6; doc.text(`Inactive Students: ${students.length - activeStudents.length}`, 20, y); y += 12; doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.text("Financial Overview", 15, y); y += 7; doc.setFontSize(11); doc.setFont("helvetica", "normal"); doc.text(`Current Month (${formatMonthYear(currentMonthStr)}) Collected: Rs. ${monthlyCollected}`, 20, y); y += 6; doc.text(`Current Month Due: Rs. ${monthlyDueAmount}`, 20, y); y += 6; doc.text(`Yearly Collected: Rs. ${yearlyCollected}`, 20, y); y += 6; doc.text(`Yearly Due: Rs. ${yearlyDueAmount}`, 20, y); y += 12; doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.text("Class Strength", 15, y); y += 7; doc.setFontSize(11); doc.setFont("helvetica", "normal"); Object.entries(classCounts).sort().forEach(([className, count]) => { doc.text(`${className}: ${count} students`, 20, y); y += 6; }); addWatermarkAndSignatureToPdf(doc); doc.save(`Dashboard_Full_Report_${currentMonthStr}.pdf`); }
-        function generateReport() { const type = document.getElementById('reportType').value; const summaryEl = document.getElementById('reportSummary'); const tableEl = document.getElementById('reportTable'); const tableHead = tableEl.querySelector('thead'); const tableBody = tableEl.querySelector('tbody'); const exportBtn = document.getElementById('exportReportBtn'); tableHead.innerHTML = ''; tableBody.innerHTML = ''; summaryEl.style.display = 'flex'; tableEl.style.display = 'table'; exportBtn.style.display = 'inline-block'; let totalCollected = 0, totalDue = 0; if (type === 'monthly') { const month = document.getElementById('reportMonth').value; if (!month) return; tableHead.innerHTML = `<tr><th>Student Name</th><th>Status</th><th>Amount</th><th>Action</th></tr>`; const monthIsDue = isMonthDue(month); students.forEach(student => { if (!student.status?.isActive) return; if (!wasStudentActiveDuringMonth(student, month)) return; const feeRecord = fees[month]?.[student.id]; let status = 'Pending', amount = `₹0`, rowClass = 'pending'; if (feeRecord?.status === 'paid') { status = `Paid on ${new Date(feeRecord.date).toLocaleDateString('en-IN')}`; amount = `₹${feeRecord.amount}`; rowClass = 'paid'; totalCollected += feeRecord.amount; } else if (monthIsDue) { status = 'Due'; const studentFee = student.fee_amount || DEFAULT_FEE; amount = `₹${studentFee}`; rowClass = 'unpaid'; totalDue += studentFee; } tableBody.innerHTML += `<tr class="${rowClass}"><td>${getStudentHtml(student)}</td><td>${status}</td><td>${amount}</td><td class="action-buttons">${status === 'Due' ? getContactButtons(student.id, month) : ''}</td></tr>`; }); summaryEl.innerHTML = `<div><h4>Total Collected</h4><p class="summary-collected">₹${totalCollected}</p></div><div><h4>Total Due</h4><p class="summary-due">₹${totalDue}</p></div>`; } else if (type === 'yearly') { const year = document.getElementById('reportYear').value; if (!year) return; tableHead.innerHTML = `<tr><th>Student Name</th><th>Total Paid</th><th>Due Months</th></tr>`; students.forEach(student => { if (!student.status?.isActive) return; let studentTotalPaid = 0; let dueMonthsList = []; let hasActivityInYear = false; for(let i=1; i<=12; i++) { const monthStr = `${year}-${i.toString().padStart(2, '0')}`; if (wasStudentActiveDuringMonth(student, monthStr)) { hasActivityInYear = true; if (fees[monthStr]?.[student.id]?.status === 'paid') { studentTotalPaid += fees[monthStr][student.id].amount; } else if (isMonthDue(monthStr)) { dueMonthsList.push(new Date(year, i-1).toLocaleString('default', { month: 'short' })); } } } if(hasActivityInYear) { totalCollected += studentTotalPaid; totalDue += dueMonthsList.length * (student.fee_amount || DEFAULT_FEE); const dueDisplay = dueMonthsList.length > 0 ? `<span style="color:#ef4444; font-weight:bold;">${dueMonthsList.join(", ")}</span>` : '<span style="color:#10b981;">Clear</span>'; tableBody.innerHTML += `<tr><td>${getStudentHtml(student)}</td><td>₹${studentTotalPaid}</td><td>${dueDisplay}</td></tr>`; } }); summaryEl.innerHTML = `<div><h4>Total Collected</h4><p class="summary-collected">₹${totalCollected}</p></div><div><h4>Total Due</h4><p class="summary-due">₹${totalDue}</p></div>`; } }
-        function exportReportPDF() { const type = document.getElementById('reportType').value; const { jsPDF } = window.jspdf; const doc = new jsPDF(); let y = 20; doc.setFontSize(16); doc.setFont("helvetica", "bold"); doc.text(INSTITUTE_NAME, 105, y, {align: "center"}); y += 10; if (type === 'monthly') { const month = document.getElementById('reportMonth').value; if(!month) return; doc.setFontSize(12); doc.text(`Monthly Report: ${formatMonthYear(month)}`, 105, y, {align: "center"}); y += 15; doc.setFontSize(10); doc.setFont("helvetica", "bold"); doc.text("Student Name", 15, y); doc.text("Status", 80, y); doc.text("Amount", 150, y); doc.line(15, y+2, 195, y+2); y += 8; const monthIsDue = isMonthDue(month); let totalCollected = 0, totalDue = 0; doc.setFont("helvetica", "normal"); students.forEach(student => { if (!student.status?.isActive) return; if (!wasStudentActiveDuringMonth(student, month)) return; const feeRecord = fees[month]?.[student.id]; let status = 'Pending', amount = '0'; if (feeRecord?.status === 'paid') { status = `Paid (${feeRecord.mode || 'Cash'})`; amount = `${feeRecord.amount}`; totalCollected += feeRecord.amount; } else if (monthIsDue) { status = 'Due'; const f = student.fee_amount || DEFAULT_FEE; amount = `${f}`; totalDue += f; } doc.text(student.name, 15, y); doc.text(status, 80, y); doc.text(amount, 150, y); y += 6; if(y > 280) { doc.addPage(); y = 20; } }); y += 5; doc.line(15, y, 195, y); y += 8; doc.setFont("helvetica", "bold"); doc.text(`Total Collected: ${totalCollected}`, 15, y); doc.text(`Total Due: ${totalDue}`, 80, y); addWatermarkAndSignatureToPdf(doc); doc.save(`Monthly_Report_${month}.pdf`); } else if (type === 'yearly') { const year = document.getElementById('reportYear').value; if(!year) return; doc.setFontSize(12); doc.text(`Yearly Report: ${year}`, 105, y, {align: "center"}); y += 15; doc.setFontSize(10); doc.setFont("helvetica", "bold"); doc.text("Student Name", 15, y); doc.text("Total Paid", 90, y); doc.text("Due Months", 140, y); doc.line(15, y+2, 195, y+2); y += 8; let totalCollected = 0; doc.setFont("helvetica", "normal"); students.forEach(student => { if (!student.status?.isActive) return; let studentTotal = 0; let dueMonthsList = []; let hasActivity = false; for(let i=1; i<=12; i++) { const m = `${year}-${i.toString().padStart(2, '0')}`; if (wasStudentActiveDuringMonth(student, m)) { hasActivity = true; if(fees[m]?.[student.id]?.status === 'paid') studentTotal += fees[m][student.id].amount; else if(isMonthDue(m)) dueMonthsList.push(new Date(year, i-1).toLocaleString('default', { month: 'short' })); } } if(hasActivity) { totalCollected += studentTotal; const dueText = dueMonthsList.length > 0 ? dueMonthsList.join(", ") : "None"; doc.text(student.name, 15, y); doc.text(`${studentTotal}`, 90, y); doc.text(dueText, 140, y); y += 6; if(y > 280) { doc.addPage(); y = 20; } } }); y += 5; doc.line(15, y, 195, y); y += 8; doc.setFont("helvetica", "bold"); doc.text(`Grand Total Collected: ${totalCollected}`, 15, y); addWatermarkAndSignatureToPdf(doc); doc.save(`Yearly_Report_${year}.pdf`); } }
+        
+        function exportDashboardPDF() { 
+            const activeStudents = students.filter(s => s.status?.isActive); 
+            const currentYear = new Date().getFullYear(); 
+            const currentMonthStr = `${currentYear}-${(new Date().getMonth() + 1).toString().padStart(2, '0')}`; 
+            let monthlyCollected = 0, monthlyDueAmount = 0, yearlyCollected = 0, yearlyDueAmount = 0; 
+            
+            // Logic change: removed strict !student.status?.isActive check to allow historical data
+            students.forEach(student => { 
+                // Removed: if (!student.status?.isActive) return;
+                for (let i = 0; i < 12; i++) { 
+                    const monthStr = `${currentYear}-${(i + 1).toString().padStart(2, '0')}`; 
+                    if (wasStudentActiveDuringMonth(student, monthStr)) { 
+                        if (fees[monthStr]?.[student.id]?.status === 'paid') { 
+                            if (monthStr === currentMonthStr) monthlyCollected += fees[monthStr][student.id].amount; 
+                            yearlyCollected += fees[monthStr][student.id].amount; 
+                        } else if (isMonthDue(monthStr)) { 
+                            const studentFee = student.fee_amount || DEFAULT_FEE; 
+                            if (monthStr === currentMonthStr) monthlyDueAmount += studentFee; 
+                            yearlyDueAmount += studentFee; 
+                        } 
+                    } 
+                } 
+            }); 
+            
+            const classCounts = activeStudents.reduce((acc, student) => { const className = student.class || 'Unassigned'; acc[className] = (acc[className] || 0) + 1; return acc; }, {}); 
+            const { jsPDF } = window.jspdf; const doc = new jsPDF(); let y = 20; doc.setFontSize(18); doc.setFont("helvetica", "bold"); doc.text(INSTITUTE_NAME, 105, y, {align: "center"}); y += 10; doc.setFontSize(14); doc.text("Complete Dashboard Report", 105, y, {align: "center"}); y += 8; doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.text(`Generated: ${new Date().toLocaleDateString('en-IN')}`, 105, y, {align: "center"}); y += 15; doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.text("Student Statistics", 15, y); y += 7; doc.setFontSize(11); doc.setFont("helvetica", "normal"); doc.text(`Total Students: ${students.length}`, 20, y); y += 6; doc.text(`Active Students: ${activeStudents.length}`, 20, y); y += 6; doc.text(`Inactive Students: ${students.length - activeStudents.length}`, 20, y); y += 12; doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.text("Financial Overview", 15, y); y += 7; doc.setFontSize(11); doc.setFont("helvetica", "normal"); doc.text(`Current Month (${formatMonthYear(currentMonthStr)}) Collected: Rs. ${monthlyCollected}`, 20, y); y += 6; doc.text(`Current Month Due: Rs. ${monthlyDueAmount}`, 20, y); y += 6; doc.text(`Yearly Collected: Rs. ${yearlyCollected}`, 20, y); y += 6; doc.text(`Yearly Due: Rs. ${yearlyDueAmount}`, 20, y); y += 12; doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.text("Class Strength", 15, y); y += 7; doc.setFontSize(11); doc.setFont("helvetica", "normal"); Object.entries(classCounts).sort().forEach(([className, count]) => { doc.text(`${className}: ${count} students`, 20, y); y += 6; }); addWatermarkAndSignatureToPdf(doc); doc.save(`Dashboard_Full_Report_${currentMonthStr}.pdf`); 
+        }
+
+        function generateReport() { 
+            const type = document.getElementById('reportType').value; 
+            const summaryEl = document.getElementById('reportSummary'); 
+            const tableEl = document.getElementById('reportTable'); 
+            const tableHead = tableEl.querySelector('thead'); 
+            const tableBody = tableEl.querySelector('tbody'); 
+            const exportBtn = document.getElementById('exportReportBtn'); 
+            
+            tableHead.innerHTML = ''; tableBody.innerHTML = ''; 
+            summaryEl.style.display = 'flex'; tableEl.style.display = 'table'; 
+            exportBtn.style.display = 'inline-block'; 
+            
+            let totalCollected = 0, totalDue = 0; 
+            
+            if (type === 'monthly') { 
+                const month = document.getElementById('reportMonth').value; 
+                if (!month) return; 
+                
+                tableHead.innerHTML = `<tr><th>Student Name</th><th>Status</th><th>Amount</th><th>Action</th></tr>`; 
+                const monthIsDue = isMonthDue(month); 
+                
+                students.forEach(student => { 
+                    // Logic change: removed strict active check to show historical data
+                    // Removed: if (!student.status?.isActive) return;
+
+                    if (!wasStudentActiveDuringMonth(student, month)) return; 
+                    
+                    const feeRecord = fees[month]?.[student.id]; 
+                    let status = 'Pending', amount = `₹0`, rowClass = 'pending'; 
+                    
+                    if (feeRecord?.status === 'paid') { 
+                        status = `Paid on ${new Date(feeRecord.date).toLocaleDateString('en-IN')}`; 
+                        amount = `₹${feeRecord.amount}`; 
+                        rowClass = 'paid'; 
+                        totalCollected += feeRecord.amount; 
+                    } else if (monthIsDue) { 
+                        status = 'Due'; 
+                        const studentFee = student.fee_amount || DEFAULT_FEE; 
+                        amount = `₹${studentFee}`; 
+                        rowClass = 'unpaid'; 
+                        totalDue += studentFee; 
+                    } 
+                    
+                    tableBody.innerHTML += `<tr class="${rowClass}"><td>${getStudentHtml(student)}</td><td>${status}</td><td>${amount}</td><td class="action-buttons">${status === 'Due' ? getContactButtons(student.id, month) : ''}</td></tr>`; 
+                }); 
+                
+                summaryEl.innerHTML = `<div><h4>Total Collected</h4><p class="summary-collected">₹${totalCollected}</p></div><div><h4>Total Due</h4><p class="summary-due">₹${totalDue}</p></div>`; 
+                
+            } else if (type === 'yearly') { 
+                const year = document.getElementById('reportYear').value; 
+                if (!year) return; 
+                
+                tableHead.innerHTML = `<tr><th>Student Name</th><th>Total Paid</th><th>Due Months</th></tr>`; 
+                
+                students.forEach(student => { 
+                    // Logic change: removed strict active check
+                    // Removed: if (!student.status?.isActive) return;
+
+                    let studentTotalPaid = 0; 
+                    let dueMonthsList = []; 
+                    let hasActivityInYear = false; 
+
+                    for(let i=1; i<=12; i++) { 
+                        const monthStr = `${year}-${i.toString().padStart(2, '0')}`; 
+                        if (wasStudentActiveDuringMonth(student, monthStr)) { 
+                            hasActivityInYear = true; 
+                            if (fees[monthStr]?.[student.id]?.status === 'paid') { 
+                                studentTotalPaid += fees[monthStr][student.id].amount; 
+                            } else if (isMonthDue(monthStr)) { 
+                                dueMonthsList.push(new Date(year, i-1).toLocaleString('default', { month: 'short' })); 
+                            } 
+                        } 
+                    } 
+                    
+                    if(hasActivityInYear) { 
+                        totalCollected += studentTotalPaid; 
+                        totalDue += dueMonthsList.length * (student.fee_amount || DEFAULT_FEE); 
+                        const dueDisplay = dueMonthsList.length > 0 ? `<span style="color:#ef4444; font-weight:bold;">${dueMonthsList.join(", ")}</span>` : '<span style="color:#10b981;">Clear</span>'; 
+                        tableBody.innerHTML += `<tr><td>${getStudentHtml(student)}</td><td>₹${studentTotalPaid}</td><td>${dueDisplay}</td></tr>`; 
+                    } 
+                }); 
+                
+                summaryEl.innerHTML = `<div><h4>Total Collected</h4><p class="summary-collected">₹${totalCollected}</p></div><div><h4>Total Due</h4><p class="summary-due">₹${totalDue}</p></div>`; 
+            } 
+        }
+        
+        function exportReportPDF() { 
+            const type = document.getElementById('reportType').value; const { jsPDF } = window.jspdf; const doc = new jsPDF(); let y = 20; 
+            doc.setFontSize(16); doc.setFont("helvetica", "bold"); doc.text(INSTITUTE_NAME, 105, y, {align: "center"}); y += 10; 
+            
+            if (type === 'monthly') { 
+                const month = document.getElementById('reportMonth').value; if(!month) return; 
+                doc.setFontSize(12); doc.text(`Monthly Report: ${formatMonthYear(month)}`, 105, y, {align: "center"}); y += 15; 
+                doc.setFontSize(10); doc.setFont("helvetica", "bold"); 
+                doc.text("Student Name", 15, y); doc.text("Status", 80, y); doc.text("Amount", 150, y); 
+                doc.line(15, y+2, 195, y+2); y += 8; 
+                const monthIsDue = isMonthDue(month); let totalCollected = 0, totalDue = 0; 
+                doc.setFont("helvetica", "normal"); 
+                
+                students.forEach(student => { 
+                    // Removed strict check: if (!student.status?.isActive) return;
+                    if (!wasStudentActiveDuringMonth(student, month)) return; 
+                    const feeRecord = fees[month]?.[student.id]; 
+                    let status = 'Pending', amount = '0'; 
+                    if (feeRecord?.status === 'paid') { 
+                        status = `Paid (${feeRecord.mode || 'Cash'})`; amount = `${feeRecord.amount}`; totalCollected += feeRecord.amount; 
+                    } else if (monthIsDue) { 
+                        status = 'Due'; const f = student.fee_amount || DEFAULT_FEE; amount = `${f}`; totalDue += f; 
+                    } 
+                    doc.text(student.name, 15, y); doc.text(status, 80, y); doc.text(amount, 150, y); y += 6; 
+                    if(y > 280) { doc.addPage(); y = 20; } 
+                }); 
+                
+                y += 5; doc.line(15, y, 195, y); y += 8; doc.setFont("helvetica", "bold"); 
+                doc.text(`Total Collected: ${totalCollected}`, 15, y); doc.text(`Total Due: ${totalDue}`, 80, y); 
+                addWatermarkAndSignatureToPdf(doc); doc.save(`Monthly_Report_${month}.pdf`); 
+                
+            } else if (type === 'yearly') { 
+                const year = document.getElementById('reportYear').value; if(!year) return; 
+                doc.setFontSize(12); doc.text(`Yearly Report: ${year}`, 105, y, {align: "center"}); y += 15; 
+                doc.setFontSize(10); doc.setFont("helvetica", "bold"); 
+                doc.text("Student Name", 15, y); doc.text("Total Paid", 90, y); doc.text("Due Months", 140, y); 
+                doc.line(15, y+2, 195, y+2); y += 8; 
+                let totalCollected = 0; 
+                doc.setFont("helvetica", "normal"); 
+                
+                students.forEach(student => { 
+                    // Removed strict check: if (!student.status?.isActive) return;
+                    let studentTotal = 0; let dueMonthsList = []; let hasActivity = false; 
+                    for(let i=1; i<=12; i++) { 
+                        const m = `${year}-${i.toString().padStart(2, '0')}`; 
+                        if (wasStudentActiveDuringMonth(student, m)) { 
+                            hasActivity = true; 
+                            if(fees[m]?.[student.id]?.status === 'paid') studentTotal += fees[m][student.id].amount; 
+                            else if(isMonthDue(m)) dueMonthsList.push(new Date(year, i-1).toLocaleString('default', { month: 'short' })); 
+                        } 
+                    } 
+                    if(hasActivity) { 
+                        totalCollected += studentTotal; 
+                        const dueText = dueMonthsList.length > 0 ? dueMonthsList.join(", ") : "None"; 
+                        doc.text(student.name, 15, y); doc.text(`${studentTotal}`, 90, y); doc.text(dueText, 140, y); y += 6; 
+                        if(y > 280) { doc.addPage(); y = 20; } 
+                    } 
+                }); 
+                
+                y += 5; doc.line(15, y, 195, y); y += 8; doc.setFont("helvetica", "bold"); 
+                doc.text(`Grand Total Collected: ${totalCollected}`, 15, y); 
+                addWatermarkAndSignatureToPdf(doc); doc.save(`Yearly_Report_${year}.pdf`); 
+            } 
+        }
         function searchTable(inputId, tableId) { const input = document.getElementById(inputId), filter = input.value.toUpperCase(), table = document.getElementById(tableId), tr = table.getElementsByTagName("tr"); for (let i = 1; i < tr.length; i++) { const rowText = tr[i].textContent || tr[i].innerText; if (rowText.toUpperCase().indexOf(filter) > -1) { tr[i].style.display = ""; } else { tr[i].style.display = "none"; } } }
         async function saveFee() { 
-            const studentId = parseInt(document.getElementById('feeStudentId').value);
-            const month = document.getElementById('feeRecordMonth').value;
-            const amount = parseFloat(document.getElementById('feeAmount').value);
-            const date = document.getElementById('feeDate').value;
-            const mode = document.getElementById('paymentMode').value;
+            const studentId = parseInt(document.getElementById('feeStudentId').value); 
+            const month = document.getElementById('feeRecordMonth').value; 
+            const amount = parseFloat(document.getElementById('feeAmount').value); 
+            const date = document.getElementById('feeDate').value; 
+            const mode = document.getElementById('paymentMode').value; 
             const txnId = document.getElementById('transactionId').value.trim(); 
+            
             if (isNaN(amount) || amount <= 0) { Swal.fire('Error','Invalid amount.', 'error'); return; } 
             if (!date) { Swal.fire('Error','Select date.', 'error'); return; } 
             if (!fees[month]) fees[month] = {}; 
-            let receiptNo = fees[month][studentId]?.receiptNo;
-            if (!receiptNo) { receiptNo = Date.now().toString().slice(-6); }
+            
+            let receiptNo = fees[month][studentId]?.receiptNo; 
+            if (!receiptNo) { 
+                receiptNo = Date.now().toString().slice(-6); 
+            }
+
             fees[month][studentId] = { status: 'paid', amount, date, mode: mode, transactionId: txnId, receiptNo: receiptNo }; 
             await saveData(); 
             closeModal('feeModal'); 
             Swal.fire({ title: 'Payment Recorded!', html: `<p>What would you like to do?</p><div style="display:flex; gap:5px; justify-content:center; flex-wrap:wrap;"><button class="btn-like btn-receipt" onclick="generatePaymentReceipt(${studentId}, '${month}')">Receipt</button><button class="btn-like btn-whatsapp" onclick="sendMsg('wa', ${studentId}, '${month}', ${amount}, false)">WhatsApp</button><button class="btn-like btn-sms" onclick="sendMsg('sms', ${studentId}, '${month}', ${amount}, false)">SMS</button><button class="btn-like btn-mail" onclick="sendMsg('mail', ${studentId}, '${month}', ${amount}, false)">Email</button></div>`, icon: 'success', showConfirmButton: false, showCloseButton: true }); 
             loadAllData(); 
         }
-        function renderFees() { const selectedMonth = document.getElementById('feeMonth').value, tableBody = document.querySelector('#feeTable tbody'); tableBody.innerHTML = ''; if (!selectedMonth) return; let totalCollected = 0, totalDueAmount = 0, dueCount = 0; const monthIsDue = isMonthDue(selectedMonth); students.forEach(student => { if (!student.status?.isActive) return; const wasActive = wasStudentActiveDuringMonth(student, selectedMonth); if (!wasActive) return; const feeRecord = fees[selectedMonth]?.[student.id], isPaid = feeRecord?.status === 'paid'; const hasGlobalDue = checkGlobalDues(student.id); let rowClass = 'pending', statusText = 'Pending'; if (isPaid) { totalCollected += feeRecord.amount; rowClass = 'paid'; statusText = `Paid (₹${feeRecord.amount})`; } else if (monthIsDue) { dueCount++; totalDueAmount += student.fee_amount || DEFAULT_FEE; rowClass = 'unpaid'; statusText = 'Due'; } if (hasGlobalDue) rowClass += ' has-dues-alert'; const row = document.createElement('tr'); row.className = rowClass; let actionButtons = isPaid ? `<button class="btn-receipt" onclick="generatePaymentReceipt(${student.id}, '${selectedMonth}')">Receipt</button> <button class="btn-warning" onclick="openFeeModal(${student.id}, '${selectedMonth}', true)">Edit</button><button class="btn-danger" onclick="unmarkFee(${student.id}, '${selectedMonth}')">Unmark</button>` : `<button class="btn-success" onclick="openFeeModal(${student.id}, '${selectedMonth}')">Record Payment</button>` + (monthIsDue ? getContactButtons(student.id, selectedMonth) : ''); row.innerHTML = `<td>${getStudentHtml(student)}</td><td>${statusText}</td><td class="action-buttons">${actionButtons}</td>`; tableBody.appendChild(row); }); document.getElementById('feeSummary').innerHTML = `<div onclick="showFeeBreakdown('collected')"><h4>Collected</h4><p class="summary-collected">₹${totalCollected}</p></div><div onclick="showFeeBreakdown('due')"><h4>Due (${dueCount} students)</h4><p class="summary-due">₹${totalDueAmount}</p></div>`; searchTable('searchFees', 'feeTable'); }
-        async function generatePaymentReceipt(studentId, monthStr) { const student = students.find(s => s.id === studentId); const feeRecord = fees[monthStr]?.[studentId]; if (!student || !feeRecord) return; const { jsPDF } = window.jspdf; const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [105, 148] }); if (instituteLogo) { doc.saveGraphicsState(); doc.setGState(new doc.GState({ opacity: 0.1 })); const imgDim = 80; const pageWidth = 105; const pageHeight = 148; doc.addImage(instituteLogo, 'JPEG', (pageWidth - imgDim) / 2, (pageHeight - imgDim) / 2, imgDim, imgDim); doc.restoreGraphicsState(); } doc.setDrawColor(0); doc.setLineWidth(0.5); doc.rect(5, 5, 95, 138); let y = 15; if (instituteLogo) { doc.addImage(instituteLogo, 'JPEG', 42.5, 10, 20, 20); y = 35; } doc.setFontSize(14); doc.setFont("helvetica", "bold"); const titleLines = doc.splitTextToSize(INSTITUTE_NAME, 90); doc.text(titleLines, 52.5, y, {align: "center"}); y += (titleLines.length * 6); doc.setFontSize(12); doc.setFont("helvetica", "normal"); doc.text("PAYMENT RECEIPT", 52.5, y, {align: "center"}); doc.line(30, y+1, 75, y+1); y += 15; doc.setFontSize(10); const lineH = 8; doc.text(`Receipt No:`, 10, y); const rNo = feeRecord.receiptNo || "LEGACY-" + Math.floor(new Date(feeRecord.date).getTime()/10000).toString().slice(-4); doc.text(`${rNo}`, 40, y); y += lineH; doc.text(`Date:`, 10, y); const paymentDate = feeRecord.date ? new Date(feeRecord.date).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN'); doc.text(`${paymentDate}`, 40, y); y += lineH; doc.text(`Student Name:`, 10, y); doc.setFont("helvetica", "bold"); doc.text(student.name, 40, y); doc.setFont("helvetica", "normal"); y += lineH; doc.text(`Class:`, 10, y); doc.text(student.class || 'N/A', 40, y); y += lineH; doc.text(`Month:`, 10, y); doc.setFont("helvetica", "bold"); doc.text(formatMonthYear(monthStr), 40, y); doc.setFont("helvetica", "normal"); y += lineH; doc.text(`Payment Mode:`, 10, y); doc.text(feeRecord.mode || 'Cash', 40, y); y += lineH; if (feeRecord.transactionId) { doc.text(`Txn ID:`, 10, y); doc.text(feeRecord.transactionId, 40, y); y += lineH; } y += 5; doc.setFontSize(12); doc.text(`Amount Received:`, 10, y); doc.setFontSize(16); doc.setFont("helvetica", "bold"); doc.text(`Rs. ${feeRecord.amount}/-`, 50, y); y += 20; if (authorizedSignature) { doc.addImage(authorizedSignature, 'PNG', 50, y - 15, 40, 15); } doc.setFontSize(9); doc.setFont("helvetica", "italic"); doc.text(`Authorized Signature`, 70, y, {align:"center"}); doc.text(`(${MY_NAME})`, 70, y+5, {align:"center"}); const fileName = `Receipt_${student.name.replace(/\s+/g, '_')}_${monthStr}.pdf`; if (navigator.canShare && navigator.share) { const pdfBlob = doc.output('blob'); const file = new File([pdfBlob], fileName, { type: 'application/pdf' }); if (navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], title: 'Fee Receipt', text: `Payment receipt for ${student.name}` }); } catch (err) { doc.save(fileName); } } else { doc.save(fileName); } } else { doc.save(fileName); } }
+
+        // UPDATED: Logic to hide inactive students based on month selection
+        function renderFees() { 
+            const selectedMonth = document.getElementById('feeMonth').value, tableBody = document.querySelector('#feeTable tbody'); 
+            tableBody.innerHTML = ''; 
+            if (!selectedMonth) return; 
+            
+            let totalCollected = 0, totalDueAmount = 0, dueCount = 0; 
+            const monthIsDue = isMonthDue(selectedMonth); 
+            
+            students.forEach(student => { 
+                // REMOVED GLOBAL INACTIVE FILTER: if (!student.status?.isActive) return;
+                
+                const wasActive = wasStudentActiveDuringMonth(student, selectedMonth); 
+                if (!wasActive) return; 
+                
+                const feeRecord = fees[selectedMonth]?.[student.id];
+                const isPaid = feeRecord?.status === 'paid'; 
+                const hasGlobalDue = checkGlobalDues(student.id); 
+                
+                let rowClass = 'pending', statusText = 'Pending'; 
+                
+                if (isPaid) { 
+                    totalCollected += feeRecord.amount; 
+                    rowClass = 'paid'; 
+                    statusText = `Paid (₹${feeRecord.amount})`; 
+                } else if (monthIsDue) { 
+                    dueCount++; 
+                    totalDueAmount += student.fee_amount || DEFAULT_FEE; 
+                    rowClass = 'unpaid'; 
+                    statusText = 'Due'; 
+                } 
+                
+                if (hasGlobalDue) rowClass += ' has-dues-alert'; 
+                
+                const row = document.createElement('tr'); 
+                row.className = rowClass; 
+                
+                let actionButtons = isPaid ? 
+                    `<button class="btn-receipt" onclick="generatePaymentReceipt(${student.id}, '${selectedMonth}')">Receipt</button> <button class="btn-warning" onclick="openFeeModal(${student.id}, '${selectedMonth}', true)">Edit</button><button class="btn-danger" onclick="unmarkFee(${student.id}, '${selectedMonth}')">Unmark</button>` 
+                    : `<button class="btn-success" onclick="openFeeModal(${student.id}, '${selectedMonth}')">Record Payment</button>` + (monthIsDue ? getContactButtons(student.id, selectedMonth) : ''); 
+                
+                row.innerHTML = `<td>${getStudentHtml(student)}</td><td>${statusText}</td><td class="action-buttons">${actionButtons}</td>`; 
+                tableBody.appendChild(row); 
+            }); 
+            
+            document.getElementById('feeSummary').innerHTML = `<div onclick="showFeeBreakdown('collected')"><h4>Collected</h4><p class="summary-collected">₹${totalCollected}</p></div><div onclick="showFeeBreakdown('due')"><h4>Due (${dueCount} students)</h4><p class="summary-due">₹${totalDueAmount}</p></div>`; 
+            searchTable('searchFees', 'feeTable'); 
+        }
+        async function generatePaymentReceipt(studentId, monthStr) { 
+            const student = students.find(s => s.id === studentId); 
+            const feeRecord = fees[monthStr]?.[studentId]; 
+            if (!student || !feeRecord) return; 
+            
+            const { jsPDF } = window.jspdf; 
+            const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [105, 148] }); 
+            
+            if (instituteLogo) { 
+                doc.saveGraphicsState(); 
+                doc.setGState(new doc.GState({ opacity: 0.1 })); 
+                const imgDim = 80; 
+                const pageWidth = 105; 
+                const pageHeight = 148; 
+                doc.addImage(instituteLogo, 'JPEG', (pageWidth - imgDim) / 2, (pageHeight - imgDim) / 2, imgDim, imgDim); 
+                doc.restoreGraphicsState(); 
+            } 
+            
+            doc.setDrawColor(0); doc.setLineWidth(0.5); doc.rect(5, 5, 95, 138); let y = 15; 
+            if (instituteLogo) { doc.addImage(instituteLogo, 'JPEG', 42.5, 10, 20, 20); y = 35; } 
+            
+            doc.setFontSize(14); doc.setFont("helvetica", "bold"); 
+            const titleLines = doc.splitTextToSize(INSTITUTE_NAME, 90); 
+            doc.text(titleLines, 52.5, y, {align: "center"}); y += (titleLines.length * 6); 
+            
+            doc.setFontSize(12); doc.setFont("helvetica", "normal"); doc.text("PAYMENT RECEIPT", 52.5, y, {align: "center"}); doc.line(30, y+1, 75, y+1); y += 15; 
+            doc.setFontSize(10); const lineH = 8; 
+            
+            doc.text(`Receipt No:`, 10, y); 
+            const rNo = feeRecord.receiptNo || "LEGACY-" + Math.floor(new Date(feeRecord.date).getTime()/10000).toString().slice(-4);
+            doc.text(`${rNo}`, 40, y); y += lineH; 
+            
+            doc.text(`Date:`, 10, y); 
+            const paymentDate = feeRecord.date ? new Date(feeRecord.date).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN');
+            doc.text(`${paymentDate}`, 40, y); 
+            
+            y += lineH; doc.text(`Student Name:`, 10, y); doc.setFont("helvetica", "bold"); doc.text(student.name, 40, y); doc.setFont("helvetica", "normal"); y += lineH; doc.text(`Class:`, 10, y); doc.text(student.class || 'N/A', 40, y); y += lineH; doc.text(`Month:`, 10, y); doc.setFont("helvetica", "bold"); doc.text(formatMonthYear(monthStr), 40, y); doc.setFont("helvetica", "normal"); y += lineH; doc.text(`Payment Mode:`, 10, y); doc.text(feeRecord.mode || 'Cash', 40, y); y += lineH; if (feeRecord.transactionId) { doc.text(`Txn ID:`, 10, y); doc.text(feeRecord.transactionId, 40, y); y += lineH; } y += 5; doc.setFontSize(12); doc.text(`Amount Received:`, 10, y); doc.setFontSize(16); doc.setFont("helvetica", "bold"); doc.text(`Rs. ${feeRecord.amount}/-`, 50, y); y += 20; if (authorizedSignature) { doc.addImage(authorizedSignature, 'PNG', 50, y - 15, 40, 15); } doc.setFontSize(9); doc.setFont("helvetica", "italic"); doc.text(`Authorized Signature`, 70, y, {align:"center"}); doc.text(`(${MY_NAME})`, 70, y+5, {align:"center"}); const fileName = `Receipt_${student.name.replace(/\s+/g, '_')}_${monthStr}.pdf`; if (navigator.canShare && navigator.share) { const pdfBlob = doc.output('blob'); const file = new File([pdfBlob], fileName, { type: 'application/pdf' }); if (navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], title: 'Fee Receipt', text: `Payment receipt for ${student.name}` }); } catch (err) { doc.save(fileName); } } else { doc.save(fileName); } } else { doc.save(fileName); } }
         async function generateIDCard() { const name = document.getElementById('modalStudentName').textContent; const serial = document.getElementById('modalSerialNo').textContent; const student = students.find(s => s.serial_no == serial); if (!student) return; const issueDateInput = document.getElementById('idCardIssueDate').value; const endDateInput = document.getElementById('idCardEndDate').value; const issueDateStr = issueDateInput ? new Date(issueDateInput).toLocaleDateString('en-IN') : 'N/A'; const endDateStr = endDateInput ? new Date(endDateInput).toLocaleDateString('en-IN') : null; const dobStr = student.dob ? new Date(student.dob).toLocaleDateString('en-IN') : '-'; const { jsPDF } = window.jspdf; const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [86, 54] }); doc.setFillColor(24, 90, 157); doc.rect(0, 0, 30, 54, 'F'); if (student.photo) { doc.addImage(student.photo, 'JPEG', 5, 12, 20, 20); } else { doc.setFillColor(200, 200, 200); doc.circle(15, 22, 10, 'F'); doc.setFontSize(8); doc.text("No Photo", 15, 22, {align: 'center'}); } if (instituteLogo) { doc.saveGraphicsState(); doc.setGState(new doc.GState({ opacity: 0.1 })); doc.addImage(instituteLogo, 'JPEG', 40, 9, 36, 36); doc.restoreGraphicsState(); } doc.setTextColor(0, 0, 0); doc.setFontSize(7); doc.setFont("helvetica", "bold"); const headerLines = doc.splitTextToSize(INSTITUTE_NAME, 50); doc.text(headerLines, 58, 5, {align: "center"}); doc.setDrawColor(24, 90, 157); doc.line(35, 12, 80, 12); let yText = 16; const labelX = 35; const valX = 48; doc.setFontSize(7); doc.setFont("helvetica", "bold"); doc.text("Name:", labelX, yText); doc.setFont("helvetica", "normal"); doc.text(student.name, valX, yText); yText += 3.5; doc.setFont("helvetica", "bold"); doc.text("ID No:", labelX, yText); doc.setFont("helvetica", "normal"); doc.text(student.serial_no.toString(), valX, yText); yText += 3.5; doc.setFont("helvetica", "bold"); doc.text("Class:", labelX, yText); doc.setFont("helvetica", "normal"); doc.text(student.class || '-', valX, yText); yText += 3.5; doc.setFont("helvetica", "bold"); doc.text("Phone:", labelX, yText); doc.setFont("helvetica", "normal"); doc.text(student.phone || '-', valX, yText); yText += 3.5; doc.setFont("helvetica", "bold"); doc.text("Addr:", labelX, yText); doc.setFont("helvetica", "normal"); const addrLines = doc.splitTextToSize(student.address || '-', 35); doc.text(addrLines, valX, yText); yText += (addrLines.length * 3) + 1; doc.setFont("helvetica", "bold"); doc.text("DOB:", labelX, yText); doc.setFont("helvetica", "normal"); doc.text(dobStr, valX, yText); yText += 3.5; doc.setFontSize(6); doc.setFont("helvetica", "bold"); let validText = `Issued: ${issueDateStr}`; if (endDateStr) validText += ` | Valid: ${endDateStr}`; doc.text(validText, 35, yText); if (authorizedSignature) { doc.addImage(authorizedSignature, 'PNG', 65, 38, 18, 6); } doc.setFontSize(6); doc.setFont("helvetica", "bold"); doc.text("Auth. Signature:", 83, 44, {align: "right"}); doc.setFont("helvetica", "italic"); doc.text("Srikanta Banerjee", 83, 47, {align: "right"}); doc.setFillColor(67, 206, 162); doc.rect(30, 49, 56, 5, 'F'); doc.setTextColor(255, 255, 255); doc.setFontSize(6); doc.setFont("helvetica", "bold"); doc.text("AUTHORIZED STUDENT CARD", 58, 52.5, {align: "center"}); const fileName = `ID_Card_${student.name}.pdf`; if (navigator.canShare && navigator.share) { const pdfBlob = doc.output('blob'); const file = new File([pdfBlob], fileName, { type: 'application/pdf' }); if (navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], title: 'Student ID Card', text: `ID Card for ${student.name}` }); } catch (err) { doc.save(fileName); } } else { doc.save(fileName); } } else { doc.save(fileName); } }
+
+        // UPDATED: Logic to hide inactive students
         function renderAttendance() { 
             const date = document.getElementById('attendanceDate').value, tableBody = document.querySelector('#attendanceTable tbody'); 
             tableBody.innerHTML = ''; 
             if (!date) return; 
             
-            // Set Default Time if empty (visual only)
+            // Default Time (Visual)
             const timeInput = document.getElementById('attendanceTime');
             if(!timeInput.value) {
-                const now = new Date();
-                const hours = now.getHours().toString().padStart(2, '0');
-                const mins = now.getMinutes().toString().padStart(2, '0');
-                timeInput.value = `${hours}:${mins}`;
+               const now = new Date();
+               const hours = now.getHours().toString().padStart(2, '0');
+               const mins = now.getMinutes().toString().padStart(2, '0');
+               timeInput.value = `${hours}:${mins}`;
             }
 
             students.filter(s => s.status?.isActive).forEach(student => { 
                 const entry = attendance[date]?.[student.id];
                 const status = (typeof entry === 'object' && entry !== null) ? entry.status : entry; 
+                
                 const statusText = status === 'present' ? 'Present' : (status === 'absent' ? 'Absent' : 'Not Marked');
                 const statusClass = status === 'present' ? 'status-present' : (status === 'absent' ? 'status-absent' : ''); 
+                
                 const hasGlobalDue = checkGlobalDues(student.id); 
                 const rowClass = hasGlobalDue ? 'has-dues-alert' : ''; 
+                
                 const row = document.createElement('tr');
                 if (rowClass) row.className = rowClass;
+                
                 row.innerHTML = `<td>${getStudentHtml(student)}</td><td class="${statusClass}">${statusText}</td><td class="action-buttons"><button class="btn-success" onclick="markAttendance(${student.id}, 'present')">P</button><button class="btn-danger" onclick="markAttendance(${student.id}, 'absent')">A</button><button class="btn-secondary" onclick="markAttendance(${student.id}, 'clear')">X</button></td>`;
                 tableBody.appendChild(row);
             }); 
             searchTable('searchAttendance', 'attendanceTable'); 
         }
+
         function loadStudentsList() { 
-            const listBody = document.getElementById('allStudentsList'); listBody.innerHTML = ''; 
+            const listBody = document.getElementById('allStudentsList'); 
+            listBody.innerHTML = ''; 
+            
             students.forEach(student => { 
                 const statusBtnText = student.status?.isActive ? 'Deactivate' : 'Activate'; 
                 const hasGlobalDue = checkGlobalDues(student.id); 
                 let rowClass = student.status?.isActive ? '' : 'inactive-student'; 
                 if (student.status?.isActive && hasGlobalDue) rowClass += ' has-dues-alert'; 
+                
                 let timeDisplay = ''; 
-                if(student.class_time) { timeDisplay = formatTime12H(student.class_time); } 
+                if(student.class_time) { 
+                    const [h, m] = student.class_time.split(':'); 
+                    const ampm = h >= 12 ? 'PM' : 'AM'; 
+                    const h12 = h % 12 || 12; 
+                    timeDisplay = `${h12}:${m} ${ampm}`; 
+                } 
                 const dayTimeStr = (student.class_day || student.class_time) ? `<br><span class="student-time-sub">${student.class_day || ''} ${timeDisplay}</span>` : ''; 
+                
                 const row = document.createElement('tr');
                 if (rowClass) row.className = rowClass;
-                row.innerHTML = `<td>${student.serial_no}</td><td>${getStudentHtml(student)}</td><td>${student.class || 'N/A'}${dayTimeStr}</td><td>₹${student.fee_amount || DEFAULT_FEE}</td><td style="min-width: 160px;">${getAllContactButtons(student)}</td><td>${student.status?.isActive ? 'Active' : 'Inactive'}</td><td class="action-buttons"><button class="${student.status?.isActive ? 'btn-info' : 'btn-success'}" onclick="openStatusChangeModal(${student.id}, ${!student.status?.isActive})">${statusBtnText}</button> <button class="btn-warning" onclick="openEditStudentModal(${student.id})">Edit</button></td>`;
+                
+                row.innerHTML = `
+                    <td>${student.serial_no}</td>
+                    <td>${getStudentHtml(student)}</td>
+                    <td>${student.class || 'N/A'}${dayTimeStr}</td>
+                    <td>₹${student.fee_amount || DEFAULT_FEE}</td>
+                    <td style="min-width: 160px;">${getAllContactButtons(student)}</td>
+                    <td>${student.status?.isActive ? 'Active' : 'Inactive'}</td>
+                    <td class="action-buttons">
+                        <button class="${student.status?.isActive ? 'btn-info' : 'btn-success'}" onclick="openStatusChangeModal(${student.id}, ${!student.status?.isActive})">${statusBtnText}</button> 
+                        <button class="btn-warning" onclick="openEditStudentModal(${student.id})">Edit</button>
+                    </td>`;
+                
                 listBody.appendChild(row);
             }); 
         }
+        
         function markAttendance(studentId, status) {
             const date = document.getElementById('attendanceDate').value; 
             if (!date) { Swal.fire('Alert','Please select a date.', 'warning'); return; } 
+            
             if (!attendance[date]) attendance[date] = {}; 
+            
             if (status === 'clear') {
                 delete attendance[date][studentId]; 
             } else {
+                // UPDATED: Input Time or Current Time ONLY
                 const timeInput = document.getElementById('attendanceTime').value;
                 let timeToSave = timeInput;
+                
+                // If no manual time, take current system time
                 if (!timeToSave) {
                       const now = new Date();
                       const hours = now.getHours().toString().padStart(2, '0');
                       const mins = now.getMinutes().toString().padStart(2, '0');
                       timeToSave = `${hours}:${mins}`;
                 }
+
                 attendance[date][studentId] = { status: status, time: timeToSave }; 
             }
             saveData().then(() => renderAttendance()); 
         }
-        function unmarkFee(studentId, month) { Swal.fire({ title: 'Unmark Payment?', text: "Mark fee as unpaid?", icon: 'warning', showCancelButton: true, confirmButtonText: 'Yes' }).then(async (result) => { if (result.isConfirmed && fees[month]?.[studentId]) { delete fees[month][studentId]; await saveData(); loadAllData(); Swal.fire('Success', 'Payment removed.', 'success'); } }); }
+        function unmarkFee(studentId, month) { 
+            Swal.fire({ title: 'Unmark Payment?', text: "Mark fee as unpaid?", icon: 'warning', showCancelButton: true, confirmButtonText: 'Yes' }).then(async (result) => { 
+                if (result.isConfirmed && fees[month]?.[studentId]) { 
+                    delete fees[month][studentId]; 
+                    await saveData(); 
+                    loadAllData(); 
+                    Swal.fire('Success', 'Payment removed.', 'success'); 
+                } 
+            }); 
+        }
         
         function openFeeModal(studentId, month, isEdit = false) { 
             const modal = document.getElementById('feeModal'), amountInput = document.getElementById('feeAmount'), dateInput = document.getElementById('feeDate'); 
@@ -1107,6 +1442,7 @@ function sendWelcomeMsg(type, studentId) {
             else { document.getElementById('editPhotoPreview').src = 'https://via.placeholder.com/100?text=No+Photo'; } 
             document.getElementById('editStudentModal').style.display = 'flex'; 
         }
+        
         async function saveStudentChanges() { 
             const id = parseInt(document.getElementById('editStudentId').value), student = students.find(s => s.id === id); 
             if(!student) return; 
@@ -1127,9 +1463,7 @@ function sendWelcomeMsg(type, studentId) {
             loadAllData(); 
             Swal.fire('Saved', 'Student details updated.', 'success'); 
         }
-
-        let currentlyViewingStudentId = null;
-
+        
         function showStudentDetails(studentId) { 
             const student = students.find(s => s.id === studentId); 
             if (!student) return; 
@@ -1138,10 +1472,7 @@ function sendWelcomeMsg(type, studentId) {
             document.getElementById('modalStudentName').textContent = student.name; 
             document.getElementById('modalSerialNo').textContent = student.serial_no; 
             document.getElementById('modalClass').textContent = student.class || 'N/A'; 
-            
-            const fmtTime = student.class_time ? formatTime12H(student.class_time) : '';
-            document.getElementById('modalDayTime').textContent = (student.class_day || '') + " " + fmtTime; 
-            
+            document.getElementById('modalDayTime').textContent = (student.class_day || '') + " " + (student.class_time || ''); 
             document.getElementById('modalFeeAmount').textContent = `₹${student.fee_amount || DEFAULT_FEE}`; 
             document.getElementById('modalGuardianName').textContent = student.guardian || 'N/A'; 
             document.getElementById('modalPhone').innerHTML = student.phone ? `${student.phone}` : 'N/A'; 
@@ -1163,7 +1494,7 @@ function sendWelcomeMsg(type, studentId) {
                 }); 
             } else { historyList.innerHTML = '<li>No history found.</li>'; } 
             
-            // Populate Filters
+            // Populate Filters for Detail View
             const yearSelect = document.getElementById('detailsFilterYear');
             const monthSelect = document.getElementById('detailsFilterMonth');
             yearSelect.innerHTML = ''; monthSelect.innerHTML = '';
@@ -1202,19 +1533,25 @@ function sendWelcomeMsg(type, studentId) {
             const presentList = document.getElementById('modalPresentList'), absentList = document.getElementById('modalAbsentList'); 
             presentList.innerHTML = absentList.innerHTML = ''; 
             
-            // Filter Attendance by Month/Year
             Object.keys(attendance).sort().reverse().forEach(date => { 
                 const d = new Date(date);
                 if(d.getFullYear() === selectedYear && (d.getMonth() + 1) === selectedMonth) {
                     const entry = attendance[date]?.[student.id];
                     if(entry) {
                         const dayName = d.toLocaleDateString('en-IN', { weekday: 'long' });
+                        
                         let timeStr = '';
                         let status = entry;
                         if(typeof entry === 'object' && entry !== null) {
                             status = entry.status;
-                            if(entry.time) { timeStr = ` (${formatTime12H(entry.time)})`; }
+                            if(entry.time) {
+                                const [h, m] = entry.time.split(':');
+                                const ampm = h >= 12 ? 'PM' : 'AM';
+                                const h12 = h % 12 || 12;
+                                timeStr = ` (${h12}:${m} ${ampm})`;
+                            }
                         }
+
                         const formattedDate = `${d.toLocaleDateString('en-IN')} (${dayName})${timeStr}`;
                         
                         if (status === 'present') { presentList.innerHTML += `<li style="padding:2px 0; border-bottom:1px solid #f9f9f9;">${formattedDate}</li>`; } 
@@ -1229,7 +1566,6 @@ function sendWelcomeMsg(type, studentId) {
             const paidList = document.getElementById('modalPaidList'); 
             paidList.innerHTML = ''; 
             
-            // Filter Fees (Show logic: if active in that month, check status)
             const monthStr = `${selectedYear}-${selectedMonth.toString().padStart(2, '0')}`;
             
             if(wasStudentActiveDuringMonth(student, monthStr)) {
@@ -1244,7 +1580,7 @@ function sendWelcomeMsg(type, studentId) {
                 paidList.innerHTML = `<li>Not active in this period</li>`;
             }
         }
-
+        
         function resetApp() { 
             Swal.fire({ 
                 title: 'Are you sure?', 
@@ -1263,6 +1599,7 @@ function sendWelcomeMsg(type, studentId) {
                 } 
             }) 
         }
+
         function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
         window.onclick = (event) => { if (event.target.classList.contains('modal')) { event.target.style.display = 'none'; } };
     </script>
