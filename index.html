@@ -20,12 +20,30 @@
     
     <style>
         :root {
+            /* Light Theme Variables (Default) */
             --primary: #4f46e5; --primary-dark: #4338ca; --secondary: #64748b;
             --success: #10b981; --danger: #ef4444; --warning: #f59e0b;
-            --info: #3b82f6; --pink: #ec4899; --bg-body: #f3f4f6;
-            --bg-card: #ffffff; --text-main: #1f2937; --text-muted: #6b7280;
+            --info: #3b82f6; --pink: #ec4899; 
+            --bg-body: #f3f4f6;
+            --bg-card: #ffffff; 
+            --bg-input: #f9fafb;
+            --text-main: #1f2937; 
+            --text-muted: #6b7280;
+            --border-color: #e2e8f0;
             --radius: 12px; --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             --nav-height: 70px;
+        }
+
+        /* Dark Theme Variables */
+        [data-theme="dark"] {
+            --primary: #6366f1; --primary-dark: #4f46e5; --secondary: #94a3b8;
+            --bg-body: #0f172a;
+            --bg-card: #1e293b;
+            --bg-input: #334155;
+            --text-main: #f1f5f9;
+            --text-muted: #cbd5e1;
+            --border-color: #334155;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
         }
 
         body { 
@@ -33,11 +51,12 @@
             color: var(--text-main); margin: 0; padding: 0; 
             padding-bottom: calc(var(--nav-height) + 20px);
             -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         ul::-webkit-scrollbar { width: 4px; }
-        ul::-webkit-scrollbar-track { background: #f1f1f1; }
-        ul::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ul::-webkit-scrollbar-track { background: var(--bg-body); }
+        ul::-webkit-scrollbar-thumb { background: var(--secondary); border-radius: 4px; }
 
         header { 
             background: var(--bg-card); padding: 10px 20px;
@@ -45,6 +64,7 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
             display: flex; align-items: center; justify-content: space-between;
             height: 60px;
+            transition: background 0.3s ease;
         }
         .header-content { display: flex; align-items: center; gap: 12px; }
         #headerLogo { height: 40px; width: auto; border-radius: 6px; display: none; }
@@ -55,14 +75,15 @@
 
         .bottom-nav {
             position: fixed; bottom: 0; left: 0; width: 100%;
-            background: #fff; height: var(--nav-height);
+            background: var(--bg-card); height: var(--nav-height);
             display: flex; justify-content: space-around; align-items: center;
             box-shadow: 0 -2px 15px rgba(0,0,0,0.08);
             z-index: 990; border-top-left-radius: 15px; border-top-right-radius: 15px;
+            transition: background 0.3s ease;
         }
         .nav-item {
             border: none; background: none; display: flex; flex-direction: column;
-            align-items: center; color: #94a3b8; font-size: 8px; font-weight: 500;
+            align-items: center; color: var(--text-muted); font-size: 8px; font-weight: 500;
             padding: 5px; flex-grow: 1; transition: 0.2s; cursor: pointer;
         }
         .nav-item i { font-size: 16px; margin-bottom: 4px; }
@@ -81,28 +102,33 @@
             background: var(--bg-card); border-radius: var(--radius);
             padding: 20px; box-shadow: var(--shadow);
             border-top: 4px solid var(--primary); margin-bottom: 15px;
+            transition: background 0.3s ease;
         }
-        h3 { margin-top: 0; font-size: 16px; margin-bottom: 15px; color: var(--text-main); border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; }
+        h3 { margin-top: 0; font-size: 16px; margin-bottom: 15px; color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
         
-        .summary-box { display: flex; justify-content: space-between; background: #f8fafc; padding: 15px; border-radius: var(--radius); margin-top: 10px; gap: 10px; }
-        .summary-box > div { flex: 1; text-align: center; border-right: 1px solid #e2e8f0; cursor: pointer; }
+        .summary-box { display: flex; justify-content: space-between; background: var(--bg-input); padding: 15px; border-radius: var(--radius); margin-top: 10px; gap: 10px; border: 1px solid var(--border-color); }
+        .summary-box > div { flex: 1; text-align: center; border-right: 1px solid var(--border-color); cursor: pointer; }
         .summary-box > div:last-child { border-right: none; }
         .summary-box h4 { font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin: 0 0 5px 0; }
-        .summary-box p { font-size: 18px; font-weight: 700; margin: 0; }
+        .summary-box p { font-size: 18px; font-weight: 700; margin: 0; color: var(--text-main); }
         
-        .clickable-stat { cursor: pointer; } .clickable-stat:active { background-color: #e0e7ff; }
-        .summary-collected { color: var(--success); } .summary-due { color: var(--danger); }
+        .clickable-stat { cursor: pointer; } 
+        /* Adjust active state for dark mode compatibility */
+        .clickable-stat:active { opacity: 0.7; }
+        
+        .summary-collected { color: var(--success) !important; } .summary-due { color: var(--danger) !important; }
 
         .comparison-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        .comp-card { background: #f8fafc; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #e2e8f0; }
+        .comp-card { background: var(--bg-input); padding: 10px; border-radius: 8px; text-align: center; border: 1px solid var(--border-color); }
+        .comp-card strong { color: var(--text-main); }
         .comp-diff { font-size: 12px; font-weight: bold; margin-top: 5px; }
         .diff-up { color: var(--success); } .diff-down { color: var(--danger); }
 
         .form-group { margin-bottom: 15px; }
         .form-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
         label { font-size: 13px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px; display: block; }
-        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; background: #f9fafb; box-sizing: border-box; }
-        input:focus { outline: none; border-color: var(--primary); background: #fff; }
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px; background: var(--bg-input); color: var(--text-main); box-sizing: border-box; }
+        input:focus { outline: none; border-color: var(--primary); }
 
         button, .btn-like {
             padding: 10px 16px; border-radius: 8px; border: none; font-size: 14px; font-weight: 500;
@@ -119,53 +145,54 @@
         table { width: 100%; border-collapse: separate; border-spacing: 0; }
         @media (max-width: 768px) {
             thead { display: none; } 
-            tr { display: block; background: #fff; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: var(--shadow); border: 1px solid #f1f5f9; }
-            td { display: block; padding: 5px 0; border: none; text-align: left; }
+            tr { display: block; background: var(--bg-card); border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: var(--shadow); border: 1px solid var(--border-color); }
+            td { display: block; padding: 5px 0; border: none; text-align: left; color: var(--text-main); }
             td.action-buttons { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 5px; }
         }
-        @media (min-width: 769px) { th { background: #f8fafc; padding: 12px; text-align: left; color: var(--text-muted); font-size: 12px; } td { padding: 12px; border-bottom: 1px solid #f1f5f9; } }
+        @media (min-width: 769px) { th { background: var(--bg-input); padding: 12px; text-align: left; color: var(--text-muted); font-size: 12px; border-bottom: 1px solid var(--border-color); } td { padding: 12px; border-bottom: 1px solid var(--border-color); color: var(--text-main); } }
 
-        .paid { border-left: 5px solid var(--success) !important; background-color: #ecfdf5 !important; }
-        .unpaid { border-left: 5px solid var(--danger) !important; background-color: #fef2f2 !important; }
+        /* Status Colors - Dark Mode Friendly */
+        .paid { border-left: 5px solid var(--success) !important; background-color: rgba(16, 185, 129, 0.1) !important; }
+        .unpaid { border-left: 5px solid var(--danger) !important; background-color: rgba(239, 68, 68, 0.1) !important; }
         .pending { border-left: 5px solid var(--warning) !important; }
-        .has-dues-alert { background-color: #fee2e2 !important; border-left: 5px solid #dc2626 !important; }
-        .inactive-student { opacity: 0.6; filter: grayscale(100%); background: #f3f4f6 !important; }
+        .has-dues-alert { background-color: rgba(220, 38, 38, 0.1) !important; border-left: 5px solid #dc2626 !important; }
+        .inactive-student { opacity: 0.6; filter: grayscale(100%); background: var(--bg-input) !important; }
         
         .student-cell { display: flex; align-items: center; width: 100%; }
         .student-thumb { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; margin-right: 15px; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex-shrink: 0; }
         .student-info { display: flex; flex-direction: column; flex-grow: 1; min-width: 0; }
         .student-name-link { font-weight: 600; color: var(--text-main); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
         .student-phone-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-        .student-time-sub { font-size: 11px; color: #666; display: block; }
+        .student-time-sub { font-size: 11px; color: var(--text-muted); display: block; }
         .status-present { color: var(--success); font-weight: bold; } .status-absent { color: var(--danger); font-weight: bold; }
 
         .reminder-item {
-            background: #fff; padding: 12px; border-radius: 8px; margin-bottom: 8px;
+            background: var(--bg-card); padding: 12px; border-radius: 8px; margin-bottom: 8px;
             border-left: 4px solid var(--warning); display: flex; justify-content: space-between; align-items: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05); color: var(--text-main);
         }
 
         .modal {
             display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; 
-            background-color: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); align-items: center; justify-content: center;
+            background-color: rgba(15, 23, 42, 0.8); backdrop-filter: blur(4px); align-items: center; justify-content: center;
         }
         .modal-content {
-            background-color: #fff; width: 90%; max-width: 600px; padding: 25px; border-radius: 16px;
+            background-color: var(--bg-card); width: 90%; max-width: 600px; padding: 25px; border-radius: 16px;
             box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); max-height: 90vh; overflow-y: auto; position: relative;
-            animation: slideUp 0.3s ease;
+            animation: slideUp 0.3s ease; color: var(--text-main); border: 1px solid var(--border-color);
         }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .close-button { float: right; font-size: 28px; color: #94a3b8; cursor: pointer; }
+        .close-button { float: right; font-size: 28px; color: var(--text-muted); cursor: pointer; }
 
         .scrollable-list {
             list-style: none; padding: 5px; margin: 0;
             max-height: 120px; overflow-y: auto;
-            border: 1px solid #f1f5f9;
-            background: #fff;
+            border: 1px solid var(--border-color);
+            background: var(--bg-input);
             border-radius: 8px;
         }
         .scrollable-list li {
-            padding: 5px; border-bottom: 1px solid #f8fafc; font-size: 12px;
+            padding: 5px; border-bottom: 1px solid var(--border-color); font-size: 12px; color: var(--text-main);
         }
         .scrollable-list li:last-child { border-bottom: none; }
 
@@ -173,7 +200,7 @@
         .search-bar input { padding-left: 40px; border-radius: 50px; }
         .search-bar::before { content: '\f002'; font-family: "Font Awesome 6 Free"; font-weight: 900; position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
         
-        #photoPreviewBox { width: 120px; height: 120px; border-radius: 50%; background: #f1f5f9; margin: 0 auto 15px auto; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px dashed #cbd5e1; cursor: pointer; }
+        #photoPreviewBox { width: 120px; height: 120px; border-radius: 50%; background: var(--bg-input); margin: 0 auto 15px auto; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px dashed var(--secondary); cursor: pointer; }
         
         #securityOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; color: white; }
         .pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 30px; }
@@ -287,7 +314,7 @@
                     <input type="file" id="addStudentCamera" accept="image/*" capture="environment" onchange="handlePhotoSelection(this, 'add')" style="display:none;">
                     <input type="file" id="addStudentGallery" accept="image/*" onchange="handlePhotoSelection(this, 'add')" style="display:none;">
                     <div id="photoPreviewBox" onclick="openPhotoSourceModal('add')">
-                        <span id="photoPlaceholder" style="font-size: 11px; color: #64748b; text-align: center;"><i class="fas fa-camera fa-2x"></i><br>Add Photo</span>
+                        <span id="photoPlaceholder" style="font-size: 11px; color: var(--text-muted); text-align: center;"><i class="fas fa-camera fa-2x"></i><br>Add Photo</span>
                         <img id="photoPreview" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
                     </div>
                 </div>
@@ -315,8 +342,8 @@
                 <button class="btn-primary" onclick="exportDashboardPDF()" style="font-size: 11px;"><i class="fas fa-download"></i> PDF</button>
             </div>
             
-            <div id="dashboardRemindersBox" class="dashboard-card" style="display: none; border-top-color: var(--warning); background-color: #fffbeb;">
-                <h3 style="color: #b45309; border:none; margin-bottom:5px;"><i class="fas fa-bell"></i> Reminders for Today</h3>
+            <div id="dashboardRemindersBox" class="dashboard-card" style="display: none; border-top-color: var(--warning); background-color: rgba(253, 230, 138, 0.2);">
+                <h3 style="color: var(--warning); border:none; margin-bottom:5px;"><i class="fas fa-bell"></i> Reminders for Today</h3>
                 <div id="dashboardReminderList" style="padding-top:5px;"></div>
             </div>
 
@@ -338,11 +365,11 @@
                 </div>
                 <div class="dashboard-card">
                     <h3>Class Strength</h3>
-                    <ul id="classStrengthList" class="class-strength-list"></ul>
+                    <ul id="classStrengthList" class="class-strength-list" style="padding-left: 20px;"></ul>
                 </div>
                 <div class="dashboard-card" style="border-top-color: var(--danger);">
                     <h3 style="color: var(--danger);">Pending Dues (Active Only)</h3>
-                    <p id="dueFeeMessage" style="font-size: 12px; color: #666;"></p>
+                    <p id="dueFeeMessage" style="font-size: 12px; color: var(--text-muted);"></p>
                     <table id="dueFeeTable"><thead><tr><th>Student</th><th>Action</th></tr></thead><tbody></tbody></table>
                 </div>
             </div>
@@ -405,20 +432,20 @@
                     <h4 style="text-align:center; margin-bottom:10px;">Comparison Result</h4>
                     <div class="comparison-grid">
                         <div class="comp-card">
-                            <span style="font-size:10px; color:#666;">Income A</span><br>
+                            <span style="font-size:10px; color:var(--text-muted);">Income A</span><br>
                             <strong id="compIncome1"></strong>
                         </div>
                         <div class="comp-card">
-                            <span style="font-size:10px; color:#666;">Income B</span><br>
+                            <span style="font-size:10px; color:var(--text-muted);">Income B</span><br>
                             <strong id="compIncome2"></strong>
                             <div id="compIncomeDiff" class="comp-diff"></div>
                         </div>
                         <div class="comp-card">
-                            <span style="font-size:10px; color:#666;">Students A</span><br>
+                            <span style="font-size:10px; color:var(--text-muted);">Students A</span><br>
                             <strong id="compStudent1"></strong>
                         </div>
                         <div class="comp-card">
-                            <span style="font-size:10px; color:#666;">Students B</span><br>
+                            <span style="font-size:10px; color:var(--text-muted);">Students B</span><br>
                             <strong id="compStudent2"></strong>
                             <div id="compStudentDiff" class="comp-diff"></div>
                         </div>
@@ -430,6 +457,13 @@
         <div id="settings" class="tab-content">
             <h3>App Settings</h3>
             <div class="dashboard-grid">
+                <div class="dashboard-card">
+                    <label>App Theme</label>
+                    <button class="btn-secondary" onclick="toggleTheme()" id="themeToggleBtn" style="width:100%;">
+                        <i class="fas fa-moon"></i> Switch to Dark Mode
+                    </button>
+                </div>
+                
                 <div class="dashboard-card">
                     <label>Institute Logo</label>
                     <input type="file" id="instituteLogoInput" accept="image/*" onchange="saveInstituteLogo(this)">
@@ -452,7 +486,7 @@
                 <div class="dashboard-card">
                     <label>Backup Data</label>
                     <button class="btn-primary btn-google" onclick="secureAction(exportData)" style="width:100%; margin-top:5px;"><i class="fab fa-google-drive"></i> Backup</button>
-                    <hr style="margin: 15px 0; border-top: 1px solid #eee;">
+                    <hr style="margin: 15px 0; border-top: 1px solid var(--border-color);">
                     <label>Restore / Reset</label>
                     <button class="btn-warning" onclick="secureAction(() => document.getElementById('importFile').click())" style="width:100%;"><i class="fas fa-file-upload"></i> Restore JSON</button>
                     <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
@@ -487,11 +521,11 @@
         <div class="modal-content">
             <span class="close-button" onclick="closeModal('studentDetailsModal')">&times;</span>
             <div style="text-align: center; margin-bottom: 20px;">
-                <img id="modalStudentPhoto" src="" style="width:100px; height:100px; border-radius:50%; border:3px solid #e2e8f0; object-fit:cover;">
+                <img id="modalStudentPhoto" src="" style="width:100px; height:100px; border-radius:50%; border:3px solid var(--border-color); object-fit:cover;">
                 <h2 id="modalStudentName" style="margin:10px 0 5px 0;"></h2>
                 <span id="modalClass" style="color:var(--primary); font-weight:600;"></span>
             </div>
-            <div style="background: #f8fafc; padding: 15px; border-radius: 12px; font-size: 14px; margin-bottom: 20px;">
+            <div style="background: var(--bg-input); padding: 15px; border-radius: 12px; font-size: 14px; margin-bottom: 20px;">
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
                     <div><strong>ID:</strong> <span id="modalSerialNo"></span></div>
                     <div><strong>Fee:</strong> <span id="modalFeeAmount"></span></div>
@@ -505,7 +539,7 @@
                 <p><strong>DOB:</strong> <span id="modalDOB"></span></p>
             </div>
 
-            <div style="display:flex; gap:10px; margin-bottom:10px; align-items:center; background:#f1f5f9; padding:10px; border-radius:8px;">
+            <div style="display:flex; gap:10px; margin-bottom:10px; align-items:center; background:var(--bg-input); padding:10px; border-radius:8px;">
                 <select id="detailsFilterYear" style="flex:1; font-size:12px; padding:8px;" onchange="renderStudentDetailsHistory()"></select>
                 <select id="detailsFilterMonth" style="flex:1; font-size:12px; padding:8px;" onchange="renderStudentDetailsHistory()"></select>
             </div>
@@ -525,7 +559,7 @@
                     <div style="font-size:11px; color:red; margin-top:5px;">Absent: <ul id="modalAbsentList" class="scrollable-list" style="max-height:80px;"></ul></div>
                  </div>
             </div>
-            <div style="background: #f1f5f9; padding: 15px; border-radius: 12px;">
+            <div style="background: var(--bg-input); padding: 15px; border-radius: 12px;">
                 <label>Generate ID Card</label>
                 <div style="display: flex; gap: 10px; margin-bottom: 10px;">
                     <input type="date" id="idCardIssueDate">
@@ -624,8 +658,40 @@
             }, 1000);
         }
 
-        document.addEventListener('DOMContentLoaded', async () => { await openDB(); let existingPin = await dbGet('app_pin'); if (!existingPin) { const lsPin = localStorage.getItem('app_pin'); if(lsPin) { await dbSet('app_pin', lsPin); if(localStorage.getItem('students')) await dbSet('students', JSON.parse(localStorage.getItem('students'))); if(localStorage.getItem('attendance')) await dbSet('attendance', JSON.parse(localStorage.getItem('attendance'))); if(localStorage.getItem('fees')) await dbSet('fees', JSON.parse(localStorage.getItem('fees'))); if(localStorage.getItem('studentSerialCounter')) await dbSet('studentSerialCounter', localStorage.getItem('studentSerialCounter')); if(localStorage.getItem('instituteLogo')) await dbSet('instituteLogo', localStorage.getItem('instituteLogo')); if(localStorage.getItem('authorizedSignature')) await dbSet('authorizedSignature', localStorage.getItem('authorizedSignature')); if(localStorage.getItem('lastBackupDate')) await dbSet('lastBackupDate', localStorage.getItem('lastBackupDate')); Swal.fire('System Update', 'Data migrated.', 'success'); } else { await dbSet('app_pin', '1234'); } } await loadInstituteLogo(); await loadAuthSignature(); secureAction(() => { initApp(); checkBackupStatus(); startClock(); }, true); document.querySelector('.close-pin').style.display = 'none'; });
+        document.addEventListener('DOMContentLoaded', async () => { await openDB(); let existingPin = await dbGet('app_pin'); if (!existingPin) { const lsPin = localStorage.getItem('app_pin'); if(lsPin) { await dbSet('app_pin', lsPin); if(localStorage.getItem('students')) await dbSet('students', JSON.parse(localStorage.getItem('students'))); if(localStorage.getItem('attendance')) await dbSet('attendance', JSON.parse(localStorage.getItem('attendance'))); if(localStorage.getItem('fees')) await dbSet('fees', JSON.parse(localStorage.getItem('fees'))); if(localStorage.getItem('studentSerialCounter')) await dbSet('studentSerialCounter', localStorage.getItem('studentSerialCounter')); if(localStorage.getItem('instituteLogo')) await dbSet('instituteLogo', localStorage.getItem('instituteLogo')); if(localStorage.getItem('authorizedSignature')) await dbSet('authorizedSignature', localStorage.getItem('authorizedSignature')); if(localStorage.getItem('lastBackupDate')) await dbSet('lastBackupDate', localStorage.getItem('lastBackupDate')); Swal.fire('System Update', 'Data migrated.', 'success'); } else { await dbSet('app_pin', '1234'); } } await loadInstituteLogo(); await loadAuthSignature(); secureAction(() => { initApp(); checkBackupStatus(); startClock(); loadTheme(); }, true); document.querySelector('.close-pin').style.display = 'none'; });
         
+        // --- Theme Logic ---
+        function toggleTheme() {
+            const body = document.body;
+            const currentTheme = body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('app_theme', newTheme);
+            updateThemeButton(newTheme);
+        }
+
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('app_theme') || 'light';
+            document.body.setAttribute('data-theme', savedTheme);
+            updateThemeButton(savedTheme);
+        }
+
+        function updateThemeButton(theme) {
+            const btn = document.getElementById('themeToggleBtn');
+            if(btn) {
+                if(theme === 'dark') {
+                    btn.innerHTML = '<i class="fas fa-sun"></i> Switch to Light Mode';
+                    btn.classList.remove('btn-secondary');
+                    btn.classList.add('btn-warning');
+                } else {
+                    btn.innerHTML = '<i class="fas fa-moon"></i> Switch to Dark Mode';
+                    btn.classList.remove('btn-warning');
+                    btn.classList.add('btn-secondary');
+                }
+            }
+        }
+        // --- End Theme Logic ---
+
         async function initApp() { 
             const now = new Date();
             document.getElementById('attendanceDate').valueAsDate = now;
@@ -681,7 +747,7 @@
         let instituteLogo = null; 
         let authorizedSignature = null;
         let analyticsChartInstance = null; 
-        let currentlyViewingStudentId = null; // Added Missing Variable
+        let currentlyViewingStudentId = null; 
         
         let dismissedBirthdays = JSON.parse(sessionStorage.getItem('dismissedBirthdays')) || [];
 
@@ -994,18 +1060,18 @@
         function updateReminderDay() { const dateVal = document.getElementById('reminderDate').value; if (dateVal) { const date = new Date(dateVal); const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']; document.getElementById('reminderDay').value = days[date.getDay()]; } }
         async function addReminder() { const text = document.getElementById('reminderText').value.trim(); const day = document.getElementById('reminderDay').value; if(!text) { Swal.fire('Error', 'Please enter reminder text.', 'error'); return; } reminders.push({ id: Date.now(), text: text, day: day }); await saveData(); document.getElementById('reminderText').value = ''; document.getElementById('reminderDate').value = ''; renderReminders(); Swal.fire('Added', 'Reminder added successfully.', 'success'); }
         async function deleteReminder(id) { reminders = reminders.filter(r => r.id !== id); await saveData(); renderReminders(); }
-        function renderReminders() { const listContainer = document.getElementById('reminderListContainer'); listContainer.innerHTML = ''; const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]; days.forEach(day => { const dayReminders = reminders.filter(r => r.day === day); if(dayReminders.length > 0) { const dayHeader = document.createElement('h4'); dayHeader.style.cssText = "margin: 10px 0 5px 0; color: var(--primary); font-size:12px; border-bottom:1px solid #eee;"; dayHeader.textContent = day; listContainer.appendChild(dayHeader); dayReminders.forEach(r => { const div = document.createElement('div'); div.className = 'reminder-item'; div.innerHTML = `<span>${r.text}</span> <button class="btn-danger" style="padding:4px 8px;" onclick="deleteReminder(${r.id})"><i class="fas fa-trash"></i></button>`; listContainer.appendChild(div); }); } }); if(reminders.length === 0) { listContainer.innerHTML = '<p style="text-align:center; color:#999; font-size:12px; margin-top:20px;">No reminders set.</p>'; } }
+        function renderReminders() { const listContainer = document.getElementById('reminderListContainer'); listContainer.innerHTML = ''; const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]; days.forEach(day => { const dayReminders = reminders.filter(r => r.day === day); if(dayReminders.length > 0) { const dayHeader = document.createElement('h4'); dayHeader.style.cssText = "margin: 10px 0 5px 0; color: var(--primary); font-size:12px; border-bottom:1px solid var(--border-color);"; dayHeader.textContent = day; listContainer.appendChild(dayHeader); dayReminders.forEach(r => { const div = document.createElement('div'); div.className = 'reminder-item'; div.innerHTML = `<span>${r.text}</span> <button class="btn-danger" style="padding:4px 8px;" onclick="deleteReminder(${r.id})"><i class="fas fa-trash"></i></button>`; listContainer.appendChild(div); }); } }); if(reminders.length === 0) { listContainer.innerHTML = '<p style="text-align:center; color:var(--text-muted); font-size:12px; margin-top:20px;">No reminders set.</p>'; } }
 
         function renderDashboard() { 
             const activeStudents = students.filter(s => s.status?.isActive); 
-            document.getElementById('studentStatsSummary').innerHTML = `<div class="clickable-stat" onclick="showCategoryList('active')"><h4>Active</h4><p class="summary-collected">${activeStudents.length}</p></div><div class="clickable-stat" onclick="showCategoryList('inactive')"><h4>Inactive</h4><p class="summary-due">${students.length - activeStudents.length}</p></div><div><h4>Total</h4><p class="summary-total">${students.length}</p></div>`; 
+            document.getElementById('studentStatsSummary').innerHTML = `<div class="clickable-stat" onclick="showCategoryList('active')"><h4>Active</h4><p class="summary-collected">${activeStudents.length}</p></div><div class="clickable-stat" onclick="showCategoryList('inactive')"><h4>Inactive</h4><p class="summary-due">${students.length - activeStudents.length}</p></div><div><h4>Total</h4><p class="summary-total" style="color:var(--text-main);">${students.length}</p></div>`; 
             const birthdayBox = document.getElementById('birthdayAlertBox'); const birthdayList = document.getElementById('birthdayList'); 
             const birthdayStudents = activeStudents.filter(s => checkBirthday(s.dob) && !dismissedBirthdays.includes(s.id)); 
-            if (birthdayStudents.length > 0) { birthdayList.innerHTML = ''; birthdayStudents.forEach(s => { birthdayList.innerHTML += `<div style="display:flex; align-items:center; justify-content:space-between; background:#fff; padding:10px; border-radius:8px; margin-bottom:5px; border:1px solid #ffe4e6;"><div style="display:flex; align-items:center;"><img src="${s.photo || 'https://via.placeholder.com/40?text=S'}" style="width:40px; height:40px; border-radius:50%; margin-right:10px; object-fit:cover;"><div><strong>${s.name}</strong><br><span style="font-size:11px; color:#666;">${s.class || 'Student'}</span></div></div><div style="display:flex; gap:5px;"><button class="btn-whatsapp btn-like" onclick="sendBirthdayWish('wa', ${s.id})"><i class="fab fa-whatsapp"></i></button><button class="btn-sms btn-like" onclick="sendBirthdayWish('sms', ${s.id})"><i class="fas fa-sms"></i></button><button class="btn-success btn-like" onclick="dismissBirthday(${s.id})" title="Dismiss"><i class="fas fa-check"></i></button></div></div>`; }); birthdayBox.style.display = 'block'; } else { birthdayBox.style.display = 'none'; }
-            const classCounts = activeStudents.reduce((acc, student) => { const className = student.class || 'Unassigned'; acc[className] = (acc[className] || 0) + 1; return acc; }, {}); const classListEl = document.getElementById('classStrengthList'); classListEl.innerHTML = ''; Object.entries(classCounts).sort().forEach(([className, count]) => { classListEl.innerHTML += `<li onclick="showClassStudents('${className}')"><strong>${className}:</strong> <span>${count} students</span></li>`; }); 
+            if (birthdayStudents.length > 0) { birthdayList.innerHTML = ''; birthdayStudents.forEach(s => { birthdayList.innerHTML += `<div style="display:flex; align-items:center; justify-content:space-between; background:var(--bg-input); padding:10px; border-radius:8px; margin-bottom:5px; border:1px solid #ffe4e6; color:var(--text-main);"><div style="display:flex; align-items:center;"><img src="${s.photo || 'https://via.placeholder.com/40?text=S'}" style="width:40px; height:40px; border-radius:50%; margin-right:10px; object-fit:cover;"><div><strong>${s.name}</strong><br><span style="font-size:11px; color:var(--text-muted);">${s.class || 'Student'}</span></div></div><div style="display:flex; gap:5px;"><button class="btn-whatsapp btn-like" onclick="sendBirthdayWish('wa', ${s.id})"><i class="fab fa-whatsapp"></i></button><button class="btn-sms btn-like" onclick="sendBirthdayWish('sms', ${s.id})"><i class="fas fa-sms"></i></button><button class="btn-success btn-like" onclick="dismissBirthday(${s.id})" title="Dismiss"><i class="fas fa-check"></i></button></div></div>`; }); birthdayBox.style.display = 'block'; } else { birthdayBox.style.display = 'none'; }
+            const classCounts = activeStudents.reduce((acc, student) => { const className = student.class || 'Unassigned'; acc[className] = (acc[className] || 0) + 1; return acc; }, {}); const classListEl = document.getElementById('classStrengthList'); classListEl.innerHTML = ''; Object.entries(classCounts).sort().forEach(([className, count]) => { classListEl.innerHTML += `<li onclick="showClassStudents('${className}')" style="cursor:pointer; color:var(--text-main);"><strong>${className}:</strong> <span>${count} students</span></li>`; }); 
             let monthlyCollected = 0, monthlyDueAmount = 0, yearlyCollected = 0, yearlyDueAmount = 0; const currentYear = new Date().getFullYear(), currentMonthStr = `${currentYear}-${(new Date().getMonth() + 1).toString().padStart(2, '0')}`; 
             
-            const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]; const todayName = days[new Date().getDay()]; const todaysReminders = reminders.filter(r => r.day === todayName); const rBox = document.getElementById('dashboardRemindersBox'); const rList = document.getElementById('dashboardReminderList'); if(todaysReminders.length > 0) { rList.innerHTML = ''; todaysReminders.forEach(r => { rList.innerHTML += `<div style="padding:8px; border-bottom:1px solid #fde68a; font-size:13px;">• ${r.text}</div>`; }); rBox.style.display = 'block'; } else { rBox.style.display = 'none'; }
+            const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]; const todayName = days[new Date().getDay()]; const todaysReminders = reminders.filter(r => r.day === todayName); const rBox = document.getElementById('dashboardRemindersBox'); const rList = document.getElementById('dashboardReminderList'); if(todaysReminders.length > 0) { rList.innerHTML = ''; todaysReminders.forEach(r => { rList.innerHTML += `<div style="padding:8px; border-bottom:1px solid #fde68a; font-size:13px; color:var(--text-main);">• ${r.text}</div>`; }); rBox.style.display = 'block'; } else { rBox.style.display = 'none'; }
             
             students.forEach(student => { 
                 for (let i = 0; i < 12; i++) { 
@@ -1033,14 +1099,19 @@
 
             if (defaulters.length === 0) { dueMessageEl.textContent = "No pending dues."; } else { dueMessageEl.textContent = `(${defaulters.length}) students have pending dues.`; defaulters.forEach(item => { const monthsStr = item.months.join(", "); const studentHtml = getStudentHtml(item.student); const dueDisplay = `<div style="margin-top:5px; font-size:11px; color:#dc2626; font-weight:600; line-height:1.4;">Due: ${monthsStr}</div>`; const latestDueMonth = item.months.length > 0 ? getMonthStrFromFormat(item.months[0]) : currentMonthStr; dueTableBody.innerHTML += `<tr><td>${studentHtml}${dueDisplay}</td><td class="action-buttons">${getContactButtons(item.student.id, latestDueMonth)}</td></tr>`; }); }
             
-            const ctx = document.getElementById('financeChart').getContext('2d'); if (financeChartInstance) financeChartInstance.destroy(); financeChartInstance = new Chart(ctx, { type: 'doughnut', data: { labels: ['Collected', 'Due'], datasets: [{ data: [monthlyCollected, monthlyDueAmount], backgroundColor: ['#28a745', '#dc3545'], hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' }, title: { display: true, text: `Summary for ${formatMonthYear(currentMonthStr)}` } } } });
+            const ctx = document.getElementById('financeChart').getContext('2d'); if (financeChartInstance) financeChartInstance.destroy(); financeChartInstance = new Chart(ctx, { type: 'doughnut', data: { labels: ['Collected', 'Due'], datasets: [{ data: [monthlyCollected, monthlyDueAmount], backgroundColor: ['#28a745', '#dc3545'], hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: getComputedStyle(document.body).getPropertyValue('--text-main') } }, title: { display: true, text: `Summary for ${formatMonthYear(currentMonthStr)}`, color: getComputedStyle(document.body).getPropertyValue('--text-main') } } } });
         }
 
         function getMonthStrFromFormat(formattedMonth) { const parts = formattedMonth.split(' '); if (parts.length !== 2) return null; const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]; const monthIndex = monthNames.findIndex(name => name === parts[0]); if (monthIndex === -1) return null; const month = (monthIndex + 1).toString().padStart(2, '0'); const year = parts[1]; return `${year}-${month}`; }
         function addWatermarkAndSignatureToPdf(doc) { const pageCount = doc.getNumberOfPages(); const pageWidth = doc.internal.pageSize.getWidth(); const pageHeight = doc.internal.pageSize.getHeight(); for (let i = 1; i <= pageCount; i++) { doc.setPage(i); if (instituteLogo) { doc.saveGraphicsState(); doc.setGState(new doc.GState({ opacity: 0.1 })); const imgSize = Math.min(pageWidth, pageHeight) * 0.85; const x = (pageWidth - imgSize) / 2; const y = (pageHeight - imgSize) / 2; doc.addImage(instituteLogo, 'JPEG', x, y, imgSize, imgSize); doc.restoreGraphicsState(); } const sigY = pageHeight - 35; if (authorizedSignature) { doc.addImage(authorizedSignature, 'PNG', pageWidth - 55, sigY, 40, 15); } doc.setFontSize(10); doc.setFont("helvetica", "italic"); doc.text("Authorized Signature", pageWidth - 15, sigY + 20, { align: "right" }); doc.text("(Srikanta Banerjee)", pageWidth - 15, sigY + 25, { align: "right" }); } }
         function exportStudentDetailsAsPDF(studentId) { const student = students.find(s => s.id === studentId); if (!student) return; const { jsPDF } = window.jspdf; const doc = new jsPDF(); let y = 15; const addLine = (text, size, weight, margin) => { doc.setFontSize(size); doc.setFont('helvetica', weight); doc.text(text, 15, y); y += margin; if (y > 280) { doc.addPage(); y = 15; } }; doc.setFontSize(22); doc.setFont('helvetica', 'bold'); doc.text(`${INSTITUTE_NAME}`, 105, y, { align: 'center' }); y += 8; if (student.photo) { doc.addImage(student.photo, 'JPEG', 160, 15, 30, 30); } doc.setFontSize(14); doc.text('Student Report', 105, y, { align: 'center' }); y += 12; addLine(`Student Name: ${student.name}`, 16, 'bold', 8); addLine(`Serial No: ${student.serial_no}`, 11, 'normal', 6); addLine(`Class: ${student.class || 'N/A'}`, 11, 'normal', 6); addLine(`Monthly Fee: ₹${student.fee_amount || DEFAULT_FEE}`, 11, 'normal', 6); addLine(`Joining Date: ${new Date(student.joining_date).toLocaleDateString('en-IN')}`, 11, 'normal', 10); addLine('Contact Information', 14, 'bold', 8); addLine(`Guardian: ${student.guardian || 'N/A'}`, 11, 'normal', 6); addLine(`Phone: ${student.phone || 'N/A'}`, 11, 'normal', 6); addLine(`Email: ${student.email || 'N/A'}`, 11, 'normal', 6); addLine(`Address: ${student.address || 'N/A'}`, 11, 'normal', 10); addLine('Status History', 14, 'bold', 8); if (student.status.history && student.status.history.length > 0) { student.status.history.forEach(entry => { addLine(`${entry.status} on ${new Date(entry.date).toLocaleDateString('en-IN')} - Note: ${entry.note || 'N/A'}`, 10, 'normal', 6); }); } else { addLine('No status history found.', 10, 'italic', 6); } y += 4; addLine('Fee Payment History', 14, 'bold', 8); let feesFound = false; Object.keys(fees).sort().forEach(month => { if(wasStudentActiveDuringMonth(student, month)) { const feeRecord = fees[month]?.[student.id]; if (feeRecord?.status === 'paid') { addLine(`${month}: ₹${feeRecord.amount} (Paid on ${new Date(feeRecord.date).toLocaleDateString('en-IN')} - ${feeRecord.mode || 'Cash'} ${feeRecord.transactionId ? '- Txn: '+feeRecord.transactionId : ''})`, 10, 'normal', 6); feesFound = true; } else if (isMonthDue(month)) { addLine(`${month}: Due`, 10, 'normal', 6); feesFound = true; } } }); if (!feesFound) { addLine('No records found.', 10, 'italic', 6); } y += 4; addLine('Attendance Summary & Details', 14, 'bold', 8); let presentDates = [], absentDates = []; Object.keys(attendance).sort().reverse().forEach(date => { const entry = attendance[date]?.[student.id]; if (entry) { const status = (typeof entry === 'object' && entry !== null) ? entry.status : entry; const d = new Date(date); const formattedDate = `${d.toLocaleDateString('en-IN')} (${d.toLocaleDateString('en-IN', {weekday: 'long'})})`; if (status === 'present') presentDates.push(formattedDate); if (status === 'absent') absentDates.push(formattedDate); } }); addLine(`Total Present: ${presentDates.length}`, 11, 'bold', 6); addLine(`Total Absent: ${absentDates.length}`, 11, 'bold', 8); if(presentDates.length > 0) { addLine('Present Days (Recent):', 10, 'bold', 6); presentDates.forEach(d => addLine(`- ${d}`, 9, 'normal', 5)); y+=2; } if(absentDates.length > 0) { addLine('Absent Days (Recent):', 10, 'bold', 6); absentDates.forEach(d => addLine(`- ${d}`, 9, 'normal', 5)); } addWatermarkAndSignatureToPdf(doc); doc.save(`${student.name}_report.pdf`); }
         function calculateMonthStats(monthStr) { let income = 0; let studentCount = 0; if(fees[monthStr]) { Object.values(fees[monthStr]).forEach(record => { if(record.status === 'paid') income += record.amount; }); } students.forEach(student => { if(wasStudentActiveDuringMonth(student, monthStr)) { studentCount++; } }); return { income, studentCount }; }
-        function updateYearlyChart() { const year1 = document.getElementById('analyticsYear').value; const year2 = document.getElementById('compareYear').value; if(!year1) return; const labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]; const inc1 = []; const stu1 = []; let sumInc1 = 0; let sumStu1 = 0; for(let i=1; i<=12; i++) { const m = `${year1}-${i.toString().padStart(2, '0')}`; const s = calculateMonthStats(m); inc1.push(s.income); stu1.push(s.studentCount); sumInc1 += s.income; sumStu1 += s.studentCount; } const avgInc1 = sumInc1 / 12; const avgStu1 = sumStu1 / 12; const statsDiv = document.getElementById('yearlyAverages'); let statsHtml = `<div><h4>Avg Income (${year1})</h4><p class="summary-collected">₹${avgInc1.toFixed(0)}</p></div><div><h4>Avg Students (${year1})</h4><p class="summary-total">${Math.round(avgStu1)}</p></div>`; const datasets = [ { label: `Income ${year1}`, data: inc1, backgroundColor: 'rgba(16, 185, 129, 0.6)', borderColor: '#10b981', borderWidth: 1, type: 'bar', yAxisID: 'y' }, { label: `Students ${year1}`, data: stu1, borderColor: '#3b82f6', borderWidth: 2, type: 'line', tension: 0.3, yAxisID: 'y1' } ]; if (year2) { const inc2 = []; const stu2 = []; let sumInc2 = 0; let sumStu2 = 0; for(let i=1; i<=12; i++) { const m = `${year2}-${i.toString().padStart(2, '0')}`; const s = calculateMonthStats(m); inc2.push(s.income); stu2.push(s.studentCount); sumInc2 += s.income; sumStu2 += s.studentCount; } const avgInc2 = sumInc2 / 12; const avgStu2 = sumStu2 / 12; statsHtml += `<div><h4>Avg Income (${year2})</h4><p class="summary-collected">₹${avgInc2.toFixed(0)}</p></div><div><h4>Avg Students (${year2})</h4><p class="summary-total">${Math.round(avgStu2)}</p></div>`; datasets.push({ label: `Income ${year2}`, data: inc2, backgroundColor: 'rgba(239, 68, 68, 0.6)', borderColor: '#ef4444', borderWidth: 1, type: 'bar', yAxisID: 'y' }); datasets.push({ label: `Students ${year2}`, data: stu2, borderColor: '#f97316', borderWidth: 2, type: 'line', tension: 0.3, pointRadius: 3, yAxisID: 'y1' }); } statsDiv.innerHTML = statsHtml; statsDiv.style.display = 'flex'; const ctx = document.getElementById('yearlyChart').getContext('2d'); if(analyticsChartInstance) analyticsChartInstance.destroy(); analyticsChartInstance = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: datasets }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { position: 'bottom' }, title: { display: true, text: year2 ? `${year1} vs ${year2}` : `Overview ${year1}` } }, scales: { y: { beginAtZero: true, position: 'left', title: {display:true, text:'Income (₹)'} }, y1: { beginAtZero: true, position: 'right', grid: {drawOnChartArea: false}, title: {display:true, text:'Students'} } } } }); }
+        function updateYearlyChart() { 
+            const year1 = document.getElementById('analyticsYear').value; const year2 = document.getElementById('compareYear').value; if(!year1) return; const labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]; const inc1 = []; const stu1 = []; let sumInc1 = 0; let sumStu1 = 0; for(let i=1; i<=12; i++) { const m = `${year1}-${i.toString().padStart(2, '0')}`; const s = calculateMonthStats(m); inc1.push(s.income); stu1.push(s.studentCount); sumInc1 += s.income; sumStu1 += s.studentCount; } const avgInc1 = sumInc1 / 12; const avgStu1 = sumStu1 / 12; const statsDiv = document.getElementById('yearlyAverages'); let statsHtml = `<div><h4>Avg Income (${year1})</h4><p class="summary-collected">₹${avgInc1.toFixed(0)}</p></div><div><h4>Avg Students (${year1})</h4><p class="summary-total" style="color:var(--text-main);">${Math.round(avgStu1)}</p></div>`; const datasets = [ { label: `Income ${year1}`, data: inc1, backgroundColor: 'rgba(16, 185, 129, 0.6)', borderColor: '#10b981', borderWidth: 1, type: 'bar', yAxisID: 'y' }, { label: `Students ${year1}`, data: stu1, borderColor: '#3b82f6', borderWidth: 2, type: 'line', tension: 0.3, yAxisID: 'y1' } ]; 
+            if (year2) { const inc2 = []; const stu2 = []; let sumInc2 = 0; let sumStu2 = 0; for(let i=1; i<=12; i++) { const m = `${year2}-${i.toString().padStart(2, '0')}`; const s = calculateMonthStats(m); inc2.push(s.income); stu2.push(s.studentCount); sumInc2 += s.income; sumStu2 += s.studentCount; } const avgInc2 = sumInc2 / 12; const avgStu2 = sumStu2 / 12; statsHtml += `<div><h4>Avg Income (${year2})</h4><p class="summary-collected">₹${avgInc2.toFixed(0)}</p></div><div><h4>Avg Students (${year2})</h4><p class="summary-total" style="color:var(--text-main);">${Math.round(avgStu2)}</p></div>`; datasets.push({ label: `Income ${year2}`, data: inc2, backgroundColor: 'rgba(239, 68, 68, 0.6)', borderColor: '#ef4444', borderWidth: 1, type: 'bar', yAxisID: 'y' }); datasets.push({ label: `Students ${year2}`, data: stu2, borderColor: '#f97316', borderWidth: 2, type: 'line', tension: 0.3, pointRadius: 3, yAxisID: 'y1' }); } 
+            statsDiv.innerHTML = statsHtml; statsDiv.style.display = 'flex'; 
+            const ctx = document.getElementById('yearlyChart').getContext('2d'); if(analyticsChartInstance) analyticsChartInstance.destroy(); analyticsChartInstance = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: datasets }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { position: 'bottom', labels: { color: getComputedStyle(document.body).getPropertyValue('--text-main') } }, title: { display: true, text: year2 ? `${year1} vs ${year2}` : `Overview ${year1}`, color: getComputedStyle(document.body).getPropertyValue('--text-main') } }, scales: { y: { beginAtZero: true, position: 'left', title: {display:true, text:'Income (₹)', color: getComputedStyle(document.body).getPropertyValue('--text-muted')}, ticks: { color: getComputedStyle(document.body).getPropertyValue('--text-muted') } }, y1: { beginAtZero: true, position: 'right', grid: {drawOnChartArea: false}, title: {display:true, text:'Students', color: getComputedStyle(document.body).getPropertyValue('--text-muted')}, ticks: { color: getComputedStyle(document.body).getPropertyValue('--text-muted') } }, x: { ticks: { color: getComputedStyle(document.body).getPropertyValue('--text-muted') } } } } }); 
+        }
         function comparePeriods() { const m1 = document.getElementById('compMonth1').value; const m2 = document.getElementById('compMonth2').value; if(!m1 || !m2) { return; } const s1 = calculateMonthStats(m1); const s2 = calculateMonthStats(m2); document.getElementById('compIncome1').textContent = `₹${s1.income}`; document.getElementById('compIncome2').textContent = `₹${s2.income}`; document.getElementById('compStudent1').textContent = s1.studentCount; document.getElementById('compStudent2').textContent = s2.studentCount; const incDiff = s2.income - s1.income; const stuDiff = s2.studentCount - s1.studentCount; const incDiffEl = document.getElementById('compIncomeDiff'); incDiffEl.innerHTML = incDiff > 0 ? `<i class="fas fa-arrow-up"></i> ₹${incDiff}` : (incDiff < 0 ? `<i class="fas fa-arrow-down"></i> ₹${Math.abs(incDiff)}` : '-'); incDiffEl.className = 'comp-diff ' + (incDiff >= 0 ? 'diff-up' : 'diff-down'); const stuDiffEl = document.getElementById('compStudentDiff'); stuDiffEl.innerHTML = stuDiff > 0 ? `<i class="fas fa-arrow-up"></i> ${stuDiff}` : (stuDiff < 0 ? `<i class="fas fa-arrow-down"></i> ${Math.abs(stuDiff)}` : '-'); stuDiffEl.className = 'comp-diff ' + (stuDiff >= 0 ? 'diff-up' : 'diff-down'); document.getElementById('comparisonResults').style.display = 'block'; }
         
         function exportDashboardPDF() { 
@@ -1140,7 +1211,7 @@
                     if(hasActivityInYear) { 
                         totalCollected += studentTotalPaid; 
                         totalDue += dueMonthsList.length * (student.fee_amount || DEFAULT_FEE); 
-                        const dueDisplay = dueMonthsList.length > 0 ? `<span style="color:#ef4444; font-weight:bold;">${dueMonthsList.join(", ")}</span>` : '<span style="color:#10b981;">Clear</span>'; 
+                        const dueDisplay = dueMonthsList.length > 0 ? `<span style="color:var(--danger); font-weight:bold;">${dueMonthsList.join(", ")}</span>` : '<span style="color:var(--success);">Clear</span>'; 
                         tableBody.innerHTML += `<tr><td>${getStudentHtml(student)}</td><td>₹${studentTotalPaid}</td><td>${dueDisplay}</td></tr>`; 
                     } 
                 }); 
@@ -1702,7 +1773,7 @@ async function generateIDCard() {
             if (student.status.history && student.status.history.length > 0) { 
                 student.status.history.forEach(entry => { 
                     const color = entry.status === 'Active' ? 'green' : 'red'; 
-                    historyList.innerHTML += `<li><strong style="color:${color};">${entry.status}</strong> on ${new Date(entry.date).toLocaleDateString('en-IN')}<br><em style="font-size:0.9em;color:#555;">Note: ${entry.note || 'No note'}</em></li>`; 
+                    historyList.innerHTML += `<li><strong style="color:${color};">${entry.status}</strong> on ${new Date(entry.date).toLocaleDateString('en-IN')}<br><em style="font-size:0.9em;color:var(--text-muted);">Note: ${entry.note || 'No note'}</em></li>`; 
                 }); 
             } else { historyList.innerHTML = '<li>No history found.</li>'; } 
             
@@ -1782,7 +1853,7 @@ async function generateIDCard() {
             if(wasStudentActiveDuringMonth(student, monthStr)) {
                  const feeRecord = fees[monthStr]?.[student.id]; 
                  if (feeRecord?.status === 'paid') { 
-                     let txnDisplay = feeRecord.transactionId ? ` <br><span style="font-size:0.85em; color:#666;">Txn ID: ${feeRecord.transactionId}</span>` : ''; 
+                     let txnDisplay = feeRecord.transactionId ? ` <br><span style="font-size:0.85em; color:var(--text-muted);">Txn ID: ${feeRecord.transactionId}</span>` : ''; 
                      paidList.innerHTML += `<li style="padding:2px 0; border-bottom:1px solid #f9f9f9;">${formatMonthYear(monthStr)}: ₹${feeRecord.amount} (${feeRecord.mode || 'Cash'}) - ${new Date(feeRecord.date).toLocaleDateString('en-IN')}${txnDisplay}</li>`; 
                  } 
                  else if (isMonthDue(monthStr)) { paidList.innerHTML += `<li class="unpaid" style="padding:2px 0;">${formatMonthYear(monthStr)}: Due</li>`; }
