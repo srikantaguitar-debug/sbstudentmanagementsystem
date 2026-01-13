@@ -601,11 +601,26 @@
         function dbDelete(key) { return new Promise((resolve, reject) => { const transaction = db.transaction([STORE_NAME], 'readwrite'); const store = transaction.objectStore(STORE_NAME); const request = store.delete(key); request.onsuccess = () => resolve(); request.onerror = () => reject(request.error); }); }
         function dbClear() { return new Promise((resolve, reject) => { const transaction = db.transaction([STORE_NAME], 'readwrite'); const store = transaction.objectStore(STORE_NAME); const request = store.clear(); request.onsuccess = () => resolve(); request.onerror = () => reject(request.error); }); }
         
+        let lastCheckedDate = new Date().toDateString();
+
         function startClock() {
             setInterval(() => {
                 const now = new Date();
                 const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
                 document.getElementById('liveClock').textContent = now.toLocaleString('en-IN', options);
+
+                const currentDateString = now.toDateString();
+                if (currentDateString !== lastCheckedDate) {
+                    lastCheckedDate = currentDateString;
+                    document.getElementById('attendanceDate').valueAsDate = now;
+                    const currentMonthStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+                    if(document.getElementById('feeMonth').value !== currentMonthStr) {
+                          document.getElementById('feeMonth').value = currentMonthStr;
+                          renderFees();
+                    }
+                    renderAttendance();
+                }
+
             }, 1000);
         }
 
@@ -615,7 +630,6 @@
             const now = new Date();
             document.getElementById('attendanceDate').valueAsDate = now;
             
-            // Set Default Time to Current (HH:mm format required for input type="time")
             const hours = now.getHours().toString().padStart(2, '0');
             const mins = now.getMinutes().toString().padStart(2, '0');
             document.getElementById('attendanceTime').value = `${hours}:${mins}`;
@@ -658,10 +672,17 @@
 
         async function checkBackupStatus() { const lastBackup = await dbGet('lastBackupDate'); if (!lastBackup) { Swal.fire({ title: 'Backup Warning', text: 'Backup not taken yet.', icon: 'warning', confirmButtonText: 'Okay' }); } else { const daysDiff = (new Date() - new Date(lastBackup)) / (1000 * 60 * 60 * 24); if (daysDiff > 7) { Swal.fire({ title: 'Backup Reminder', text: `Last backup was ${Math.floor(daysDiff)} days ago.`, icon: 'warning', confirmButtonText: 'Okay' }); } } }
 
-        const INSTITUTE_NAME = "Guitar, Bass Guitar, Piano, Keyboard, Mandolin Classes"; const MY_NAME = "Srikanta Banerjee"; const DEFAULT_FEE = 500, DUE_DATE = 10; let students = [], attendance = {}, fees = {}, reminders = [], studentSerialCounter = 1; let financeChartInstance = null; let instituteLogo = null; let authorizedSignature = null;
-        let analyticsChartInstance = null; 
+        const INSTITUTE_NAME = "Guitar, Bass Guitar, Piano, Keyboard, Mandolin Classes"; 
+        const MY_NAME = "Srikanta Banerjee"; 
+        const DEFAULT_FEE = 500, DUE_DATE = 10; 
         
-        // Birthday Dismissal Memory
+        let students = [], attendance = {}, fees = {}, reminders = [], studentSerialCounter = 1; 
+        let financeChartInstance = null; 
+        let instituteLogo = null; 
+        let authorizedSignature = null;
+        let analyticsChartInstance = null; 
+        let currentlyViewingStudentId = null; // Added Missing Variable
+        
         let dismissedBirthdays = JSON.parse(sessionStorage.getItem('dismissedBirthdays')) || [];
 
         async function saveInstituteLogo(input) { const file = input.files[0]; if (file) { const reader = new FileReader(); reader.onload = function(e) { const img = new Image(); img.onload = async function() { const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); const maxWidth = 200; const scaleSize = maxWidth / img.width; canvas.width = maxWidth; canvas.height = img.height * scaleSize; ctx.drawImage(img, 0, 0, canvas.width, canvas.height); const logoBase64 = canvas.toDataURL('image/jpeg', 0.8); await dbSet('instituteLogo', logoBase64); await loadInstituteLogo(); Swal.fire('Success', 'Logo saved!', 'success'); }; img.src = e.target.result; }; reader.readAsDataURL(file); } }
@@ -921,7 +942,6 @@
             if(!selectedMonth) return;
             const monthIsDue = isMonthDue(selectedMonth);
             
-            // Logic change: removed strict active check, using wasStudentActiveDuringMonth instead
             const list = students.filter(s => {
                 if(!wasStudentActiveDuringMonth(s, selectedMonth)) return false;
                 const feeRecord = fees[selectedMonth]?.[s.id];
@@ -930,6 +950,20 @@
                 if (type === 'due') return !isPaid && monthIsDue;
                 return false;
             });
+
+            if (type === 'collected') {
+                list.sort((a, b) => {
+                    const dateA = new Date(fees[selectedMonth][a.id].date);
+                    const dateB = new Date(fees[selectedMonth][b.id].date);
+                    return dateB - dateA;
+                });
+            } else if (type === 'due') {
+                list.sort((a, b) => {
+                    const duesA = getDueMonthsList(a.id).length;
+                    const duesB = getDueMonthsList(b.id).length;
+                    return duesB - duesA;
+                });
+            }
             
             document.getElementById('classStudentsTitle').textContent = type === 'collected' ? `Paid Students (${formatMonthYear(selectedMonth)})` : `Due Students (${formatMonthYear(selectedMonth)})`;
             const tableBody = document.querySelector('#classStudentsTable tbody');
@@ -942,7 +976,10 @@
                     const feeRecord = fees[selectedMonth]?.[s.id];
                     let info = '';
                     if(type === 'collected') info = `<br><span style="font-size:10px; color:green;">₹${feeRecord.amount} on ${new Date(feeRecord.date).toLocaleDateString()}</span>`;
-                    else info = `<br><span style="font-size:10px; color:red;">Due: ₹${s.fee_amount || DEFAULT_FEE}</span>`;
+                    else {
+                        const totalDueMonths = getDueMonthsList(s.id).length;
+                        info = `<br><span style="font-size:10px; color:red;">Due: ₹${s.fee_amount || DEFAULT_FEE} (${totalDueMonths} Months Pending)</span>`;
+                    }
                     
                     tableBody.innerHTML += `<tr><td>${s.serial_no}</td><td>${getStudentHtml(s)}${info}</td><td>${type === 'due' ? getContactButtons(s.id, selectedMonth) : getAllContactButtons(s)}</td></tr>`;
                 });
@@ -970,9 +1007,7 @@
             
             const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]; const todayName = days[new Date().getDay()]; const todaysReminders = reminders.filter(r => r.day === todayName); const rBox = document.getElementById('dashboardRemindersBox'); const rList = document.getElementById('dashboardReminderList'); if(todaysReminders.length > 0) { rList.innerHTML = ''; todaysReminders.forEach(r => { rList.innerHTML += `<div style="padding:8px; border-bottom:1px solid #fde68a; font-size:13px;">• ${r.text}</div>`; }); rBox.style.display = 'block'; } else { rBox.style.display = 'none'; }
             
-            // Logic change: removed strict !student.status?.isActive check to allow historical data for inactives
             students.forEach(student => { 
-                // Removed: if (!student.status?.isActive) return;
                 for (let i = 0; i < 12; i++) { 
                     const monthStr = `${currentYear}-${(i + 1).toString().padStart(2, '0')}`; 
                     if (wasStudentActiveDuringMonth(student, monthStr)) { 
@@ -991,8 +1026,13 @@
             document.getElementById('financeOverviewNumbers').innerHTML = `<div onclick="showFeeBreakdown('collected')"><h4>Collected</h4><p class="summary-collected">₹${monthlyCollected}</p></div><div onclick="showFeeBreakdown('due')"><h4>Due</h4><p class="summary-due">₹${monthlyDueAmount}</p></div>`;
 
             const dueTableBody = document.querySelector('#dueFeeTable tbody'); const dueMessageEl = document.getElementById('dueFeeMessage'); dueTableBody.innerHTML = ''; 
+            
             const defaulters = students.filter(s => s.status?.isActive).map(s => { return { student: s, months: getDueMonthsList(s.id) }; }).filter(item => item.months.length > 0); 
+            
+            defaulters.sort((a, b) => b.months.length - a.months.length);
+
             if (defaulters.length === 0) { dueMessageEl.textContent = "No pending dues."; } else { dueMessageEl.textContent = `(${defaulters.length}) students have pending dues.`; defaulters.forEach(item => { const monthsStr = item.months.join(", "); const studentHtml = getStudentHtml(item.student); const dueDisplay = `<div style="margin-top:5px; font-size:11px; color:#dc2626; font-weight:600; line-height:1.4;">Due: ${monthsStr}</div>`; const latestDueMonth = item.months.length > 0 ? getMonthStrFromFormat(item.months[0]) : currentMonthStr; dueTableBody.innerHTML += `<tr><td>${studentHtml}${dueDisplay}</td><td class="action-buttons">${getContactButtons(item.student.id, latestDueMonth)}</td></tr>`; }); }
+            
             const ctx = document.getElementById('financeChart').getContext('2d'); if (financeChartInstance) financeChartInstance.destroy(); financeChartInstance = new Chart(ctx, { type: 'doughnut', data: { labels: ['Collected', 'Due'], datasets: [{ data: [monthlyCollected, monthlyDueAmount], backgroundColor: ['#28a745', '#dc3545'], hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' }, title: { display: true, text: `Summary for ${formatMonthYear(currentMonthStr)}` } } } });
         }
 
@@ -1009,9 +1049,7 @@
             const currentMonthStr = `${currentYear}-${(new Date().getMonth() + 1).toString().padStart(2, '0')}`; 
             let monthlyCollected = 0, monthlyDueAmount = 0, yearlyCollected = 0, yearlyDueAmount = 0; 
             
-            // Logic change: removed strict !student.status?.isActive check to allow historical data
             students.forEach(student => { 
-                // Removed: if (!student.status?.isActive) return;
                 for (let i = 0; i < 12; i++) { 
                     const monthStr = `${currentYear}-${(i + 1).toString().padStart(2, '0')}`; 
                     if (wasStudentActiveDuringMonth(student, monthStr)) { 
@@ -1053,9 +1091,6 @@
                 const monthIsDue = isMonthDue(month); 
                 
                 students.forEach(student => { 
-                    // Logic change: removed strict active check to show historical data
-                    // Removed: if (!student.status?.isActive) return;
-
                     if (!wasStudentActiveDuringMonth(student, month)) return; 
                     
                     const feeRecord = fees[month]?.[student.id]; 
@@ -1086,9 +1121,6 @@
                 tableHead.innerHTML = `<tr><th>Student Name</th><th>Total Paid</th><th>Due Months</th></tr>`; 
                 
                 students.forEach(student => { 
-                    // Logic change: removed strict active check
-                    // Removed: if (!student.status?.isActive) return;
-
                     let studentTotalPaid = 0; 
                     let dueMonthsList = []; 
                     let hasActivityInYear = false; 
@@ -1131,7 +1163,6 @@
                 doc.setFont("helvetica", "normal"); 
                 
                 students.forEach(student => { 
-                    // Removed strict check: if (!student.status?.isActive) return;
                     if (!wasStudentActiveDuringMonth(student, month)) return; 
                     const feeRecord = fees[month]?.[student.id]; 
                     let status = 'Pending', amount = '0'; 
@@ -1158,7 +1189,6 @@
                 doc.setFont("helvetica", "normal"); 
                 
                 students.forEach(student => { 
-                    // Removed strict check: if (!student.status?.isActive) return;
                     let studentTotal = 0; let dueMonthsList = []; let hasActivity = false; 
                     for(let i=1; i<=12; i++) { 
                         const m = `${year}-${i.toString().padStart(2, '0')}`; 
@@ -1206,7 +1236,6 @@
             loadAllData(); 
         }
 
-        // UPDATED: Logic to hide inactive students based on month selection
         function renderFees() { 
             const selectedMonth = document.getElementById('feeMonth').value, tableBody = document.querySelector('#feeTable tbody'); 
             tableBody.innerHTML = ''; 
@@ -1216,7 +1245,6 @@
             const monthIsDue = isMonthDue(selectedMonth); 
             
             students.forEach(student => { 
-                // REMOVED GLOBAL INACTIVE FILTER: if (!student.status?.isActive) return;
                 
                 const wasActive = wasStudentActiveDuringMonth(student, selectedMonth); 
                 if (!wasActive) return; 
@@ -1254,7 +1282,7 @@
             document.getElementById('feeSummary').innerHTML = `<div onclick="showFeeBreakdown('collected')"><h4>Collected</h4><p class="summary-collected">₹${totalCollected}</p></div><div onclick="showFeeBreakdown('due')"><h4>Due (${dueCount} students)</h4><p class="summary-due">₹${totalDueAmount}</p></div>`; 
             searchTable('searchFees', 'feeTable'); 
         }
-        async function generatePaymentReceipt(studentId, monthStr) { 
+async function generatePaymentReceipt(studentId, monthStr) { 
             const student = students.find(s => s.id === studentId); 
             const feeRecord = fees[monthStr]?.[studentId]; 
             if (!student || !feeRecord) return; 
@@ -1262,9 +1290,10 @@
             const { jsPDF } = window.jspdf; 
             const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [105, 148] }); 
             
+            // Background Logo Watermark
             if (instituteLogo) { 
                 doc.saveGraphicsState(); 
-                doc.setGState(new doc.GState({ opacity: 0.1 })); 
+                doc.setGState(new doc.GState({ opacity: 0.08 })); // Slightly lighter opacity
                 const imgDim = 80; 
                 const pageWidth = 105; 
                 const pageHeight = 148; 
@@ -1272,34 +1301,219 @@
                 doc.restoreGraphicsState(); 
             } 
             
-            doc.setDrawColor(0); doc.setLineWidth(0.5); doc.rect(5, 5, 95, 138); let y = 15; 
-            if (instituteLogo) { doc.addImage(instituteLogo, 'JPEG', 42.5, 10, 20, 20); y = 35; } 
+            // --- Header Section ---
+            doc.setDrawColor(0); doc.setLineWidth(0.5); 
+            doc.rect(5, 5, 95, 138); // Main Border
             
-            doc.setFontSize(14); doc.setFont("helvetica", "bold"); 
+            let y = 15; 
+            
+            // Logo at top center
+            if (instituteLogo) { 
+                doc.addImage(instituteLogo, 'JPEG', 42.5, 8, 20, 20); 
+                y = 32; 
+            } 
+            
+            // Institute Name
+            doc.setFontSize(13); doc.setFont("helvetica", "bold"); 
             const titleLines = doc.splitTextToSize(INSTITUTE_NAME, 90); 
-            doc.text(titleLines, 52.5, y, {align: "center"}); y += (titleLines.length * 6); 
+            doc.text(titleLines, 52.5, y, {align: "center"}); 
+            y += (titleLines.length * 5) + 2; 
             
-            doc.setFontSize(12); doc.setFont("helvetica", "normal"); doc.text("PAYMENT RECEIPT", 52.5, y, {align: "center"}); doc.line(30, y+1, 75, y+1); y += 15; 
-            doc.setFontSize(10); const lineH = 8; 
+            // Receipt Label
+            doc.setFontSize(11); doc.setFont("helvetica", "normal"); 
+            doc.text("PAYMENT RECEIPT", 52.5, y, {align: "center"}); 
+            doc.setLineWidth(0.2);
+            doc.line(30, y+1, 75, y+1); 
+            y += 10; 
             
-            doc.text(`Receipt No:`, 10, y); 
+            // --- Details Section (Aligned Beautifully) ---
+            const labelX = 12;      // Labels start position
+            const valueX = 48;      // Values start position (Perfect alignment)
+            const lineH = 7;        // Spacing between lines
+            
+            doc.setFontSize(10); 
+            
+            // Receipt No
+            doc.setFont("helvetica", "normal"); doc.text(`Receipt No:`, labelX, y); 
             const rNo = feeRecord.receiptNo || "LEGACY-" + Math.floor(new Date(feeRecord.date).getTime()/10000).toString().slice(-4);
-            doc.text(`${rNo}`, 40, y); y += lineH; 
+            doc.setFont("helvetica", "bold"); doc.text(`${rNo}`, valueX, y); 
+            y += lineH; 
             
-            doc.text(`Date:`, 10, y); 
+            // Date
+            doc.setFont("helvetica", "normal"); doc.text(`Date:`, labelX, y); 
             const paymentDate = feeRecord.date ? new Date(feeRecord.date).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN');
-            doc.text(`${paymentDate}`, 40, y); 
+            doc.setFont("helvetica", "bold"); doc.text(`${paymentDate}`, valueX, y); 
+            y += lineH; 
             
-            y += lineH; doc.text(`Student Name:`, 10, y); doc.setFont("helvetica", "bold"); doc.text(student.name, 40, y); doc.setFont("helvetica", "normal"); y += lineH; doc.text(`Class:`, 10, y); doc.text(student.class || 'N/A', 40, y); y += lineH; doc.text(`Month:`, 10, y); doc.setFont("helvetica", "bold"); doc.text(formatMonthYear(monthStr), 40, y); doc.setFont("helvetica", "normal"); y += lineH; doc.text(`Payment Mode:`, 10, y); doc.text(feeRecord.mode || 'Cash', 40, y); y += lineH; if (feeRecord.transactionId) { doc.text(`Txn ID:`, 10, y); doc.text(feeRecord.transactionId, 40, y); y += lineH; } y += 5; doc.setFontSize(12); doc.text(`Amount Received:`, 10, y); doc.setFontSize(16); doc.setFont("helvetica", "bold"); doc.text(`Rs. ${feeRecord.amount}/-`, 50, y); y += 20; if (authorizedSignature) { doc.addImage(authorizedSignature, 'PNG', 50, y - 15, 40, 15); } doc.setFontSize(9); doc.setFont("helvetica", "italic"); doc.text(`Authorized Signature`, 70, y, {align:"center"}); doc.text(`(${MY_NAME})`, 70, y+5, {align:"center"}); const fileName = `Receipt_${student.name.replace(/\s+/g, '_')}_${monthStr}.pdf`; if (navigator.canShare && navigator.share) { const pdfBlob = doc.output('blob'); const file = new File([pdfBlob], fileName, { type: 'application/pdf' }); if (navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], title: 'Fee Receipt', text: `Payment receipt for ${student.name}` }); } catch (err) { doc.save(fileName); } } else { doc.save(fileName); } } else { doc.save(fileName); } }
-        async function generateIDCard() { const name = document.getElementById('modalStudentName').textContent; const serial = document.getElementById('modalSerialNo').textContent; const student = students.find(s => s.serial_no == serial); if (!student) return; const issueDateInput = document.getElementById('idCardIssueDate').value; const endDateInput = document.getElementById('idCardEndDate').value; const issueDateStr = issueDateInput ? new Date(issueDateInput).toLocaleDateString('en-IN') : 'N/A'; const endDateStr = endDateInput ? new Date(endDateInput).toLocaleDateString('en-IN') : null; const dobStr = student.dob ? new Date(student.dob).toLocaleDateString('en-IN') : '-'; const { jsPDF } = window.jspdf; const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [86, 54] }); doc.setFillColor(24, 90, 157); doc.rect(0, 0, 30, 54, 'F'); if (student.photo) { doc.addImage(student.photo, 'JPEG', 5, 12, 20, 20); } else { doc.setFillColor(200, 200, 200); doc.circle(15, 22, 10, 'F'); doc.setFontSize(8); doc.text("No Photo", 15, 22, {align: 'center'}); } if (instituteLogo) { doc.saveGraphicsState(); doc.setGState(new doc.GState({ opacity: 0.1 })); doc.addImage(instituteLogo, 'JPEG', 40, 9, 36, 36); doc.restoreGraphicsState(); } doc.setTextColor(0, 0, 0); doc.setFontSize(7); doc.setFont("helvetica", "bold"); const headerLines = doc.splitTextToSize(INSTITUTE_NAME, 50); doc.text(headerLines, 58, 5, {align: "center"}); doc.setDrawColor(24, 90, 157); doc.line(35, 12, 80, 12); let yText = 16; const labelX = 35; const valX = 48; doc.setFontSize(7); doc.setFont("helvetica", "bold"); doc.text("Name:", labelX, yText); doc.setFont("helvetica", "normal"); doc.text(student.name, valX, yText); yText += 3.5; doc.setFont("helvetica", "bold"); doc.text("ID No:", labelX, yText); doc.setFont("helvetica", "normal"); doc.text(student.serial_no.toString(), valX, yText); yText += 3.5; doc.setFont("helvetica", "bold"); doc.text("Class:", labelX, yText); doc.setFont("helvetica", "normal"); doc.text(student.class || '-', valX, yText); yText += 3.5; doc.setFont("helvetica", "bold"); doc.text("Phone:", labelX, yText); doc.setFont("helvetica", "normal"); doc.text(student.phone || '-', valX, yText); yText += 3.5; doc.setFont("helvetica", "bold"); doc.text("Addr:", labelX, yText); doc.setFont("helvetica", "normal"); const addrLines = doc.splitTextToSize(student.address || '-', 35); doc.text(addrLines, valX, yText); yText += (addrLines.length * 3) + 1; doc.setFont("helvetica", "bold"); doc.text("DOB:", labelX, yText); doc.setFont("helvetica", "normal"); doc.text(dobStr, valX, yText); yText += 3.5; doc.setFontSize(6); doc.setFont("helvetica", "bold"); let validText = `Issued: ${issueDateStr}`; if (endDateStr) validText += ` | Valid: ${endDateStr}`; doc.text(validText, 35, yText); if (authorizedSignature) { doc.addImage(authorizedSignature, 'PNG', 65, 38, 18, 6); } doc.setFontSize(6); doc.setFont("helvetica", "bold"); doc.text("Auth. Signature:", 83, 44, {align: "right"}); doc.setFont("helvetica", "italic"); doc.text("Srikanta Banerjee", 83, 47, {align: "right"}); doc.setFillColor(67, 206, 162); doc.rect(30, 49, 56, 5, 'F'); doc.setTextColor(255, 255, 255); doc.setFontSize(6); doc.setFont("helvetica", "bold"); doc.text("AUTHORIZED STUDENT CARD", 58, 52.5, {align: "center"}); const fileName = `ID_Card_${student.name}.pdf`; if (navigator.canShare && navigator.share) { const pdfBlob = doc.output('blob'); const file = new File([pdfBlob], fileName, { type: 'application/pdf' }); if (navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], title: 'Student ID Card', text: `ID Card for ${student.name}` }); } catch (err) { doc.save(fileName); } } else { doc.save(fileName); } } else { doc.save(fileName); } }
+            // Name
+            doc.setFont("helvetica", "normal"); doc.text(`Student Name:`, labelX, y); 
+            doc.setFont("helvetica", "bold"); doc.text(student.name, valueX, y); 
+            y += lineH; 
+            
+            // Class
+            doc.setFont("helvetica", "normal"); doc.text(`Class/Instrument:`, labelX, y); 
+            doc.setFont("helvetica", "bold"); doc.text(student.class || 'N/A', valueX, y); 
+            y += lineH; 
+            
+            // Month
+            doc.setFont("helvetica", "normal"); doc.text(`Fees For Month:`, labelX, y); 
+            doc.setFont("helvetica", "bold"); doc.text(formatMonthYear(monthStr), valueX, y); 
+            y += lineH; 
+            
+            // Mode
+            doc.setFont("helvetica", "normal"); doc.text(`Payment Mode:`, labelX, y); 
+            doc.setFont("helvetica", "bold"); doc.text(feeRecord.mode || 'Cash', valueX, y); 
+            y += lineH; 
+            
+            // Transaction ID (with multiline support)
+            if (feeRecord.transactionId) { 
+                doc.setFont("helvetica", "normal"); doc.text(`Transaction ID:`, labelX, y); 
+                doc.setFont("helvetica", "bold"); 
+                const txnLines = doc.splitTextToSize(feeRecord.transactionId, 50); // Wrap text if too long
+                doc.text(txnLines, valueX, y); 
+                y += (txnLines.length * 5) + 2; 
+            } else {
+                y += 2;
+            }
+            
+            // Amount Box
+            y += 2;
+            doc.setDrawColor(200); doc.setFillColor(245, 247, 250);
+            doc.rect(10, y, 85, 12, 'FD'); // Light gray box
+            doc.setTextColor(0);
+            doc.setFontSize(11); doc.setFont("helvetica", "normal"); 
+            doc.text(`Amount Received:`, 15, y+8); 
+            doc.setFontSize(14); doc.setFont("helvetica", "bold"); 
+            doc.text(`Rs. ${feeRecord.amount}/-`, 90, y+8, {align: 'right'}); 
+            
+            // --- Signature Section (Image ABOVE Name) ---
+            let sigBaseY = 135; // Fixed position near bottom
+            
+            // 1. Signature Image
+            if (authorizedSignature) { 
+                // Image placed ABOVE text (Y - 15)
+                doc.addImage(authorizedSignature, 'PNG', 55, sigBaseY - 16, 35, 12); 
+            } 
+            
+            // 2. Text Labels
+            doc.setFontSize(9); doc.setFont("helvetica", "bold"); 
+            doc.text(`Authorized Signature`, 72, sigBaseY, {align:"center"}); 
+            
+            doc.setFont("helvetica", "italic"); 
+            doc.text(`(${MY_NAME})`, 72, sigBaseY + 4, {align:"center"}); 
 
-        // UPDATED: Logic to hide inactive students
+            // Save/Share Logic
+            const fileName = `Receipt_${student.name.replace(/\s+/g, '_')}_${monthStr}.pdf`; 
+            if (navigator.canShare && navigator.share) { 
+                const pdfBlob = doc.output('blob'); 
+                const file = new File([pdfBlob], fileName, { type: 'application/pdf' }); 
+                if (navigator.canShare({ files: [file] })) { 
+                    try { await navigator.share({ files: [file], title: 'Fee Receipt', text: `Payment receipt for ${student.name}` }); } catch (err) { doc.save(fileName); } 
+                } else { doc.save(fileName); } 
+            } else { doc.save(fileName); } 
+        }
+
+async function generateIDCard() { 
+            const name = document.getElementById('modalStudentName').textContent; 
+            const serial = document.getElementById('modalSerialNo').textContent; 
+            const student = students.find(s => s.serial_no == serial); 
+            if (!student) return; 
+            
+            const issueDateInput = document.getElementById('idCardIssueDate').value; 
+            const endDateInput = document.getElementById('idCardEndDate').value; 
+            const issueDateStr = issueDateInput ? new Date(issueDateInput).toLocaleDateString('en-IN') : 'N/A'; 
+            const endDateStr = endDateInput ? new Date(endDateInput).toLocaleDateString('en-IN') : null; 
+            const dobStr = student.dob ? new Date(student.dob).toLocaleDateString('en-IN') : '-'; 
+            
+            const { jsPDF } = window.jspdf; 
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [86, 54] }); 
+            
+            // Design Layout
+            doc.setFillColor(24, 90, 157); doc.rect(0, 0, 30, 54, 'F'); 
+            
+            // Photo
+            if (student.photo) { doc.addImage(student.photo, 'JPEG', 5, 12, 20, 20); } 
+            else { doc.setFillColor(200, 200, 200); doc.circle(15, 22, 10, 'F'); doc.setFontSize(8); doc.text("No Photo", 15, 22, {align: 'center'}); } 
+            
+            // Watermark Logo
+            if (instituteLogo) { 
+                doc.saveGraphicsState(); doc.setGState(new doc.GState({ opacity: 0.1 })); 
+                doc.addImage(instituteLogo, 'JPEG', 40, 9, 36, 36); 
+                doc.restoreGraphicsState(); 
+            } 
+            
+            // Header
+            doc.setTextColor(0, 0, 0); doc.setFontSize(7); doc.setFont("helvetica", "bold"); 
+            const headerLines = doc.splitTextToSize(INSTITUTE_NAME, 50); 
+            doc.text(headerLines, 58, 5, {align: "center"}); 
+            doc.setDrawColor(24, 90, 157); doc.line(35, 12, 80, 12); 
+            
+            // Details
+            let yText = 16; const labelX = 35; const valX = 48; 
+            doc.setFontSize(7); 
+            
+            const addField = (label, val) => {
+                doc.setFont("helvetica", "bold"); doc.text(label, labelX, yText); 
+                doc.setFont("helvetica", "normal"); doc.text(val, valX, yText); 
+                yText += 3.5;
+            };
+
+            addField("Name:", student.name);
+            addField("ID No:", student.serial_no.toString());
+            addField("Class:", student.class || '-');
+            addField("Phone:", student.phone || '-');
+            
+            // Address Multiline
+            doc.setFont("helvetica", "bold"); doc.text("Addr:", labelX, yText); 
+            doc.setFont("helvetica", "normal"); 
+            const addrLines = doc.splitTextToSize(student.address || '-', 35); 
+            doc.text(addrLines, valX, yText); 
+            yText += (addrLines.length * 3) + 1; 
+            
+            // DOB
+            doc.setFont("helvetica", "bold"); doc.text("DOB:", labelX, yText); 
+            doc.setFont("helvetica", "normal"); doc.text(dobStr, valX, yText); 
+            yText += 3.5; 
+            
+            // Validity
+            doc.setFontSize(6); doc.setFont("helvetica", "bold"); 
+            let validText = `Issued: ${issueDateStr}`; 
+            if (endDateStr) validText += ` | Valid: ${endDateStr}`; 
+            doc.text(validText, 35, yText); 
+
+            // --- Signature Section (Fixed) ---
+            // Image placed explicitly ABOVE the text labels
+            if (authorizedSignature) { 
+                doc.addImage(authorizedSignature, 'PNG', 65, 36, 18, 6); 
+            } 
+            
+            doc.setFontSize(6); doc.setFont("helvetica", "bold"); 
+            doc.text("Auth. Signature:", 83, 43, {align: "right"}); 
+            
+            doc.setFont("helvetica", "italic"); 
+            doc.text("Srikanta Banerjee", 83, 46, {align: "right"}); 
+            
+            // Footer Bar
+            doc.setFillColor(67, 206, 162); doc.rect(30, 49, 56, 5, 'F'); 
+            doc.setTextColor(255, 255, 255); doc.setFontSize(6); doc.setFont("helvetica", "bold"); 
+            doc.text("AUTHORIZED STUDENT CARD", 58, 52.5, {align: "center"}); 
+
+            // Save
+            const fileName = `ID_Card_${student.name}.pdf`; 
+            if (navigator.canShare && navigator.share) { 
+                const pdfBlob = doc.output('blob'); 
+                const file = new File([pdfBlob], fileName, { type: 'application/pdf' }); 
+                if (navigator.canShare({ files: [file] })) { 
+                    try { await navigator.share({ files: [file], title: 'Student ID Card', text: `ID Card for ${student.name}` }); } catch (err) { doc.save(fileName); } 
+                } else { doc.save(fileName); } 
+            } else { doc.save(fileName); } 
+        }
+
         function renderAttendance() { 
             const date = document.getElementById('attendanceDate').value, tableBody = document.querySelector('#attendanceTable tbody'); 
             tableBody.innerHTML = ''; 
             if (!date) return; 
             
-            // Default Time (Visual)
             const timeInput = document.getElementById('attendanceTime');
             if(!timeInput.value) {
                const now = new Date();
@@ -1374,11 +1588,9 @@
             if (status === 'clear') {
                 delete attendance[date][studentId]; 
             } else {
-                // UPDATED: Input Time or Current Time ONLY
                 const timeInput = document.getElementById('attendanceTime').value;
                 let timeToSave = timeInput;
                 
-                // If no manual time, take current system time
                 if (!timeToSave) {
                       const now = new Date();
                       const hours = now.getHours().toString().padStart(2, '0');
@@ -1494,7 +1706,6 @@
                 }); 
             } else { historyList.innerHTML = '<li>No history found.</li>'; } 
             
-            // Populate Filters for Detail View
             const yearSelect = document.getElementById('detailsFilterYear');
             const monthSelect = document.getElementById('detailsFilterMonth');
             yearSelect.innerHTML = ''; monthSelect.innerHTML = '';
