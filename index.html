@@ -156,7 +156,7 @@
         .unpaid { border-left: 5px solid var(--danger) !important; background-color: rgba(239, 68, 68, 0.1) !important; }
         .pending { border-left: 5px solid var(--warning) !important; }
         .has-dues-alert { background-color: rgba(220, 38, 38, 0.1) !important; border-left: 5px solid #dc2626 !important; }
-        .inactive-student { opacity: 0.6; filter: grayscale(100%); background: var(--bg-input) !important; }
+        .inactive-student { opacity: 0.8; filter: grayscale(100%); background: var(--bg-input) !important; border: 1px solid var(--border-color); }
         
         .student-cell { display: flex; align-items: center; width: 100%; }
         .student-thumb { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; margin-right: 15px; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex-shrink: 0; }
@@ -212,6 +212,7 @@
     </style>
 </head>
 <body>
+
     <div id="securityOverlay">
         <span class="close-pin" onclick="closePinScreen()" style="position: absolute; top: 30px; right: 20px; font-size: 30px; opacity: 0.7;">&times;</span>
         <div style="font-size: 20px; letter-spacing: 2px; margin-bottom: 20px; opacity: 0.9;">ENTER PIN</div>
@@ -332,8 +333,29 @@
                 </div>
                 <button class="btn-success" onclick="addStudent()" style="width: 100%; margin-top: 10px;">Save Student</button>
             </div>
-            <div class="search-bar"><input type="search" id="searchStudents" onkeyup="searchTable('searchStudents', 'studentListTable')" placeholder="Search student by Name, Address..."></div>
-            <table id="studentListTable"><thead><tr><th>ID</th><th>Details</th><th>Class</th><th>Fee</th><th>Contact</th><th>Status</th><th>Actions</th></tr></thead><tbody id="allStudentsList"></tbody></table>
+            
+            <div class="search-bar">
+                <input type="search" id="searchStudents" onkeyup="filterStudentLists()" placeholder="Search student by Name, Address...">
+            </div>
+
+            <div style="display: flex; margin-bottom: 15px; background: var(--bg-input); border-radius: 8px; padding: 5px; border: 1px solid var(--border-color);">
+                <button id="btnShowActive" onclick="switchStudentView('active')" style="flex: 1; border: none; background: var(--primary); color: white; padding: 10px; border-radius: 6px; font-size: 13px; margin-right: 5px;">Active Students</button>
+                <button id="btnShowInactive" onclick="switchStudentView('inactive')" style="flex: 1; border: none; background: transparent; color: var(--text-muted); padding: 10px; border-radius: 6px; font-size: 13px;">Inactive Students</button>
+            </div>
+
+            <div id="activeStudentsContainer">
+                <table id="activeStudentsTable">
+                    <thead><tr><th>ID</th><th>Details</th><th>Class</th><th>Fee</th><th>Contact</th><th>Status</th><th>Actions</th></tr></thead>
+                    <tbody id="activeStudentsList"></tbody>
+                </table>
+            </div>
+
+            <div id="inactiveStudentsContainer" style="display: none;">
+                <table id="inactiveStudentsTable" style="opacity: 0.9;">
+                    <thead><tr><th>ID</th><th>Details</th><th>Class</th><th>Fee</th><th>Contact</th><th>Status</th><th>Actions</th></tr></thead>
+                    <tbody id="inactiveStudentsList"></tbody>
+                </table>
+            </div>
         </div>
 
         <div id="dashboard" class="tab-content">
@@ -636,25 +658,22 @@
         function dbClear() { return new Promise((resolve, reject) => { const transaction = db.transaction([STORE_NAME], 'readwrite'); const store = transaction.objectStore(STORE_NAME); const request = store.clear(); request.onsuccess = () => resolve(); request.onerror = () => reject(request.error); }); }
         
         let lastCheckedDate = new Date().toDateString();
-
         function startClock() {
             setInterval(() => {
                 const now = new Date();
                 const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
                 document.getElementById('liveClock').textContent = now.toLocaleString('en-IN', options);
-
                 const currentDateString = now.toDateString();
                 if (currentDateString !== lastCheckedDate) {
                     lastCheckedDate = currentDateString;
                     document.getElementById('attendanceDate').valueAsDate = now;
                     const currentMonthStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
                     if(document.getElementById('feeMonth').value !== currentMonthStr) {
-                          document.getElementById('feeMonth').value = currentMonthStr;
-                          renderFees();
+                        document.getElementById('feeMonth').value = currentMonthStr;
+                        renderFees();
                     }
                     renderAttendance();
                 }
-
             }, 1000);
         }
 
@@ -669,13 +688,11 @@
             localStorage.setItem('app_theme', newTheme);
             updateThemeButton(newTheme);
         }
-
         function loadTheme() {
             const savedTheme = localStorage.getItem('app_theme') || 'light';
             document.body.setAttribute('data-theme', savedTheme);
             updateThemeButton(savedTheme);
         }
-
         function updateThemeButton(theme) {
             const btn = document.getElementById('themeToggleBtn');
             if(btn) {
@@ -715,6 +732,8 @@
             document.getElementById('compMonth1').value = prevMonthStr;
             document.getElementById('compMonth2').value = currentMonthStr;
 
+            toggleReportInputs(); 
+
             try {
                 const sData = await dbGet('students'); 
                 students = (sData || []).map(migrateStudentData); 
@@ -748,6 +767,7 @@
         let authorizedSignature = null;
         let analyticsChartInstance = null; 
         let currentlyViewingStudentId = null; 
+        let currentStudentView = 'active'; // 'active' or 'inactive'
         
         let dismissedBirthdays = JSON.parse(sessionStorage.getItem('dismissedBirthdays')) || [];
 
@@ -876,6 +896,7 @@
                 window.open(`mailto:${student.email}?subject=${encodeURIComponent("Welcome to Music Classes")}&body=${encodeURIComponent(msgBody)}`, '_self');
             }
         }
+
         async function addStudent() { 
             const name = document.getElementById('studentName').value; const className = document.getElementById('studentClass').value; const day = document.getElementById('studentDay').value; const time = document.getElementById('studentTime').value; const fee = parseFloat(document.getElementById('studentFee').value) || DEFAULT_FEE; const email = document.getElementById('studentEmail').value; const guardian = document.getElementById('guardianName').value; const phone = document.getElementById('phone').value; const address = document.getElementById('address').value; const dob = document.getElementById('studentDOB').value; 
             if (name.trim() === '') { Swal.fire('Error', 'Name is required.', 'error'); return; } 
@@ -998,8 +1019,10 @@
                 </div>
             </div>`; 
         }
+
         function isMonthDue(monthStr) { const now = new Date(); now.setHours(0,0,0,0); const [year, month] = monthStr.split('-').map(Number); const firstDayOfMonth = new Date(year, month - 1, 1); if (firstDayOfMonth > now) return false; const currentYear = now.getFullYear(), currentMonthIndex = now.getMonth(), currentDay = now.getDate(); if (year < currentYear) return true; if (year === currentYear && month - 1 < currentMonthIndex) return true; return year === currentYear && month - 1 === currentMonthIndex && currentDay > DUE_DATE; }
         function formatMonthYear(monthStr) { const [year, month] = monthStr.split('-'); const date = new Date(year, month - 1); return date.toLocaleString('en-US', { month: 'long', year: 'numeric' }); }
+        
         function getContactButtons(studentId, month) { const student = students.find(s => s.id === studentId); if (!student) return 'N/A'; let b = ''; const isDue = month && isMonthDue(month) && wasStudentActiveDuringMonth(student, month) && !(fees[month]?.[student.id]?.status === 'paid'); if (student.phone || student.email) { if(isDue) { b += `<button class="btn-whatsapp" onclick="sendMsg('wa', ${student.id}, '${month}')">WhatsApp</button>`; b += `<button class="btn-sms" onclick="sendMsg('sms', ${student.id}, '${month}')">SMS</button>`; b += `<button class="btn-mail" onclick="sendMsg('mail', ${student.id}, '${month}')">Email</button>`; b += `<a href="tel:${student.phone}" class="btn-like btn-call">Call</a>`; } else { b += `<a href="tel:${student.phone}" class="btn-like btn-call">Call</a>`; } } return b || 'N/A'; }
         function getAllContactButtons(student) { let b = ''; if (student.phone) { b += `<a href="tel:${student.phone}" class="btn-like btn-call">Call</a>`; b += `<button class="btn-whatsapp" onclick="sendGeneralMsg('wa', ${student.id})">WhatsApp</button>`; b += `<button class="btn-sms" onclick="sendGeneralMsg('sms', ${student.id})">SMS</button>`; } if (student.email) { b += `<button class="btn-mail" onclick="sendGeneralMsg('mail', ${student.id})">Mail</button>`; } return b || 'N/A'; }
         
@@ -1096,7 +1119,6 @@
             const defaulters = students.filter(s => s.status?.isActive).map(s => { return { student: s, months: getDueMonthsList(s.id) }; }).filter(item => item.months.length > 0); 
             
             defaulters.sort((a, b) => b.months.length - a.months.length);
-
             if (defaulters.length === 0) { dueMessageEl.textContent = "No pending dues."; } else { dueMessageEl.textContent = `(${defaulters.length}) students have pending dues.`; defaulters.forEach(item => { const monthsStr = item.months.join(", "); const studentHtml = getStudentHtml(item.student); const dueDisplay = `<div style="margin-top:5px; font-size:11px; color:#dc2626; font-weight:600; line-height:1.4;">Due: ${monthsStr}</div>`; const latestDueMonth = item.months.length > 0 ? getMonthStrFromFormat(item.months[0]) : currentMonthStr; dueTableBody.innerHTML += `<tr><td>${studentHtml}${dueDisplay}</td><td class="action-buttons">${getContactButtons(item.student.id, latestDueMonth)}</td></tr>`; }); }
             
             const ctx = document.getElementById('financeChart').getContext('2d'); if (financeChartInstance) financeChartInstance.destroy(); financeChartInstance = new Chart(ctx, { type: 'doughnut', data: { labels: ['Collected', 'Due'], datasets: [{ data: [monthlyCollected, monthlyDueAmount], backgroundColor: ['#28a745', '#dc3545'], hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: getComputedStyle(document.body).getPropertyValue('--text-main') } }, title: { display: true, text: `Summary for ${formatMonthYear(currentMonthStr)}`, color: getComputedStyle(document.body).getPropertyValue('--text-main') } } } });
@@ -1104,14 +1126,17 @@
 
         function getMonthStrFromFormat(formattedMonth) { const parts = formattedMonth.split(' '); if (parts.length !== 2) return null; const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]; const monthIndex = monthNames.findIndex(name => name === parts[0]); if (monthIndex === -1) return null; const month = (monthIndex + 1).toString().padStart(2, '0'); const year = parts[1]; return `${year}-${month}`; }
         function addWatermarkAndSignatureToPdf(doc) { const pageCount = doc.getNumberOfPages(); const pageWidth = doc.internal.pageSize.getWidth(); const pageHeight = doc.internal.pageSize.getHeight(); for (let i = 1; i <= pageCount; i++) { doc.setPage(i); if (instituteLogo) { doc.saveGraphicsState(); doc.setGState(new doc.GState({ opacity: 0.1 })); const imgSize = Math.min(pageWidth, pageHeight) * 0.85; const x = (pageWidth - imgSize) / 2; const y = (pageHeight - imgSize) / 2; doc.addImage(instituteLogo, 'JPEG', x, y, imgSize, imgSize); doc.restoreGraphicsState(); } const sigY = pageHeight - 35; if (authorizedSignature) { doc.addImage(authorizedSignature, 'PNG', pageWidth - 55, sigY, 40, 15); } doc.setFontSize(10); doc.setFont("helvetica", "italic"); doc.text("Authorized Signature", pageWidth - 15, sigY + 20, { align: "right" }); doc.text("(Srikanta Banerjee)", pageWidth - 15, sigY + 25, { align: "right" }); } }
+
         function exportStudentDetailsAsPDF(studentId) { const student = students.find(s => s.id === studentId); if (!student) return; const { jsPDF } = window.jspdf; const doc = new jsPDF(); let y = 15; const addLine = (text, size, weight, margin) => { doc.setFontSize(size); doc.setFont('helvetica', weight); doc.text(text, 15, y); y += margin; if (y > 280) { doc.addPage(); y = 15; } }; doc.setFontSize(22); doc.setFont('helvetica', 'bold'); doc.text(`${INSTITUTE_NAME}`, 105, y, { align: 'center' }); y += 8; if (student.photo) { doc.addImage(student.photo, 'JPEG', 160, 15, 30, 30); } doc.setFontSize(14); doc.text('Student Report', 105, y, { align: 'center' }); y += 12; addLine(`Student Name: ${student.name}`, 16, 'bold', 8); addLine(`Serial No: ${student.serial_no}`, 11, 'normal', 6); addLine(`Class: ${student.class || 'N/A'}`, 11, 'normal', 6); addLine(`Monthly Fee: ₹${student.fee_amount || DEFAULT_FEE}`, 11, 'normal', 6); addLine(`Joining Date: ${new Date(student.joining_date).toLocaleDateString('en-IN')}`, 11, 'normal', 10); addLine('Contact Information', 14, 'bold', 8); addLine(`Guardian: ${student.guardian || 'N/A'}`, 11, 'normal', 6); addLine(`Phone: ${student.phone || 'N/A'}`, 11, 'normal', 6); addLine(`Email: ${student.email || 'N/A'}`, 11, 'normal', 6); addLine(`Address: ${student.address || 'N/A'}`, 11, 'normal', 10); addLine('Status History', 14, 'bold', 8); if (student.status.history && student.status.history.length > 0) { student.status.history.forEach(entry => { addLine(`${entry.status} on ${new Date(entry.date).toLocaleDateString('en-IN')} - Note: ${entry.note || 'N/A'}`, 10, 'normal', 6); }); } else { addLine('No status history found.', 10, 'italic', 6); } y += 4; addLine('Fee Payment History', 14, 'bold', 8); let feesFound = false; Object.keys(fees).sort().forEach(month => { if(wasStudentActiveDuringMonth(student, month)) { const feeRecord = fees[month]?.[student.id]; if (feeRecord?.status === 'paid') { addLine(`${month}: ₹${feeRecord.amount} (Paid on ${new Date(feeRecord.date).toLocaleDateString('en-IN')} - ${feeRecord.mode || 'Cash'} ${feeRecord.transactionId ? '- Txn: '+feeRecord.transactionId : ''})`, 10, 'normal', 6); feesFound = true; } else if (isMonthDue(month)) { addLine(`${month}: Due`, 10, 'normal', 6); feesFound = true; } } }); if (!feesFound) { addLine('No records found.', 10, 'italic', 6); } y += 4; addLine('Attendance Summary & Details', 14, 'bold', 8); let presentDates = [], absentDates = []; Object.keys(attendance).sort().reverse().forEach(date => { const entry = attendance[date]?.[student.id]; if (entry) { const status = (typeof entry === 'object' && entry !== null) ? entry.status : entry; const d = new Date(date); const formattedDate = `${d.toLocaleDateString('en-IN')} (${d.toLocaleDateString('en-IN', {weekday: 'long'})})`; if (status === 'present') presentDates.push(formattedDate); if (status === 'absent') absentDates.push(formattedDate); } }); addLine(`Total Present: ${presentDates.length}`, 11, 'bold', 6); addLine(`Total Absent: ${absentDates.length}`, 11, 'bold', 8); if(presentDates.length > 0) { addLine('Present Days (Recent):', 10, 'bold', 6); presentDates.forEach(d => addLine(`- ${d}`, 9, 'normal', 5)); y+=2; } if(absentDates.length > 0) { addLine('Absent Days (Recent):', 10, 'bold', 6); absentDates.forEach(d => addLine(`- ${d}`, 9, 'normal', 5)); } addWatermarkAndSignatureToPdf(doc); doc.save(`${student.name}_report.pdf`); }
         function calculateMonthStats(monthStr) { let income = 0; let studentCount = 0; if(fees[monthStr]) { Object.values(fees[monthStr]).forEach(record => { if(record.status === 'paid') income += record.amount; }); } students.forEach(student => { if(wasStudentActiveDuringMonth(student, monthStr)) { studentCount++; } }); return { income, studentCount }; }
+
         function updateYearlyChart() { 
             const year1 = document.getElementById('analyticsYear').value; const year2 = document.getElementById('compareYear').value; if(!year1) return; const labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]; const inc1 = []; const stu1 = []; let sumInc1 = 0; let sumStu1 = 0; for(let i=1; i<=12; i++) { const m = `${year1}-${i.toString().padStart(2, '0')}`; const s = calculateMonthStats(m); inc1.push(s.income); stu1.push(s.studentCount); sumInc1 += s.income; sumStu1 += s.studentCount; } const avgInc1 = sumInc1 / 12; const avgStu1 = sumStu1 / 12; const statsDiv = document.getElementById('yearlyAverages'); let statsHtml = `<div><h4>Avg Income (${year1})</h4><p class="summary-collected">₹${avgInc1.toFixed(0)}</p></div><div><h4>Avg Students (${year1})</h4><p class="summary-total" style="color:var(--text-main);">${Math.round(avgStu1)}</p></div>`; const datasets = [ { label: `Income ${year1}`, data: inc1, backgroundColor: 'rgba(16, 185, 129, 0.6)', borderColor: '#10b981', borderWidth: 1, type: 'bar', yAxisID: 'y' }, { label: `Students ${year1}`, data: stu1, borderColor: '#3b82f6', borderWidth: 2, type: 'line', tension: 0.3, yAxisID: 'y1' } ]; 
             if (year2) { const inc2 = []; const stu2 = []; let sumInc2 = 0; let sumStu2 = 0; for(let i=1; i<=12; i++) { const m = `${year2}-${i.toString().padStart(2, '0')}`; const s = calculateMonthStats(m); inc2.push(s.income); stu2.push(s.studentCount); sumInc2 += s.income; sumStu2 += s.studentCount; } const avgInc2 = sumInc2 / 12; const avgStu2 = sumStu2 / 12; statsHtml += `<div><h4>Avg Income (${year2})</h4><p class="summary-collected">₹${avgInc2.toFixed(0)}</p></div><div><h4>Avg Students (${year2})</h4><p class="summary-total" style="color:var(--text-main);">${Math.round(avgStu2)}</p></div>`; datasets.push({ label: `Income ${year2}`, data: inc2, backgroundColor: 'rgba(239, 68, 68, 0.6)', borderColor: '#ef4444', borderWidth: 1, type: 'bar', yAxisID: 'y' }); datasets.push({ label: `Students ${year2}`, data: stu2, borderColor: '#f97316', borderWidth: 2, type: 'line', tension: 0.3, pointRadius: 3, yAxisID: 'y1' }); } 
             statsDiv.innerHTML = statsHtml; statsDiv.style.display = 'flex'; 
             const ctx = document.getElementById('yearlyChart').getContext('2d'); if(analyticsChartInstance) analyticsChartInstance.destroy(); analyticsChartInstance = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: datasets }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { position: 'bottom', labels: { color: getComputedStyle(document.body).getPropertyValue('--text-main') } }, title: { display: true, text: year2 ? `${year1} vs ${year2}` : `Overview ${year1}`, color: getComputedStyle(document.body).getPropertyValue('--text-main') } }, scales: { y: { beginAtZero: true, position: 'left', title: {display:true, text:'Income (₹)', color: getComputedStyle(document.body).getPropertyValue('--text-muted')}, ticks: { color: getComputedStyle(document.body).getPropertyValue('--text-muted') } }, y1: { beginAtZero: true, position: 'right', grid: {drawOnChartArea: false}, title: {display:true, text:'Students', color: getComputedStyle(document.body).getPropertyValue('--text-muted')}, ticks: { color: getComputedStyle(document.body).getPropertyValue('--text-muted') } }, x: { ticks: { color: getComputedStyle(document.body).getPropertyValue('--text-muted') } } } } }); 
         }
+
         function comparePeriods() { const m1 = document.getElementById('compMonth1').value; const m2 = document.getElementById('compMonth2').value; if(!m1 || !m2) { return; } const s1 = calculateMonthStats(m1); const s2 = calculateMonthStats(m2); document.getElementById('compIncome1').textContent = `₹${s1.income}`; document.getElementById('compIncome2').textContent = `₹${s2.income}`; document.getElementById('compStudent1').textContent = s1.studentCount; document.getElementById('compStudent2').textContent = s2.studentCount; const incDiff = s2.income - s1.income; const stuDiff = s2.studentCount - s1.studentCount; const incDiffEl = document.getElementById('compIncomeDiff'); incDiffEl.innerHTML = incDiff > 0 ? `<i class="fas fa-arrow-up"></i> ₹${incDiff}` : (incDiff < 0 ? `<i class="fas fa-arrow-down"></i> ₹${Math.abs(incDiff)}` : '-'); incDiffEl.className = 'comp-diff ' + (incDiff >= 0 ? 'diff-up' : 'diff-down'); const stuDiffEl = document.getElementById('compStudentDiff'); stuDiffEl.innerHTML = stuDiff > 0 ? `<i class="fas fa-arrow-up"></i> ${stuDiff}` : (stuDiff < 0 ? `<i class="fas fa-arrow-down"></i> ${Math.abs(stuDiff)}` : '-'); stuDiffEl.className = 'comp-diff ' + (stuDiff >= 0 ? 'diff-up' : 'diff-down'); document.getElementById('comparisonResults').style.display = 'block'; }
         
         function exportDashboardPDF() { 
@@ -1138,6 +1163,93 @@
             
             const classCounts = activeStudents.reduce((acc, student) => { const className = student.class || 'Unassigned'; acc[className] = (acc[className] || 0) + 1; return acc; }, {}); 
             const { jsPDF } = window.jspdf; const doc = new jsPDF(); let y = 20; doc.setFontSize(18); doc.setFont("helvetica", "bold"); doc.text(INSTITUTE_NAME, 105, y, {align: "center"}); y += 10; doc.setFontSize(14); doc.text("Complete Dashboard Report", 105, y, {align: "center"}); y += 8; doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.text(`Generated: ${new Date().toLocaleDateString('en-IN')}`, 105, y, {align: "center"}); y += 15; doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.text("Student Statistics", 15, y); y += 7; doc.setFontSize(11); doc.setFont("helvetica", "normal"); doc.text(`Total Students: ${students.length}`, 20, y); y += 6; doc.text(`Active Students: ${activeStudents.length}`, 20, y); y += 6; doc.text(`Inactive Students: ${students.length - activeStudents.length}`, 20, y); y += 12; doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.text("Financial Overview", 15, y); y += 7; doc.setFontSize(11); doc.setFont("helvetica", "normal"); doc.text(`Current Month (${formatMonthYear(currentMonthStr)}) Collected: Rs. ${monthlyCollected}`, 20, y); y += 6; doc.text(`Current Month Due: Rs. ${monthlyDueAmount}`, 20, y); y += 6; doc.text(`Yearly Collected: Rs. ${yearlyCollected}`, 20, y); y += 6; doc.text(`Yearly Due: Rs. ${yearlyDueAmount}`, 20, y); y += 12; doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.text("Class Strength", 15, y); y += 7; doc.setFontSize(11); doc.setFont("helvetica", "normal"); Object.entries(classCounts).sort().forEach(([className, count]) => { doc.text(`${className}: ${count} students`, 20, y); y += 6; }); addWatermarkAndSignatureToPdf(doc); doc.save(`Dashboard_Full_Report_${currentMonthStr}.pdf`); 
+        }
+
+        // --- UPDATED REPORT FUNCTIONS START HERE ---
+
+        function toggleReportInputs() {
+            const type = document.getElementById('reportType').value;
+            if(type === 'monthly') {
+                document.getElementById('reportMonth-group').style.display = 'block';
+                document.getElementById('reportYear-group').style.display = 'none';
+            } else {
+                document.getElementById('reportMonth-group').style.display = 'none';
+                document.getElementById('reportYear-group').style.display = 'block';
+            }
+        }
+
+        function showYearlyBreakdown(type, year) {
+            const list = [];
+
+            students.forEach(student => {
+                let studentTotal = 0;
+                let detailsList = [];
+                let isActiveInYear = false;
+
+                for(let i=1; i<=12; i++) {
+                    const monthStr = `${year}-${i.toString().padStart(2, '0')}`;
+                    const monthName = new Date(year, i-1).toLocaleString('default', { month: 'short' });
+                    
+                    if (wasStudentActiveDuringMonth(student, monthStr)) {
+                        isActiveInYear = true;
+                        
+                        if (type === 'collected') {
+                            const feeRecord = fees[monthStr]?.[student.id];
+                            if (feeRecord?.status === 'paid') {
+                                studentTotal += feeRecord.amount;
+                                detailsList.push(monthName);
+                            }
+                        } else if (type === 'due') {
+                            if (fees[monthStr]?.[student.id]?.status !== 'paid' && isMonthDue(monthStr)) {
+                                const fee = student.fee_amount || DEFAULT_FEE;
+                                studentTotal += fee;
+                                detailsList.push(monthName);
+                            }
+                        }
+                    }
+                }
+
+                if (isActiveInYear && studentTotal > 0) {
+                    list.push({
+                        student: student,
+                        total: studentTotal,
+                        details: detailsList
+                    });
+                }
+            });
+
+            // Sort by amount desc
+            list.sort((a, b) => b.total - a.total);
+
+            // Populate Modal
+            document.getElementById('classStudentsTitle').textContent = type === 'collected' ? `Collected Breakdown (${year})` : `Due Breakdown (${year})`;
+            const tableBody = document.querySelector('#classStudentsTable tbody');
+            const tableHead = document.querySelector('#classStudentsTable thead tr');
+            
+            // Update Headers for this specific view
+            tableHead.innerHTML = `<th>Student</th><th>Total Amount</th><th>Months</th>`;
+            tableBody.innerHTML = '';
+
+            if(list.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px;">No records found.</td></tr>';
+            } else {
+                list.forEach(item => {
+                    const color = type === 'collected' ? 'green' : 'red';
+                    tableBody.innerHTML += `
+                        <tr>
+                            <td>
+                                <strong>${item.student.name}</strong><br>
+                                <span style="font-size:11px; color:var(--text-muted);">
+                                    ${item.student.class || 'N/A'} <span style="color:var(--text-main);">| Fee: ₹${item.student.fee_amount || DEFAULT_FEE}</span>
+                                </span>
+                            </td>
+                            <td style="color:${color}; font-weight:bold;">₹${item.total}</td>
+                            <td style="font-size:11px; line-height:1.4;">${item.details.join(", ")}</td>
+                        </tr>
+                    `;
+                });
+            }
+            document.getElementById('classStudentsModal').style.display = 'flex';
         }
 
         function generateReport() { 
@@ -1195,7 +1307,6 @@
                     let studentTotalPaid = 0; 
                     let dueMonthsList = []; 
                     let hasActivityInYear = false; 
-
                     for(let i=1; i<=12; i++) { 
                         const monthStr = `${year}-${i.toString().padStart(2, '0')}`; 
                         if (wasStudentActiveDuringMonth(student, monthStr)) { 
@@ -1216,10 +1327,22 @@
                     } 
                 }); 
                 
-                summaryEl.innerHTML = `<div><h4>Total Collected</h4><p class="summary-collected">₹${totalCollected}</p></div><div><h4>Total Due</h4><p class="summary-due">₹${totalDue}</p></div>`; 
+                // Updated Summary HTML to be clickable
+                summaryEl.innerHTML = `
+                    <div onclick="showYearlyBreakdown('collected', ${year})" style="cursor:pointer; border:1px solid var(--success);">
+                        <h4>Total Collected <i class="fas fa-list" style="font-size:10px; margin-left:3px;"></i></h4>
+                        <p class="summary-collected">₹${totalCollected}</p>
+                    </div>
+                    <div onclick="showYearlyBreakdown('due', ${year})" style="cursor:pointer; border:1px solid var(--danger);">
+                        <h4>Total Due <i class="fas fa-list" style="font-size:10px; margin-left:3px;"></i></h4>
+                        <p class="summary-due">₹${totalDue}</p>
+                    </div>
+                `; 
             } 
         }
-        
+
+        // --- UPDATED REPORT FUNCTIONS END HERE ---
+
         function exportReportPDF() { 
             const type = document.getElementById('reportType').value; const { jsPDF } = window.jspdf; const doc = new jsPDF(); let y = 20; 
             doc.setFontSize(16); doc.setFont("helvetica", "bold"); doc.text(INSTITUTE_NAME, 105, y, {align: "center"}); y += 10; 
@@ -1282,7 +1405,53 @@
                 addWatermarkAndSignatureToPdf(doc); doc.save(`Yearly_Report_${year}.pdf`); 
             } 
         }
+
         function searchTable(inputId, tableId) { const input = document.getElementById(inputId), filter = input.value.toUpperCase(), table = document.getElementById(tableId), tr = table.getElementsByTagName("tr"); for (let i = 1; i < tr.length; i++) { const rowText = tr[i].textContent || tr[i].innerText; if (rowText.toUpperCase().indexOf(filter) > -1) { tr[i].style.display = ""; } else { tr[i].style.display = "none"; } } }
+        
+        function switchStudentView(view) {
+            currentStudentView = view;
+            const activeBtn = document.getElementById('btnShowActive');
+            const inactiveBtn = document.getElementById('btnShowInactive');
+            const activeDiv = document.getElementById('activeStudentsContainer');
+            const inactiveDiv = document.getElementById('inactiveStudentsContainer');
+
+            if (view === 'active') {
+                activeBtn.style.background = 'var(--primary)';
+                activeBtn.style.color = 'white';
+                inactiveBtn.style.background = 'transparent';
+                inactiveBtn.style.color = 'var(--text-muted)';
+                activeDiv.style.display = 'block';
+                inactiveDiv.style.display = 'none';
+            } else {
+                activeBtn.style.background = 'transparent';
+                activeBtn.style.color = 'var(--text-muted)';
+                inactiveBtn.style.background = 'var(--secondary)';
+                inactiveBtn.style.color = 'white';
+                activeDiv.style.display = 'none';
+                inactiveDiv.style.display = 'block';
+            }
+        }
+
+        function filterStudentLists() {
+            const input = document.getElementById('searchStudents');
+            const filter = input.value.toUpperCase();
+            
+            searchTable('searchStudents', 'activeStudentsTable');
+            searchTable('searchStudents', 'inactiveStudentsTable');
+            
+            const activeDiv = document.getElementById('activeStudentsContainer');
+            const inactiveDiv = document.getElementById('inactiveStudentsContainer');
+            
+            if (filter.length > 0) {
+                // When searching, show BOTH lists so results are visible
+                activeDiv.style.display = 'block';
+                inactiveDiv.style.display = 'block';
+            } else {
+                // Revert to tab view when search is cleared
+                switchStudentView(currentStudentView);
+            }
+        }
+
         async function saveFee() { 
             const studentId = parseInt(document.getElementById('feeStudentId').value); 
             const month = document.getElementById('feeRecordMonth').value; 
@@ -1299,7 +1468,6 @@
             if (!receiptNo) { 
                 receiptNo = Date.now().toString().slice(-6); 
             }
-
             fees[month][studentId] = { status: 'paid', amount, date, mode: mode, transactionId: txnId, receiptNo: receiptNo }; 
             await saveData(); 
             closeModal('feeModal'); 
@@ -1353,7 +1521,8 @@
             document.getElementById('feeSummary').innerHTML = `<div onclick="showFeeBreakdown('collected')"><h4>Collected</h4><p class="summary-collected">₹${totalCollected}</p></div><div onclick="showFeeBreakdown('due')"><h4>Due (${dueCount} students)</h4><p class="summary-due">₹${totalDueAmount}</p></div>`; 
             searchTable('searchFees', 'feeTable'); 
         }
-async function generatePaymentReceipt(studentId, monthStr) { 
+
+        async function generatePaymentReceipt(studentId, monthStr) { 
             const student = students.find(s => s.id === studentId); 
             const feeRecord = fees[monthStr]?.[studentId]; 
             if (!student || !feeRecord) return; 
@@ -1484,7 +1653,7 @@ async function generatePaymentReceipt(studentId, monthStr) {
             } else { doc.save(fileName); } 
         }
 
-async function generateIDCard() { 
+        async function generateIDCard() { 
             const name = document.getElementById('modalStudentName').textContent; 
             const serial = document.getElementById('modalSerialNo').textContent; 
             const student = students.find(s => s.serial_no == serial); 
@@ -1613,13 +1782,17 @@ async function generateIDCard() {
         }
 
         function loadStudentsList() { 
-            const listBody = document.getElementById('allStudentsList'); 
-            listBody.innerHTML = ''; 
+            const activeList = document.getElementById('activeStudentsList');
+            const inactiveList = document.getElementById('inactiveStudentsList');
+            activeList.innerHTML = '';
+            inactiveList.innerHTML = '';
             
             students.forEach(student => { 
                 const statusBtnText = student.status?.isActive ? 'Deactivate' : 'Activate'; 
                 const hasGlobalDue = checkGlobalDues(student.id); 
-                let rowClass = student.status?.isActive ? '' : 'inactive-student'; 
+                
+                let rowClass = '';
+                if (!student.status?.isActive) rowClass = 'inactive-student';
                 if (student.status?.isActive && hasGlobalDue) rowClass += ' has-dues-alert'; 
                 
                 let timeDisplay = ''; 
@@ -1646,10 +1819,14 @@ async function generateIDCard() {
                         <button class="btn-warning" onclick="openEditStudentModal(${student.id})">Edit</button>
                     </td>`;
                 
-                listBody.appendChild(row);
+                if(student.status?.isActive) {
+                    activeList.appendChild(row);
+                } else {
+                    inactiveList.appendChild(row);
+                }
             }); 
         }
-        
+
         function markAttendance(studentId, status) {
             const date = document.getElementById('attendanceDate').value; 
             if (!date) { Swal.fire('Alert','Please select a date.', 'warning'); return; } 
@@ -1668,11 +1845,11 @@ async function generateIDCard() {
                       const mins = now.getMinutes().toString().padStart(2, '0');
                       timeToSave = `${hours}:${mins}`;
                 }
-
                 attendance[date][studentId] = { status: status, time: timeToSave }; 
             }
             saveData().then(() => renderAttendance()); 
         }
+
         function unmarkFee(studentId, month) { 
             Swal.fire({ title: 'Unmark Payment?', text: "Mark fee as unpaid?", icon: 'warning', showCancelButton: true, confirmButtonText: 'Yes' }).then(async (result) => { 
                 if (result.isConfirmed && fees[month]?.[studentId]) { 
@@ -1751,7 +1928,6 @@ async function generateIDCard() {
             const student = students.find(s => s.id === studentId); 
             if (!student) return; 
             currentlyViewingStudentId = studentId;
-
             document.getElementById('modalStudentName').textContent = student.name; 
             document.getElementById('modalSerialNo').textContent = student.serial_no; 
             document.getElementById('modalClass').textContent = student.class || 'N/A'; 
@@ -1789,7 +1965,6 @@ async function generateIDCard() {
                 opt.value = y; opt.text = y;
                 yearSelect.appendChild(opt);
             }
-
             const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
             monthNames.forEach((m, idx) => {
                 const opt = document.createElement('option');
@@ -1797,7 +1972,6 @@ async function generateIDCard() {
                 if(idx === new Date().getMonth()) opt.selected = true;
                 monthSelect.appendChild(opt);
             });
-
             renderStudentDetailsHistory();
             
             document.getElementById('exportPdfBtn').onclick = () => exportStudentDetailsAsPDF(studentId); 
@@ -1808,10 +1982,8 @@ async function generateIDCard() {
             if(!currentlyViewingStudentId) return;
             const student = students.find(s => s.id === currentlyViewingStudentId);
             if(!student) return;
-
             const selectedYear = parseInt(document.getElementById('detailsFilterYear').value);
             const selectedMonth = parseInt(document.getElementById('detailsFilterMonth').value);
-
             const presentList = document.getElementById('modalPresentList'), absentList = document.getElementById('modalAbsentList'); 
             presentList.innerHTML = absentList.innerHTML = ''; 
             
@@ -1833,7 +2005,6 @@ async function generateIDCard() {
                                 timeStr = ` (${h12}:${m} ${ampm})`;
                             }
                         }
-
                         const formattedDate = `${d.toLocaleDateString('en-IN')} (${dayName})${timeStr}`;
                         
                         if (status === 'present') { presentList.innerHTML += `<li style="padding:2px 0; border-bottom:1px solid #f9f9f9;">${formattedDate}</li>`; } 
@@ -1881,7 +2052,6 @@ async function generateIDCard() {
                 } 
             }) 
         }
-
         function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
         window.onclick = (event) => { if (event.target.classList.contains('modal')) { event.target.style.display = 'none'; } };
     </script>
