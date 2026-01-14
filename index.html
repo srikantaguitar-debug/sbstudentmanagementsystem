@@ -1026,8 +1026,9 @@
         function getContactButtons(studentId, month) { const student = students.find(s => s.id === studentId); if (!student) return 'N/A'; let b = ''; const isDue = month && isMonthDue(month) && wasStudentActiveDuringMonth(student, month) && !(fees[month]?.[student.id]?.status === 'paid'); if (student.phone || student.email) { if(isDue) { b += `<button class="btn-whatsapp" onclick="sendMsg('wa', ${student.id}, '${month}')">WhatsApp</button>`; b += `<button class="btn-sms" onclick="sendMsg('sms', ${student.id}, '${month}')">SMS</button>`; b += `<button class="btn-mail" onclick="sendMsg('mail', ${student.id}, '${month}')">Email</button>`; b += `<a href="tel:${student.phone}" class="btn-like btn-call">Call</a>`; } else { b += `<a href="tel:${student.phone}" class="btn-like btn-call">Call</a>`; } } return b || 'N/A'; }
         function getAllContactButtons(student) { let b = ''; if (student.phone) { b += `<a href="tel:${student.phone}" class="btn-like btn-call">Call</a>`; b += `<button class="btn-whatsapp" onclick="sendGeneralMsg('wa', ${student.id})">WhatsApp</button>`; b += `<button class="btn-sms" onclick="sendGeneralMsg('sms', ${student.id})">SMS</button>`; } if (student.email) { b += `<button class="btn-mail" onclick="sendGeneralMsg('mail', ${student.id})">Mail</button>`; } return b || 'N/A'; }
         
-        function showFeeBreakdown(type) {
-            const selectedMonth = document.getElementById('feeMonth').value;
+        // --- MODIFIED TO ACCEPT OPTIONAL MONTH ARGUMENT ---
+        function showFeeBreakdown(type, specificMonth = null) {
+            const selectedMonth = specificMonth || document.getElementById('feeMonth').value;
             if(!selectedMonth) return;
             const monthIsDue = isMonthDue(selectedMonth);
             
@@ -1044,7 +1045,7 @@
                 list.sort((a, b) => {
                     const dateA = new Date(fees[selectedMonth][a.id].date);
                     const dateB = new Date(fees[selectedMonth][b.id].date);
-                    return dateB - dateA;
+                    return dateB - dateA; // Sort by date Descending (Newest first)
                 });
             } else if (type === 'due') {
                 list.sort((a, b) => {
@@ -1056,6 +1057,10 @@
             
             document.getElementById('classStudentsTitle').textContent = type === 'collected' ? `Paid Students (${formatMonthYear(selectedMonth)})` : `Due Students (${formatMonthYear(selectedMonth)})`;
             const tableBody = document.querySelector('#classStudentsTable tbody');
+            const tableHead = document.querySelector('#classStudentsTable thead tr');
+            
+            // Reset headers if changed by yearly view
+            tableHead.innerHTML = '<th>ID</th><th>Student</th><th>Contact</th>';
             tableBody.innerHTML = '';
             
             if(list.length === 0) {
@@ -1076,8 +1081,92 @@
             document.getElementById('classStudentsModal').style.display = 'flex';
         }
 
-        function showClassStudents(className) { document.getElementById('classStudentsTitle').textContent = `Students in ${className} Class`; const tableBody = document.querySelector('#classStudentsTable tbody'); tableBody.innerHTML = ''; const classStudents = students.filter(s => s.status?.isActive && (s.class || 'Unassigned') === className); classStudents.forEach(s => { tableBody.innerHTML += `<tr><td>${s.serial_no}</td><td>${getStudentHtml(s)}</td><td>${getContactButtons(s.id)}</td></tr>`; }); document.getElementById('classStudentsModal').style.display = 'flex'; }
-        function showCategoryList(type) { const list = students.filter(s => type === 'active' ? s.status?.isActive : !s.status?.isActive); document.getElementById('classStudentsTitle').textContent = type === 'active' ? 'Active Students' : 'Inactive Students'; const tableBody = document.querySelector('#classStudentsTable tbody'); tableBody.innerHTML = ''; if(list.length === 0) { tableBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px;">No students found.</td></tr>'; } else { list.forEach(s => { tableBody.innerHTML += `<tr><td>${s.serial_no}</td><td>${getStudentHtml(s)}</td><td>${getAllContactButtons(s)}</td></tr>`; }); } document.getElementById('classStudentsModal').style.display = 'flex'; }
+        // --- NEW FUNCTION FOR YEARLY BREAKDOWN ---
+        function showYearlyBreakdown(type, year) {
+            let reportData = [];
+            students.forEach(student => {
+                let monthsDetails = [];
+                let studentTotal = 0;
+
+                for(let i=1; i<=12; i++) {
+                     const monthStr = `${year}-${i.toString().padStart(2, '0')}`;
+                     const monthName = new Date(year, i-1).toLocaleString('default', { month: 'short' });
+
+                     if (wasStudentActiveDuringMonth(student, monthStr)) {
+                         if (type === 'collected') {
+                             if (fees[monthStr]?.[student.id]?.status === 'paid') {
+                                 const amt = fees[monthStr][student.id].amount;
+                                 monthsDetails.push(`${monthName}: ₹${amt}`);
+                                 studentTotal += amt;
+                             }
+                         } else if (type === 'due') {
+                             if (isMonthDue(monthStr) && fees[monthStr]?.[student.id]?.status !== 'paid') {
+                                 const amt = student.fee_amount || DEFAULT_FEE;
+                                 monthsDetails.push(`${monthName}: ₹${amt}`);
+                                 studentTotal += amt;
+                             }
+                         }
+                     }
+                }
+
+                if (studentTotal > 0) {
+                    reportData.push({ student, months: monthsDetails, total: studentTotal });
+                }
+            });
+
+            // Sorting logic
+            reportData.sort((a, b) => b.total - a.total);
+
+            const title = type === 'collected' ? `Collected Breakdown (${year})` : `Due Breakdown (${year})`;
+            document.getElementById('classStudentsTitle').textContent = title;
+            const tableBody = document.querySelector('#classStudentsTable tbody');
+            const tableHead = document.querySelector('#classStudentsTable thead tr');
+
+            // Adjust headers for this specific view
+            tableHead.innerHTML = '<th>Student</th><th>Monthly Breakdown</th><th>Total</th>';
+            tableBody.innerHTML = '';
+
+            if(reportData.length === 0) {
+                 tableBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px;">No data found for this year.</td></tr>';
+            } else {
+                reportData.forEach(item => {
+                    const breakdownHtml = item.months.map(m => `<span style="font-size:11px; display:inline-block; background:var(--bg-input); padding:2px 5px; margin:2px; border-radius:4px; border:1px solid var(--border-color);">${m}</span>`).join(' ');
+
+                    tableBody.innerHTML += `
+                        <tr>
+                            <td>${getStudentHtml(item.student)}</td>
+                            <td>${breakdownHtml}</td>
+                            <td style="font-weight:bold; color:${type==='collected'?'var(--success)':'var(--danger)'}">₹${item.total}</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            document.getElementById('classStudentsModal').style.display = 'flex';
+        }
+
+        function showClassStudents(className) { 
+            document.getElementById('classStudentsTitle').textContent = `Students in ${className} Class`; 
+            const tableBody = document.querySelector('#classStudentsTable tbody'); 
+            const tableHead = document.querySelector('#classStudentsTable thead tr');
+            tableHead.innerHTML = '<th>ID</th><th>Student</th><th>Contact</th>'; // Reset Header
+            tableBody.innerHTML = ''; 
+            const classStudents = students.filter(s => s.status?.isActive && (s.class || 'Unassigned') === className); 
+            classStudents.forEach(s => { tableBody.innerHTML += `<tr><td>${s.serial_no}</td><td>${getStudentHtml(s)}</td><td>${getContactButtons(s.id)}</td></tr>`; }); 
+            document.getElementById('classStudentsModal').style.display = 'flex'; 
+        }
+
+        function showCategoryList(type) { 
+            const list = students.filter(s => type === 'active' ? s.status?.isActive : !s.status?.isActive); 
+            document.getElementById('classStudentsTitle').textContent = type === 'active' ? 'Active Students' : 'Inactive Students'; 
+            const tableBody = document.querySelector('#classStudentsTable tbody'); 
+            const tableHead = document.querySelector('#classStudentsTable thead tr');
+            tableHead.innerHTML = '<th>ID</th><th>Student</th><th>Contact</th>'; // Reset Header
+            tableBody.innerHTML = ''; 
+            if(list.length === 0) { tableBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px;">No students found.</td></tr>'; } 
+            else { list.forEach(s => { tableBody.innerHTML += `<tr><td>${s.serial_no}</td><td>${getStudentHtml(s)}</td><td>${getAllContactButtons(s)}</td></tr>`; }); } 
+            document.getElementById('classStudentsModal').style.display = 'flex'; 
+        }
         
         function checkBirthday(dobString) { if (!dobString) return false; const today = new Date(); const dob = new Date(dobString); return today.getDate() === dob.getDate() && today.getMonth() === dob.getMonth(); }
         function updateReminderDay() { const dateVal = document.getElementById('reminderDate').value; if (dateVal) { const date = new Date(dateVal); const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']; document.getElementById('reminderDay').value = days[date.getDay()]; } }
@@ -1178,80 +1267,6 @@
             }
         }
 
-        function showYearlyBreakdown(type, year) {
-            const list = [];
-
-            students.forEach(student => {
-                let studentTotal = 0;
-                let detailsList = [];
-                let isActiveInYear = false;
-
-                for(let i=1; i<=12; i++) {
-                    const monthStr = `${year}-${i.toString().padStart(2, '0')}`;
-                    const monthName = new Date(year, i-1).toLocaleString('default', { month: 'short' });
-                    
-                    if (wasStudentActiveDuringMonth(student, monthStr)) {
-                        isActiveInYear = true;
-                        
-                        if (type === 'collected') {
-                            const feeRecord = fees[monthStr]?.[student.id];
-                            if (feeRecord?.status === 'paid') {
-                                studentTotal += feeRecord.amount;
-                                detailsList.push(monthName);
-                            }
-                        } else if (type === 'due') {
-                            if (fees[monthStr]?.[student.id]?.status !== 'paid' && isMonthDue(monthStr)) {
-                                const fee = student.fee_amount || DEFAULT_FEE;
-                                studentTotal += fee;
-                                detailsList.push(monthName);
-                            }
-                        }
-                    }
-                }
-
-                if (isActiveInYear && studentTotal > 0) {
-                    list.push({
-                        student: student,
-                        total: studentTotal,
-                        details: detailsList
-                    });
-                }
-            });
-
-            // Sort by amount desc
-            list.sort((a, b) => b.total - a.total);
-
-            // Populate Modal
-            document.getElementById('classStudentsTitle').textContent = type === 'collected' ? `Collected Breakdown (${year})` : `Due Breakdown (${year})`;
-            const tableBody = document.querySelector('#classStudentsTable tbody');
-            const tableHead = document.querySelector('#classStudentsTable thead tr');
-            
-            // Update Headers for this specific view
-            tableHead.innerHTML = `<th>Student</th><th>Total Amount</th><th>Months</th>`;
-            tableBody.innerHTML = '';
-
-            if(list.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px;">No records found.</td></tr>';
-            } else {
-                list.forEach(item => {
-                    const color = type === 'collected' ? 'green' : 'red';
-                    tableBody.innerHTML += `
-                        <tr>
-                            <td>
-                                <strong>${item.student.name}</strong><br>
-                                <span style="font-size:11px; color:var(--text-muted);">
-                                    ${item.student.class || 'N/A'} <span style="color:var(--text-main);">| Fee: ₹${item.student.fee_amount || DEFAULT_FEE}</span>
-                                </span>
-                            </td>
-                            <td style="color:${color}; font-weight:bold;">₹${item.total}</td>
-                            <td style="font-size:11px; line-height:1.4;">${item.details.join(", ")}</td>
-                        </tr>
-                    `;
-                });
-            }
-            document.getElementById('classStudentsModal').style.display = 'flex';
-        }
-
         function generateReport() { 
             const type = document.getElementById('reportType').value; 
             const summaryEl = document.getElementById('reportSummary'); 
@@ -1295,45 +1310,77 @@
                     tableBody.innerHTML += `<tr class="${rowClass}"><td>${getStudentHtml(student)}</td><td>${status}</td><td>${amount}</td><td class="action-buttons">${status === 'Due' ? getContactButtons(student.id, month) : ''}</td></tr>`; 
                 }); 
                 
-                summaryEl.innerHTML = `<div><h4>Total Collected</h4><p class="summary-collected">₹${totalCollected}</p></div><div><h4>Total Due</h4><p class="summary-due">₹${totalDue}</p></div>`; 
+                // CLICKABLE SUMMARY BOXES FOR MONTHLY REPORT
+                summaryEl.innerHTML = `
+                    <div onclick="showFeeBreakdown('collected', '${month}')" style="cursor:pointer; border:1px solid var(--success);">
+                        <h4>Total Collected <i class="fas fa-list" style="font-size:10px; margin-left:3px;"></i></h4>
+                        <p class="summary-collected">₹${totalCollected}</p>
+                    </div>
+                    <div onclick="showFeeBreakdown('due', '${month}')" style="cursor:pointer; border:1px solid var(--danger);">
+                        <h4>Total Due <i class="fas fa-list" style="font-size:10px; margin-left:3px;"></i></h4>
+                        <p class="summary-due">₹${totalDue}</p>
+                    </div>
+                `; 
                 
             } else if (type === 'yearly') { 
                 const year = document.getElementById('reportYear').value; 
                 if (!year) return; 
                 
-                tableHead.innerHTML = `<tr><th>Student Name</th><th>Total Paid</th><th>Due Months</th></tr>`; 
+                // UPDATED TABLE HEADERS FOR YEARLY REPORT
+                tableHead.innerHTML = `<tr><th>Student</th><th>Monthly History</th><th>Summary</th></tr>`; 
                 
                 students.forEach(student => { 
                     let studentTotalPaid = 0; 
-                    let dueMonthsList = []; 
+                    let studentTotalDue = 0;
+                    let historyHtml = '';
                     let hasActivityInYear = false; 
+
                     for(let i=1; i<=12; i++) { 
                         const monthStr = `${year}-${i.toString().padStart(2, '0')}`; 
+                        const monthName = new Date(year, i-1).toLocaleString('default', { month: 'short' });
+
                         if (wasStudentActiveDuringMonth(student, monthStr)) { 
                             hasActivityInYear = true; 
+                            
                             if (fees[monthStr]?.[student.id]?.status === 'paid') { 
-                                studentTotalPaid += fees[monthStr][student.id].amount; 
+                                const amt = fees[monthStr][student.id].amount;
+                                studentTotalPaid += amt; 
+                                historyHtml += `<span style="font-size:11px; color:var(--success); margin-right:5px;">${monthName}: ₹${amt} <i class="fas fa-check"></i></span><br>`;
                             } else if (isMonthDue(monthStr)) { 
-                                dueMonthsList.push(new Date(year, i-1).toLocaleString('default', { month: 'short' })); 
-                            } 
+                                const amt = student.fee_amount || DEFAULT_FEE;
+                                studentTotalDue += amt;
+                                historyHtml += `<span style="font-size:11px; color:var(--danger); margin-right:5px;">${monthName}: ₹${amt} (Due)</span><br>`;
+                            } else {
+                                historyHtml += `<span style="font-size:11px; color:var(--text-muted); margin-right:5px;">${monthName}: -</span><br>`;
+                            }
                         } 
                     } 
                     
                     if(hasActivityInYear) { 
                         totalCollected += studentTotalPaid; 
-                        totalDue += dueMonthsList.length * (student.fee_amount || DEFAULT_FEE); 
-                        const dueDisplay = dueMonthsList.length > 0 ? `<span style="color:var(--danger); font-weight:bold;">${dueMonthsList.join(", ")}</span>` : '<span style="color:var(--success);">Clear</span>'; 
-                        tableBody.innerHTML += `<tr><td>${getStudentHtml(student)}</td><td>₹${studentTotalPaid}</td><td>${dueDisplay}</td></tr>`; 
+                        totalDue += studentTotalDue; 
+                        
+                        tableBody.innerHTML += `
+                            <tr>
+                                <td>${getStudentHtml(student)}</td>
+                                <td style="line-height:1.4;">${historyHtml || '<span style="color:var(--text-muted);">No Activity</span>'}</td>
+                                <td>
+                                    <div style="font-size:12px;">
+                                        <div style="color:var(--success); font-weight:bold;">Paid: ₹${studentTotalPaid}</div>
+                                        <div style="color:var(--danger); font-weight:bold; margin-top:2px;">Due: ₹${studentTotalDue}</div>
+                                    </div>
+                                </td>
+                            </tr>`; 
                     } 
                 }); 
                 
-                // Updated Summary HTML to be clickable
+                // CLICKABLE SUMMARY BOXES FOR YEARLY REPORT (UPDATED)
                 summaryEl.innerHTML = `
-                    <div onclick="showYearlyBreakdown('collected', ${year})" style="cursor:pointer; border:1px solid var(--success);">
+                    <div onclick="showYearlyBreakdown('collected', '${year}')" style="cursor:pointer; border:1px solid var(--success);">
                         <h4>Total Collected <i class="fas fa-list" style="font-size:10px; margin-left:3px;"></i></h4>
                         <p class="summary-collected">₹${totalCollected}</p>
                     </div>
-                    <div onclick="showYearlyBreakdown('due', ${year})" style="cursor:pointer; border:1px solid var(--danger);">
+                    <div onclick="showYearlyBreakdown('due', '${year}')" style="cursor:pointer; border:1px solid var(--danger);">
                         <h4>Total Due <i class="fas fa-list" style="font-size:10px; margin-left:3px;"></i></h4>
                         <p class="summary-due">₹${totalDue}</p>
                     </div>
@@ -1377,31 +1424,32 @@
                 const year = document.getElementById('reportYear').value; if(!year) return; 
                 doc.setFontSize(12); doc.text(`Yearly Report: ${year}`, 105, y, {align: "center"}); y += 15; 
                 doc.setFontSize(10); doc.setFont("helvetica", "bold"); 
-                doc.text("Student Name", 15, y); doc.text("Total Paid", 90, y); doc.text("Due Months", 140, y); 
+                doc.text("Student Name", 15, y); doc.text("Total Paid", 90, y); doc.text("Total Due", 140, y); 
                 doc.line(15, y+2, 195, y+2); y += 8; 
-                let totalCollected = 0; 
+                let totalCollected = 0, totalDue = 0;
                 doc.setFont("helvetica", "normal"); 
                 
                 students.forEach(student => { 
-                    let studentTotal = 0; let dueMonthsList = []; let hasActivity = false; 
+                    let studentTotal = 0; let studentDue = 0; let hasActivity = false; 
                     for(let i=1; i<=12; i++) { 
                         const m = `${year}-${i.toString().padStart(2, '0')}`; 
                         if (wasStudentActiveDuringMonth(student, m)) { 
                             hasActivity = true; 
                             if(fees[m]?.[student.id]?.status === 'paid') studentTotal += fees[m][student.id].amount; 
-                            else if(isMonthDue(m)) dueMonthsList.push(new Date(year, i-1).toLocaleString('default', { month: 'short' })); 
+                            else if(isMonthDue(m)) studentDue += (student.fee_amount || DEFAULT_FEE);
                         } 
                     } 
                     if(hasActivity) { 
                         totalCollected += studentTotal; 
-                        const dueText = dueMonthsList.length > 0 ? dueMonthsList.join(", ") : "None"; 
-                        doc.text(student.name, 15, y); doc.text(`${studentTotal}`, 90, y); doc.text(dueText, 140, y); y += 6; 
+                        totalDue += studentDue;
+                        doc.text(student.name, 15, y); doc.text(`${studentTotal}`, 90, y); doc.text(`${studentDue}`, 140, y); y += 6; 
                         if(y > 280) { doc.addPage(); y = 20; } 
                     } 
                 }); 
                 
                 y += 5; doc.line(15, y, 195, y); y += 8; doc.setFont("helvetica", "bold"); 
                 doc.text(`Grand Total Collected: ${totalCollected}`, 15, y); 
+                doc.text(`Grand Total Due: ${totalDue}`, 90, y); 
                 addWatermarkAndSignatureToPdf(doc); doc.save(`Yearly_Report_${year}.pdf`); 
             } 
         }
