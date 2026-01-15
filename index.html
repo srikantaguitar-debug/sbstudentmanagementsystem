@@ -202,13 +202,37 @@
         
         #photoPreviewBox { width: 120px; height: 120px; border-radius: 50%; background: var(--bg-input); margin: 0 auto 15px auto; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px dashed var(--secondary); cursor: pointer; }
         
-        #securityOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; color: white; }
+/* THEME ADAPTIVE SECURITY OVERLAY */
+        #securityOverlay { 
+            display: none; 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            
+            /* নিচের লাইনটি পরিবর্তন করা হয়েছে */
+            background: #e0f7fa; /* এখানে আপনার পছন্দের কালার দিন (যেমন: white বা #eef2ff) */
+            
+            z-index: 9999; 
+            flex-direction: column; align-items: center; justify-content: center; 
+            color: var(--text-main); 
+        }  
+/* এটি নতুন যোগ করুন যাতে ডার্ক মোড ঠিক থাকে */
+        [data-theme="dark"] #securityOverlay {
+            background: var(--bg-body);
+        }
         .pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 30px; }
-        .pin-btn { width: 70px; height: 70px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); transition: all 0.1s ease; }
-        .pin-btn:active { background-color: rgba(255, 255, 255, 0.3); transform: scale(0.95); }
+        .pin-btn { 
+            width: 70px; height: 70px; border-radius: 50%; 
+            background: var(--bg-card); /* Adaptive Button */
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 24px; cursor: pointer; 
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            box-shadow: var(--shadow);
+            transition: all 0.1s ease; 
+        }
+        .pin-btn:active { background-color: var(--bg-input); transform: scale(0.95); }
         .pin-dots { display: flex; gap: 15px; height: 20px; margin-bottom: 20px; }
-        .pin-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #818cf8; }
-        .pin-dot.filled { background: #818cf8; box-shadow: 0 0 10px #818cf8; }
+        .pin-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--primary); }
+        .pin-dot.filled { background: var(--primary); box-shadow: 0 0 10px var(--primary); }
     </style>
 </head>
 <body>
@@ -677,7 +701,9 @@
             }, 1000);
         }
 
-        document.addEventListener('DOMContentLoaded', async () => { await openDB(); let existingPin = await dbGet('app_pin'); if (!existingPin) { const lsPin = localStorage.getItem('app_pin'); if(lsPin) { await dbSet('app_pin', lsPin); if(localStorage.getItem('students')) await dbSet('students', JSON.parse(localStorage.getItem('students'))); if(localStorage.getItem('attendance')) await dbSet('attendance', JSON.parse(localStorage.getItem('attendance'))); if(localStorage.getItem('fees')) await dbSet('fees', JSON.parse(localStorage.getItem('fees'))); if(localStorage.getItem('studentSerialCounter')) await dbSet('studentSerialCounter', localStorage.getItem('studentSerialCounter')); if(localStorage.getItem('instituteLogo')) await dbSet('instituteLogo', localStorage.getItem('instituteLogo')); if(localStorage.getItem('authorizedSignature')) await dbSet('authorizedSignature', localStorage.getItem('authorizedSignature')); if(localStorage.getItem('lastBackupDate')) await dbSet('lastBackupDate', localStorage.getItem('lastBackupDate')); Swal.fire('System Update', 'Data migrated.', 'success'); } else { await dbSet('app_pin', '1234'); } } await loadInstituteLogo(); await loadAuthSignature(); secureAction(() => { initApp(); checkBackupStatus(); startClock(); loadTheme(); }, true); document.querySelector('.close-pin').style.display = 'none'; });
+        document.addEventListener('DOMContentLoaded', async () => { await openDB(); let existingPin = await dbGet('app_pin'); if (!existingPin) { const lsPin = localStorage.getItem('app_pin'); if(lsPin) { await dbSet('app_pin', lsPin); if(localStorage.getItem('students')) await dbSet('students', JSON.parse(localStorage.getItem('students'))); if(localStorage.getItem('attendance')) await dbSet('attendance', JSON.parse(localStorage.getItem('attendance'))); if(localStorage.getItem('fees')) await dbSet('fees', JSON.parse(localStorage.getItem('fees'))); if(localStorage.getItem('studentSerialCounter')) await dbSet('studentSerialCounter', localStorage.getItem('studentSerialCounter')); if(localStorage.getItem('instituteLogo')) await dbSet('instituteLogo', localStorage.getItem('instituteLogo')); if(localStorage.getItem('authorizedSignature')) await dbSet('authorizedSignature', localStorage.getItem('authorizedSignature')); if(localStorage.getItem('lastBackupDate')) await dbSet('lastBackupDate', localStorage.getItem('lastBackupDate')); Swal.fire('System Update', 'Data migrated.', 'success'); } else { await dbSet('app_pin', '1234'); } } await loadInstituteLogo(); await loadAuthSignature(); // প্রথমে থিম লোড হবে, তারপর পিন চাইবে
+loadTheme(); 
+secureAction(() => { initApp(); checkBackupStatus(); startClock(); }, true); document.querySelector('.close-pin').style.display = 'none'; });
         
         // --- Theme Logic ---
         function toggleTheme() {
@@ -1200,7 +1226,7 @@
                     } 
                 } 
             });
-            document.getElementById('dashboardYearlySummary').innerHTML = `<div><h4>Yearly Collected</h4><p class="summary-collected">₹${yearlyCollected}</p></div><div><h4>Yearly Due (Active)</h4><p class="summary-due">₹${yearlyDueAmount}</p></div>`; 
+            document.getElementById('dashboardYearlySummary').innerHTML = `<div onclick="showYearlyBreakdown('collected', '${currentYear}')" style="cursor:pointer;"><h4>Yearly Collected</h4><p class="summary-collected">₹${yearlyCollected}</p></div><div onclick="showYearlyBreakdown('due', '${currentYear}')" style="cursor:pointer;"><h4>Yearly Due (Active)</h4><p class="summary-due">₹${yearlyDueAmount}</p></div>`; 
             document.getElementById('financeOverviewNumbers').innerHTML = `<div onclick="showFeeBreakdown('collected')"><h4>Collected</h4><p class="summary-collected">₹${monthlyCollected}</p></div><div onclick="showFeeBreakdown('due')"><h4>Due</h4><p class="summary-due">₹${monthlyDueAmount}</p></div>`;
 
             const dueTableBody = document.querySelector('#dueFeeTable tbody'); const dueMessageEl = document.getElementById('dueFeeMessage'); dueTableBody.innerHTML = ''; 
