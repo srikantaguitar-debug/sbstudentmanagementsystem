@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Music Classes Manager (Pro)</title>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4f46e5">
@@ -913,113 +915,227 @@
     </div>
 
     <script>
-        if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./serviceWorker.js').then(r => console.log('SW reg:', r.scope)).catch(e => console.log('SW fail:', e)); }); }
-        const DB_NAME = 'MusicClassManagerDB'; const DB_VERSION = 2; const STORE_NAME = 'appData'; let db;
-        function openDB() { return new Promise((resolve, reject) => { const request = indexedDB.open(DB_NAME, DB_VERSION); request.onupgradeneeded = (event) => { db = event.target.result; if (!db.objectStoreNames.contains(STORE_NAME)) { db.createObjectStore(STORE_NAME); } }; request.onsuccess = (event) => { db = event.target.result; resolve(db); }; request.onerror = (event) => { reject('Database error: ' + event.target.errorCode); }; }); }
-        function dbGet(key) { return new Promise((resolve, reject) => { const transaction = db.transaction([STORE_NAME], 'readonly'); const store = transaction.objectStore(STORE_NAME); const request = store.get(key); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); }); }
-        function dbSet(key, value) { return new Promise((resolve, reject) => { const transaction = db.transaction([STORE_NAME], 'readwrite'); const store = transaction.objectStore(STORE_NAME); const request = store.put(value, key); request.onsuccess = () => resolve(); request.onerror = () => reject(request.error); }); }
-        function dbDelete(key) { return new Promise((resolve, reject) => { const transaction = db.transaction([STORE_NAME], 'readwrite'); const store = transaction.objectStore(STORE_NAME); const request = store.delete(key); request.onsuccess = () => resolve(); request.onerror = () => reject(request.error); }); }
-        function dbClear() { return new Promise((resolve, reject) => { const transaction = db.transaction([STORE_NAME], 'readwrite'); const store = transaction.objectStore(STORE_NAME); const request = store.clear(); request.onsuccess = () => resolve(); request.onerror = () => reject(request.error); }); }
-        
-        let lastCheckedDate = new Date().toDateString();
-        function startClock() {
-            setInterval(() => {
-                const now = new Date();
-                const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
-                document.getElementById('liveClock').textContent = now.toLocaleString('en-IN', options);
-                const currentDateString = now.toDateString();
-                if (currentDateString !== lastCheckedDate) {
-                    lastCheckedDate = currentDateString;
-                    document.getElementById('attendanceDate').valueAsDate = now;
-                    const currentMonthStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
-                    if(document.getElementById('feeMonth').value !== currentMonthStr) {
-                        document.getElementById('feeMonth').value = currentMonthStr;
-                        renderFees();
-                    }
-                    renderAttendance();
-                }
-            }, 1000);
-        }
+        // --- 1. Firebase Configuration ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyBDr_ANRX57trE7_1pkH2BaOeQsG0B-3LI",
+        authDomain: "student-management-syste-6a036.firebaseapp.com",
+        projectId: "student-management-syste-6a036",
+        storageBucket: "student-management-syste-6a036.firebasestorage.app",
+        messagingSenderId: "198959369817",
+        appId: "1:198959369817:web:f24dfd15b9d3d897d9eb48"
+    };
 
-        document.addEventListener('DOMContentLoaded', async () => { await openDB(); let existingPin = await dbGet('app_pin'); if (!existingPin) { const lsPin = localStorage.getItem('app_pin'); if(lsPin) { await dbSet('app_pin', lsPin); if(localStorage.getItem('students')) await dbSet('students', JSON.parse(localStorage.getItem('students'))); if(localStorage.getItem('attendance')) await dbSet('attendance', JSON.parse(localStorage.getItem('attendance'))); if(localStorage.getItem('fees')) await dbSet('fees', JSON.parse(localStorage.getItem('fees'))); if(localStorage.getItem('studentSerialCounter')) await dbSet('studentSerialCounter', localStorage.getItem('studentSerialCounter')); if(localStorage.getItem('instituteLogo')) await dbSet('instituteLogo', localStorage.getItem('instituteLogo')); if(localStorage.getItem('authorizedSignature')) await dbSet('authorizedSignature', localStorage.getItem('authorizedSignature')); if(localStorage.getItem('lastBackupDate')) await dbSet('lastBackupDate', localStorage.getItem('lastBackupDate')); Swal.fire('System Update', 'Data migrated.', 'success'); } else { await dbSet('app_pin', '1234'); } } await loadInstituteLogo(); await loadAuthSignature(); 
-loadTheme(); 
-secureAction(() => { initApp(); checkBackupStatus(); startClock(); }, true); document.querySelector('.close-pin').style.display = 'none'; });
-        
-        function toggleTheme() {
-            const body = document.body;
-            const currentTheme = body.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            body.setAttribute('data-theme', newTheme);
-            localStorage.setItem('app_theme', newTheme);
-            updateThemeButton(newTheme);
-        }
-        function loadTheme() {
-            const savedTheme = localStorage.getItem('app_theme') || 'light';
-            document.body.setAttribute('data-theme', savedTheme);
-            updateThemeButton(savedTheme);
-        }
-        function updateThemeButton(theme) {
-            const btn = document.getElementById('themeToggleBtn');
-            if(btn) {
-                if(theme === 'dark') {
-                    btn.innerHTML = '<i class="fas fa-sun"></i> Switch to Light Mode';
-                    btn.classList.remove('btn-secondary');
-                    btn.classList.add('btn-warning');
-                } else {
-                    btn.innerHTML = '<i class="fas fa-moon"></i> Switch to Dark Mode';
-                    btn.classList.remove('btn-warning');
-                    btn.classList.add('btn-secondary');
-                }
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Enable Offline Persistence
+    db.enablePersistence({ synchronizeTabs: true }).catch((err) => {
+        console.log("Persistence error:", err.code);
+    });
+
+    const COLLECTION_NAME = 'music_classes';
+    const DOC_ID = 'main_data';
+
+    // --- 2. Database Functions (Replaces IndexedDB) ---
+
+    async function openDB() {
+        // Firebase handles connection automatically
+        return true;
+    }
+
+    async function dbGet(key) {
+        try {
+            const docRef = db.collection(COLLECTION_NAME).doc(DOC_ID);
+            const doc = await docRef.get();
+            if (doc.exists) {
+                const data = doc.data();
+                return data[key] !== undefined ? data[key] : null;
             }
+            return null;
+        } catch (error) {
+            console.error("Get Error:", error);
+            return null;
+        }
+    }
+
+    async function dbSet(key, value) {
+        try {
+            const docRef = db.collection(COLLECTION_NAME).doc(DOC_ID);
+            await docRef.set({ [key]: value }, { merge: true });
+        } catch (error) {
+            console.error("Set Error:", error);
+        }
+    }
+
+    async function dbDelete(key) {
+        try {
+            const docRef = db.collection(COLLECTION_NAME).doc(DOC_ID);
+            await docRef.update({ [key]: firebase.firestore.FieldValue.delete() });
+        } catch (error) {
+            console.error("Delete Error:", error);
+        }
+    }
+
+    async function dbClear() {
+        try {
+            await db.collection(COLLECTION_NAME).doc(DOC_ID).delete();
+        } catch (error) {
+            console.error("Clear Error:", error);
+        }
+    }
+
+    // --- 3. Data Migration (Old Phone Data -> Cloud) ---
+    
+    async function syncOldDataToFirebase() {
+        const onlinePin = await dbGet('app_pin');
+        if (onlinePin) {
+            console.log("Cloud data found. No migration needed.");
+            return; 
         }
 
-        async function initApp() { 
+        console.log("Checking local data...");
+        // Check IndexedDB
+        const idbData = await new Promise((resolve) => {
+            const req = indexedDB.open('MusicClassManagerDB', 2);
+            req.onerror = () => resolve(null);
+            req.onsuccess = (e) => {
+                const idb = e.target.result;
+                if (!idb.objectStoreNames.contains('appData')) { resolve(null); return; }
+                const tx = idb.transaction(['appData'], 'readonly');
+                const store = tx.objectStore('appData');
+                const getAll = store.getAllKeys();
+                getAll.onsuccess = () => {
+                    const keys = getAll.result;
+                    const data = {};
+                    let count = 0;
+                    if(keys.length === 0) { resolve(null); return; }
+                    keys.forEach(key => {
+                        store.get(key).onsuccess = (ev) => {
+                            data[key] = ev.target.result;
+                            count++;
+                            if(count === keys.length) resolve(data);
+                        };
+                    });
+                };
+            };
+        });
+
+        if (idbData) {
+            Swal.fire({ title: 'Syncing...', text: 'Uploading data to cloud...', didOpen: () => Swal.showLoading() });
+            for (const [key, value] of Object.entries(idbData)) { await dbSet(key, value); }
+            Swal.fire('Success', 'Data moved to cloud!', 'success');
+            return;
+        }
+
+        // Check LocalStorage
+        const lsPin = localStorage.getItem('app_pin');
+        if (lsPin) {
+            Swal.fire({ title: 'Syncing...', didOpen: () => Swal.showLoading() });
+            await dbSet('app_pin', lsPin);
+            if(localStorage.getItem('students')) await dbSet('students', JSON.parse(localStorage.getItem('students')));
+            if(localStorage.getItem('attendance')) await dbSet('attendance', JSON.parse(localStorage.getItem('attendance')));
+            if(localStorage.getItem('fees')) await dbSet('fees', JSON.parse(localStorage.getItem('fees')));
+            if(localStorage.getItem('instituteLogo')) await dbSet('instituteLogo', localStorage.getItem('instituteLogo'));
+            Swal.fire('Success', 'Local data uploaded!', 'success');
+        } else {
+            await dbSet('app_pin', '1234');
+        }
+    }
+
+    // --- 4. App Initialization ---
+
+    if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./serviceWorker.js').catch(console.error); }); }
+    
+    let lastCheckedDate = new Date().toDateString();
+    function startClock() {
+        setInterval(() => {
             const now = new Date();
-            document.getElementById('attendanceDate').valueAsDate = now;
-            
-            const hours = now.getHours().toString().padStart(2, '0');
-            const mins = now.getMinutes().toString().padStart(2, '0');
-            document.getElementById('attendanceTime').value = `${hours}:${mins}`;
-
-            const currentMonthStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`; 
-            
-            const prevDate = new Date(now);
-            prevDate.setMonth(prevDate.getMonth() - 1);
-            const prevMonthStr = `${prevDate.getFullYear()}-${(prevDate.getMonth() + 1).toString().padStart(2, '0')}`;
-
-            document.getElementById('feeMonth').value = currentMonthStr; 
-            document.getElementById('reportMonth').value = currentMonthStr; 
-            document.getElementById('reportYear').value = now.getFullYear(); 
-            document.getElementById('idCardIssueDate').valueAsDate = now; 
-            document.getElementById('analyticsYear').value = now.getFullYear(); 
-            
-            document.getElementById('compMonth1').value = prevMonthStr;
-            document.getElementById('compMonth2').value = currentMonthStr;
-
-            toggleReportInputs(); 
-
-            try {
-                const sData = await dbGet('students'); 
-                students = (sData || []).map(migrateStudentData); 
-                attendance = (await dbGet('attendance')) || {}; 
-                fees = (await dbGet('fees')) || {}; 
-                reminders = (await dbGet('reminders')) || []; 
-                studentSerialCounter = parseInt(await dbGet('studentSerialCounter')) || 1; 
-                
-                loadAllData(); 
-            } catch(e) {
-                console.error("Init Error:", e);
-                students = []; attendance = {}; fees = {}; reminders = [];
+            const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
+            document.getElementById('liveClock').textContent = now.toLocaleString('en-IN', options);
+            if (now.toDateString() !== lastCheckedDate) {
+                lastCheckedDate = now.toDateString();
+                document.getElementById('attendanceDate').valueAsDate = now;
+                renderAttendance();
             }
+        }, 1000);
+    }
 
-            document.getElementById('attendanceDate').addEventListener('change', renderAttendance); 
-            document.getElementById('feeMonth').addEventListener('change', renderFees); 
+    document.addEventListener('DOMContentLoaded', async () => { 
+        await syncOldDataToFirebase();
+        await loadInstituteLogo(); 
+        await loadAuthSignature(); 
+        loadTheme(); 
+        secureAction(() => { initApp(); startClock(); }, true); 
+        document.querySelector('.close-pin').style.display = 'none'; 
+    });
+
+    function toggleTheme() {
+        const body = document.body;
+        const newTheme = body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        body.setAttribute('data-theme', newTheme);
+        localStorage.setItem('app_theme', newTheme);
+        updateThemeButton(newTheme);
+    }
+    function loadTheme() {
+        const savedTheme = localStorage.getItem('app_theme') || 'light';
+        document.body.setAttribute('data-theme', savedTheme);
+        updateThemeButton(savedTheme);
+    }
+    function updateThemeButton(theme) {
+        const btn = document.getElementById('themeToggleBtn');
+        if(btn) {
+            btn.innerHTML = theme === 'dark' ? '<i class="fas fa-sun"></i> Switch to Light Mode' : '<i class="fas fa-moon"></i> Switch to Dark Mode';
+            btn.className = theme === 'dark' ? 'btn btn-warning w-100 mb-3' : 'btn btn-secondary w-100 mb-3';
+        }
+    }
+
+    async function initApp() { 
+        const now = new Date();
+        document.getElementById('attendanceDate').valueAsDate = now;
+        const hours = now.getHours().toString().padStart(2, '0');
+        const mins = now.getMinutes().toString().padStart(2, '0');
+        document.getElementById('attendanceTime').value = `${hours}:${mins}`;
+        
+        const currentMonthStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`; 
+        const prevDate = new Date(now);
+        prevDate.setMonth(prevDate.getMonth() - 1);
+        const prevMonthStr = `${prevDate.getFullYear()}-${(prevDate.getMonth() + 1).toString().padStart(2, '0')}`;
+
+        document.getElementById('feeMonth').value = currentMonthStr; 
+        document.getElementById('reportMonth').value = currentMonthStr; 
+        document.getElementById('reportYear').value = now.getFullYear(); 
+        document.getElementById('idCardIssueDate').valueAsDate = now; 
+        document.getElementById('analyticsYear').value = now.getFullYear(); 
+        document.getElementById('compMonth1').value = prevMonthStr;
+        document.getElementById('compMonth2').value = currentMonthStr;
+
+        toggleReportInputs(); 
+
+        try {
+            // Fetch ALL data from Cloud
+            const sData = await dbGet('students'); 
+            students = (sData || []).map(migrateStudentData); 
+            attendance = (await dbGet('attendance')) || {}; 
+            fees = (await dbGet('fees')) || {}; 
+            reminders = (await dbGet('reminders')) || []; 
+            studentSerialCounter = parseInt(await dbGet('studentSerialCounter')) || 1; 
             
-            comparePeriods(); 
-            updateYearlyChart();
+            loadAllData(); 
+        } catch(e) {
+            console.error("Init Error:", e);
         }
 
-        async function checkBackupStatus() { const lastBackup = await dbGet('lastBackupDate'); if (!lastBackup) { Swal.fire({ title: 'Backup Warning', text: 'Backup not taken yet.', icon: 'warning', confirmButtonText: 'Okay' }); } else { const daysDiff = (new Date() - new Date(lastBackup)) / (1000 * 60 * 60 * 24); if (daysDiff > 7) { Swal.fire({ title: 'Backup Reminder', text: `Last backup was ${Math.floor(daysDiff)} days ago.`, icon: 'warning', confirmButtonText: 'Okay' }); } } }
+        document.getElementById('attendanceDate').addEventListener('change', renderAttendance); 
+        document.getElementById('feeMonth').addEventListener('change', renderFees); 
+        
+        comparePeriods(); 
+        updateYearlyChart();
+    }
+
+    async function checkBackupStatus() { 
+        // Not needed for cloud version
+    }
 
         const INSTITUTE_NAME = "Guitar, Bass Guitar, Piano, Keyboard, Mandolin Classes"; 
         const MY_NAME = "Srikanta Banerjee"; 
