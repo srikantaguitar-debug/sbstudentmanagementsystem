@@ -18,6 +18,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
         :root {
@@ -271,45 +272,71 @@
             z-index: 2002;
         }
 
-        /* WELCOME NOTE PDF STYLES */
-        #welcomeNoteTemplate {
-            position: fixed; 
-            top: -9999px; 
-            left: -9999px; 
-            width: 210mm; 
-            min-height: 297mm;
-            background: white; 
-            color: #000;
-            font-family: 'Hind Siliguri', sans-serif;
-            padding: 40px; 
-            box-sizing: border-box;
-            background-color: #ffffff;
-        }
-        .wn-watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70%; opacity: 0.05; z-index: 0; }
-        .wn-header { text-align: center; border-bottom: 3px solid #6a1b9a; padding-bottom: 15px; margin-bottom: 25px; position: relative; z-index: 2; }
-        .wn-logo { height: 90px; width: auto; margin-bottom: 10px; }
-        .wn-title { color: #6a1b9a; margin: 5px 0; font-size: 34px; font-weight: 800; font-family: 'Noto Serif Bengali', serif; text-transform: uppercase; line-height: 1.3; }
-        .wn-phone { font-weight: bold; color: #000; margin: 5px 0 0 0; font-size: 20px; }
-        .wn-details-box { background: rgba(255, 255, 255, 0.95); border: 2px solid #ddd; padding: 20px; border-radius: 12px; margin-bottom: 25px; z-index: 2; position: relative; }
-        .wn-row { display: flex; margin-bottom: 12px; align-items: center; }
-        .wn-label { width: 160px; font-weight: bold; color: #333; font-size: 20px; }
-        .wn-val { flex: 1; border-bottom: 2px dotted #333; padding-left: 10px; font-size: 20px; font-weight: 600; color: #000; }
-        .wn-welcome-box { background: #fdf2ff; padding: 20px; border-radius: 12px; border-left: 8px solid #6a1b9a; margin-bottom: 25px; text-align: center; z-index: 2; position: relative; }
-        .wn-welcome-title { color: #4a148c; margin-top: 0; font-size: 26px; font-weight: bold; }
-        .wn-welcome-box p { font-size: 20px; line-height: 1.6; color: #333; }
-        .wn-rules-box { z-index: 2; position: relative; }
-        .wn-rules-title { border-bottom: 2px solid #ddd; padding-bottom: 8px; color: #000; font-size: 24px; margin-top: 0; font-weight: bold; }
-        .wn-rules-list { list-style: none; padding: 0; margin: 0; }
-        .wn-rules-list li { margin-bottom: 12px; padding-left: 35px; position: relative; line-height: 1.5; font-size: 20px; color: #222; }
-        .wn-rules-list li::before { content: '🎵'; position: absolute; left: 0; font-size: 20px; }
-        .wn-footer { margin-top: 50px; display: flex; justify-content: space-between; align-items: flex-end; z-index: 2; position: relative; }
-        .wn-sig-box { text-align: center; width: 250px; }
-        .wn-sig-img { height: 70px; display: block; margin: 0 auto; }
-        .wn-owner { font-weight: bold; border-top: 2px solid #333; padding-top: 5px; display: block; margin-top: 5px; font-size: 20px; }
-        
-        /* UPDATED BIGGER SIGNATURE STYLE */
-        #wnStudentSig { max-height: 140px; max-width: 300px; display:none; }
-        
+/* --- WELCOME NOTE CSS (Large Text & No Watermark) --- */
+#welcomeNoteTemplate {
+    position: fixed; top: -9999px; left: -9999px; 
+    width: 210mm; min-height: 297mm;
+    background: #ffffff; color: #000;
+    font-family: 'Hind Siliguri', sans-serif;
+    padding: 40px; box-sizing: border-box;
+    border: none;
+}
+
+/* Watermark REMOVED */
+.wn-watermark { display: none !important; }
+
+.wn-header { text-align: center; border-bottom: 3px solid #6a1b9a; padding-bottom: 15px; margin-bottom: 25px; position: relative; z-index: 2; }
+.wn-logo { height: 90px; width: auto; margin-bottom: 10px; }
+.wn-title { color: #6a1b9a; margin: 5px 0; font-size: 34px; font-weight: 800; font-family: 'Noto Serif Bengali', serif; text-transform: uppercase; line-height: 1.3; }
+.wn-phone { font-weight: bold; color: #000; margin: 5px 0 0 0; font-size: 22px; }
+
+/* Info Box */
+.wn-details-box { 
+    background: rgba(255, 255, 255, 0.95); border: 2px solid #ddd; 
+    padding: 20px; border-radius: 12px; margin-bottom: 25px; 
+    display: flex; justify-content: space-between; align-items: flex-start;
+}
+.wn-info-col { flex: 1; }
+.wn-photo-col { width: 140px; padding-right: 15px; display: flex; justify-content: flex-end; }
+
+.wn-row { display: flex; margin-bottom: 12px; align-items: center; font-size: 26px; } /* সাইজ ২০ থেকে ২২ করা হলো */
+.wn-label { width: 200px; font-weight: bold; color: #333; }
+.wn-val { flex: 1; border-bottom: 2px dotted #333; padding-left: 10px; font-weight: 600; color: #000; }
+
+#wnStudentPhoto { 
+    width: 110px; height: 130px; 
+    border: 3px solid #000 !important; 
+    object-fit: cover; background: #eee;
+}
+
+/* বয়ান (Welcome Msg) - ফন্ট বড় করা হয়েছে */
+.wn-welcome-box { 
+    background: #fdf2ff; padding: 25px; border-radius: 12px; 
+    border-left: 8px solid #6a1b9a; margin-bottom: 30px; 
+    text-align: center; 
+}
+.wn-welcome-title { color: #4a148c; margin-top: 0; font-size: 32px; font-weight: bold; } /* ২৬ থেকে ৩২ */
+.wn-welcome-box p { font-size: 32px; line-height: 1.6; color: #333; margin: 0; font-weight: 500; } /* ২০ থেকে ২৬ */
+
+/* নিয়মাবলী (Rules) - ফন্ট বড় করা হয়েছে */
+.wn-rules-box { margin-bottom: 30px; }
+.wn-rules-title { border-bottom: 2px solid #ddd; padding-bottom: 8px; color: #000; font-size: 28px; margin-top: 0; font-weight: bold; } /* ২৪ থেকে ২৮ */
+.wn-rules-list { list-style: none; padding: 0; margin: 0; }
+.wn-rules-list li { margin-bottom: 15px; padding-left: 40px; position: relative; line-height: 1.5; font-size: 30px; color: #222; } /* ২০ থেকে ২৪ */
+.wn-rules-list li::before { content: '🎵'; position: absolute; left: 0; font-size: 24px; }
+
+/* Footer */
+.wn-footer { margin-top: 50px; display: flex; justify-content: space-between; align-items: flex-end; }
+.wn-sig-box { text-align: center; width: 280px; }
+.wn-sig-img { height: 70px; display: block; margin: 0 auto; }
+.wn-owner { font-weight: bold; border-top: 2px solid #333; padding-top: 5px; display: block; margin-top: 5px; font-size: 22px; }
+
+/* Digital Signature Size Increase */
+#wnStudentSig {
+    max-height: 140px !important; /* সিগনেচার সাইজ ৮০ থেকে ১২০ করা হলো */
+    width: auto;
+    display: block;
+}
         /* BLACK BORDER FOR PHOTO IN PDF */
         #wnStudentPhoto { width: 90px; height: 110px; border: 2px solid #000 !important; object-fit: cover; display: none; background: #eee; }
 
@@ -340,24 +367,22 @@
     
     <div class="wn-header">
         <img id="wnHeaderLogo" class="wn-logo" src="">
-        <h1 class="wn-title">Guitar, Bass Guitar, Piano, Keyboard, Mandolin Classes</h1>
+        <h1 class="wn-title">GUITAR, BASS GUITAR, PIANO, KEYBOARD, MANDOLIN CLASSES</h1>
         <p class="wn-phone">Ph- 7001471235</p>
     </div>
     
     <div class="wn-details-box">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <div style="flex: 1;">
-                <div class="wn-row"><span class="wn-label">Student Name:</span><span id="wnStudentName" class="wn-val"></span></div>
-                <div class="wn-row"><span class="wn-label">Class:</span><span id="wnClass" class="wn-val"></span></div>
-                <div class="wn-row"><span class="wn-label">Class Time:</span><span id="wnTime" class="wn-val"></span></div>
-                <div class="wn-row"><span class="wn-label">Monthly Fees:</span><span id="wnFee" class="wn-val"></span></div>
-                <div class="wn-row"><span class="wn-label">Address:</span><span id="wnAddress" class="wn-val"></span></div>
-                <div class="wn-row"><span class="wn-label">Phone:</span><span id="wnPhone" class="wn-val"></span></div>
-            </div>
+        <div class="wn-info-col">
+            <div class="wn-row"><span class="wn-label">Student Name:</span><span id="wnStudentName" class="wn-val"></span></div>
+            <div class="wn-row"><span class="wn-label">Class:</span><span id="wnClass" class="wn-val"></span></div>
+            <div class="wn-row"><span class="wn-label">Class Time:</span><span id="wnTime" class="wn-val"></span></div>
+            <div class="wn-row"><span class="wn-label">Monthly Fees:</span><span id="wnFee" class="wn-val"></span></div>
+            <div class="wn-row"><span class="wn-label">Address:</span><span id="wnAddress" class="wn-val"></span></div>
+            <div class="wn-row"><span class="wn-label">Phone:</span><span id="wnPhone" class="wn-val"></span></div>
+        </div>
 
-            <div style="margin-left: 15px;">
-                <img id="wnStudentPhoto" src="">
-            </div>
+        <div class="wn-photo-col">
+            <img id="wnStudentPhoto" src="">
         </div>
     </div>
 
@@ -376,19 +401,19 @@
         </ul>
     </div>
 
-    <div style="font-size: 16px; color: #444; margin-top: 30px; font-style: italic;">
+    <div style="font-size: 18px; color: #444; margin-top: 30px; font-style: italic;">
         <p><span style="color:#d32f2f;">*</span> Conditions Apply.</p>
         <p>আমি উপরের নিয়মগুলো পড়লাম এবং মেনে চলতে সম্মত হলাম।</p>
     </div>
 
     <div class="wn-footer">
         <div class="wn-sig-box" style="text-align: left;">
-            <div style="height: 90px; display: flex; align-items: flex-end; justify-content: flex-start;">
-                <img id="wnStudentSig" src="">
+            <div style="height: 130px; display: flex; align-items: flex-end; justify-content: flex-start;">
+                <img id="wnStudentSig" src="" style="display:none;">
             </div>
-             <span id="wnStudentNameSig" style="font-weight: bold; border-top: 2px solid #333; padding-top: 5px; display: block; margin-top: 5px; font-size: 20px;">
-                </span>
-            <div style="font-size: 20px; font-weight: bold; color: #333; margin-top: 5px;">
+            <span id="wnStudentNameSig" style="font-weight: bold; border-top: 2px solid #333; padding-top: 5px; display: block; margin-top: 5px; font-size: 22px;">
+            </span>
+            <div style="font-size: 22px; font-weight: bold; color: #333; margin-top: 5px;">
                 Date: <span id="wnFooterDate"></span>
             </div>
         </div>
@@ -396,11 +421,10 @@
         <div class="wn-sig-box">
             <img id="wnSigImg" class="wn-sig-img" src="">
             <span class="wn-owner">Srikanta Banerjee</span>
-            <span style="font-size: 16px;">(Owner & Instructor)</span>
+            <span style="font-size: 18px;">(Owner & Instructor)</span>
         </div>
     </div>
 </div>
-
     <div id="securityOverlay">
         <span class="close-pin" onclick="closePinScreen()" style="position: absolute; top: 30px; right: 20px; font-size: 30px; opacity: 0.7;">&times;</span>
         <div style="font-size: 20px; letter-spacing: 2px; margin-bottom: 20px; opacity: 0.9;">ENTER PIN</div>
@@ -715,6 +739,9 @@
                 <div class="dashboard-card">
                     <label>Backup Data</label>
                     <button class="btn-primary btn-google" onclick="secureAction(exportData)" style="width:100%; margin-top:5px;"><i class="fab fa-google-drive"></i> Backup</button>
+                    <button class="btn-success" onclick="secureAction(exportToExcel)" style="width:100%; margin-top:10px; background: #1D6F42;">
+    <i class="fas fa-file-excel"></i> Export to Excel (Secure)
+</button>
                     <hr style="margin: 15px 0; border-top: 1px solid var(--border-color);">
                     <label>Restore / Reset</label>
                     <button class="btn-warning" onclick="secureAction(() => document.getElementById('importFile').click())" style="width:100%;"><i class="fas fa-file-upload"></i> Restore JSON</button>
@@ -792,12 +819,27 @@
                     <div style="font-size:11px; color:red; margin-top:5px;">Absent: <ul id="modalAbsentList" class="scrollable-list" style="max-height:80px;"></ul></div>
                  </div>
             </div>
+            <div style="background: var(--bg-input); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--border-color);">
+    <h4 style="margin: 0 0 10px 0; border-bottom: 2px solid var(--warning); padding-bottom: 5px;">
+        <i class="fas fa-sticky-note" style="color: var(--warning);"></i> Class Notes History
+    </h4>
+    
+    <input type="text" id="noteSearchInput" placeholder="Search by Date or Note content..." 
+           onkeyup="filterStudentNotes()" 
+           style="padding: 8px; font-size: 12px; margin-bottom: 10px;">
+
+    <div style="max-height: 150px; overflow-y: auto; border: 1px solid var(--border-color); background: var(--bg-card); border-radius: 8px;">
+        <ul id="modalNotesList" style="list-style: none; padding: 0; margin: 0;">
+            </ul>
+    </div>
+</div>
             <div style="background: var(--bg-input); padding: 15px; border-radius: 12px;">
                 <label>Generate Documents</label>
                 <div style="display: flex; gap: 10px; margin-bottom: 10px;">
                     <input type="date" id="idCardIssueDate">
                     <input type="date" id="idCardEndDate">
                 </div>
+                
                 <div style="display: flex; gap: 10px;">
                     <button class="btn-info" onclick="generateIDCard()" style="flex:1;">ID Card</button>
                     <button class="btn-primary" id="exportPdfBtn" style="flex:1;">Profile PDF</button>
@@ -1243,130 +1285,113 @@ secureAction(() => { initApp(); checkBackupStatus(); startClock(); }, true); doc
             sendWelcomeMsg('sms', studentId);
         };
 
-async function generateWelcomeNote(studentId, comeBack = false) {
+async function generateWelcomeNote(studentId) {
     const student = students.find(s => s.id === studentId);
     if (!student) return;
 
     Swal.fire({
         title: 'Generating PDF...',
-        text: 'Please wait a moment...',
+        text: 'Please wait...',
         allowOutsideClick: false,
         didOpen: () => { Swal.showLoading(); }
     });
 
+    // ডাটা সেট করা
     document.getElementById('wnStudentName').textContent = student.name;
+    document.getElementById('wnStudentNameSig').textContent = student.name; // সিগনেচারের নিচে নাম
     document.getElementById('wnClass').textContent = student.class || 'Music';
     
-    const timeStr = (student.class_day || '') + ' ' + (student.class_time ? formatTime12H(student.class_time) : '');
+    let timeStr = (student.class_day || '') + ' ' + (student.class_time ? formatTime12H(student.class_time) : '');
     document.getElementById('wnTime').textContent = timeStr;
-
     document.getElementById('wnFee').textContent = '₹' + (student.fee_amount || DEFAULT_FEE) + '/-';
     document.getElementById('wnAddress').textContent = student.address || '';
     document.getElementById('wnPhone').textContent = student.phone || '';
-    
     document.getElementById('wnFooterDate').textContent = new Date().toLocaleDateString('en-GB');
 
-    // Student Photo with Black Border
-    const studentPhotoImg = document.getElementById('wnStudentPhoto');
-    if (student.photo) {
-        studentPhotoImg.src = student.photo;
-        studentPhotoImg.style.display = 'block';
-    } else {
-        studentPhotoImg.style.display = 'none';
+    // ছবি
+    const photoImg = document.getElementById('wnStudentPhoto');
+    if (student.photo) { photoImg.src = student.photo; photoImg.style.display = 'block'; } 
+    else { photoImg.style.display = 'none'; }
+
+    // --- সিগনেচার ফিক্স ---
+    const studSigImg = document.getElementById('wnStudentSig');
+    if (student.student_signature) { 
+        studSigImg.src = student.student_signature; 
+        studSigImg.style.display = 'block'; 
+    } else { 
+        studSigImg.style.display = 'none'; 
     }
 
-    // Student Signature (Bottom Left)
-    const wnStudentSig = document.getElementById('wnStudentSig');
-    const wnStudentNameSig = document.getElementById('wnStudentNameSig');
-    wnStudentNameSig.textContent = student.name;
-    
-    if (student.student_signature) {
-        wnStudentSig.src = student.student_signature;
-        wnStudentSig.style.display = 'block';
-    } else {
-        wnStudentSig.style.display = 'none';
-    }
-    
-    // Logo
     if (instituteLogo) {
         document.getElementById('wnHeaderLogo').src = instituteLogo;
         document.getElementById('wnWatermarkImg').src = instituteLogo;
-    } else {
-        document.getElementById('wnHeaderLogo').style.display = 'none';
-        document.getElementById('wnWatermarkImg').style.display = 'none';
     }
-
-    // Instructor Signature
     if (authorizedSignature) {
         document.getElementById('wnSigImg').src = authorizedSignature;
-        document.getElementById('wnSigImg').style.display = 'block';
-    } else {
-        document.getElementById('wnSigImg').style.display = 'none';
     }
 
-    const element = document.getElementById('welcomeNoteTemplate');
-    
-    try {
-        const canvas = await html2canvas(element, { 
-            scale: 1.2, // Optimized scale for speed
-            useCORS: true, 
-            logging: false,
-            windowWidth: element.scrollWidth,
-            windowHeight: element.scrollHeight
-        });
+    setTimeout(async () => {
+        const element = document.getElementById('welcomeNoteTemplate');
         
-        const imgData = canvas.toDataURL('image/jpeg', 0.8);
-        
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-        
-        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-        
-        const fileName = `Welcome_${student.name.replace(/\s+/g, '_')}.pdf`;
-        window.tempPdfObj = pdf;
-        const pdfBlob = pdf.output('blob');
-        window.tempPdfFile = new File([pdfBlob], fileName, { type: "application/pdf" });
+        try {
+            const canvas = await html2canvas(element, { 
+                scale: 1.5, 
+                useCORS: true, 
+                logging: false,
+                backgroundColor: '#ffffff'
+            });
+            
+            const imgData = canvas.toDataURL('image/jpeg', 0.8);
+            
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            
+            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+            
+            const fileName = `Welcome_${student.name.replace(/\s+/g, '_')}.pdf`;
+            window.tempPdfObj = pdf;
+            const pdfBlob = pdf.output('blob');
+            window.tempPdfFile = new File([pdfBlob], fileName, { type: "application/pdf" });
 
-        Swal.close();
+            Swal.close();
 
-        Swal.fire({
-            title: 'Welcome Note Ready!',
-            html: `
-                <div class="swal-custom-actions">
-                    <button class="btn-whatsapp" onclick="shareWelcomePdf('${fileName}')">
-                        <i class="fab fa-whatsapp"></i> Share PDF
-                    </button>
-                    
-                    <button class="btn-whatsapp" style="background: #128C7E;" onclick="sendWelcomeMsg('wa', ${studentId})">
-                        <i class="fab fa-whatsapp"></i> Msg (WA)
-                    </button>
+            // --- আগের মতো বাটন সহ পপ-আপ ---
+            Swal.fire({
+                title: 'Welcome Note Ready!',
+                html: `
+                    <div class="swal-custom-actions" style="display:flex; flex-direction:column; gap:10px;">
+                        <button class="btn-whatsapp" onclick="shareWelcomePdf('${fileName}')" style="padding:10px; width:100%;">
+                            <i class="fab fa-whatsapp"></i> Share PDF
+                        </button>
+                        
+                        <div style="display:flex; gap:5px;">
+                            <button class="btn-whatsapp" style="background: #128C7E; flex:1;" onclick="sendWelcomeMsg('wa', ${studentId})">
+                                <i class="fab fa-whatsapp"></i> Msg (WA)
+                            </button>
+                            <button class="btn-sms" style="flex:1;" onclick="sendWelcomeSmsFromModal(${studentId})">
+                                <i class="fas fa-sms"></i> Send SMS
+                            </button>
+                        </div>
 
-                    <button class="btn-sms" onclick="sendWelcomeSmsFromModal(${studentId})">
-                        <i class="fas fa-sms"></i> Send SMS
-                    </button>
+                        <button class="btn-primary" onclick="downloadWelcomePdf('${fileName}')" style="padding:10px; width:100%;">
+                            <i class="fas fa-download"></i> Download PDF
+                        </button>
+                    </div>
+                `,
+                icon: 'success',
+                showConfirmButton: true,
+                confirmButtonText: 'Close',
+                confirmButtonColor: '#d33',
+                allowOutsideClick: false
+            });
 
-                    <button class="btn-primary" onclick="downloadWelcomePdf('${fileName}')">
-                        <i class="fas fa-download"></i> Download PDF
-                    </button>
-                </div>
-            `,
-            icon: 'success',
-            showConfirmButton: true,
-            confirmButtonText: 'Close',
-            allowOutsideClick: false,
-            didClose: () => {
-                if (comeBack) {
-                    // Optional logic
-                }
-            }
-        });
-
-    } catch (err) {
-        console.error(err);
-        Swal.fire('Error', 'Failed to generate PDF.', 'error');
-    }
+        } catch (err) {
+            console.error(err);
+            Swal.fire('Error', 'Failed to generate PDF.', 'error');
+        }
+    }, 200);
 }
 async function addStudent() { 
     const name = document.getElementById('studentName').value; 
@@ -1400,7 +1425,6 @@ async function addStudent() {
         timeDisplay = `${h12}:${m} ${ampm}`;
     }
     
-    // UPDATED SIGNATURE PREVIEW LOGIC
     let sigDisplay = currentStudentSignature 
         ? `<div style="margin-top:5px;"><img src="${currentStudentSignature}" style="max-height: 40px; border:1px solid #ddd; padding:2px;"></div>` 
         : '<span style="color:red;">No</span>';
@@ -1430,7 +1454,8 @@ async function addStudent() {
         confirmButtonText: 'Confirm & Save',
         cancelButtonText: 'Edit / Cancel',
         confirmButtonColor: 'var(--success)',
-        cancelButtonColor: 'var(--danger)'
+        cancelButtonColor: 'var(--danger)',
+        allowOutsideClick: false // এই লাইনটি বাইরে ক্লিক বন্ধ করবে
     });
 
     if (result.isConfirmed) {
@@ -1449,7 +1474,7 @@ async function addStudent() {
             address, 
             dob: dob, 
             photo: currentPhotoBase64, 
-            student_signature: currentStudentSignature, // Save signature
+            student_signature: currentStudentSignature, 
             joining_date: new Date().toISOString().split('T')[0], 
             status: { isActive: true, history: [{ status: 'Active', date: new Date().toISOString().split('T')[0], note: 'Joined' }] } 
         }; 
@@ -1491,9 +1516,10 @@ async function addStudent() {
             `,
             icon: 'success',
             showConfirmButton: true,
+            confirmButtonColor: '#d33', 
             confirmButtonText: 'Done / Close',
-            allowOutsideClick: false,
-            showCloseButton: true
+            showCloseButton: true,
+            allowOutsideClick: false // এই লাইনটি বাইরে ক্লিক বন্ধ করবে
         });
     } 
 }
@@ -1786,9 +1812,278 @@ async function addStudent() {
         }
 
         function getMonthStrFromFormat(formattedMonth) { const parts = formattedMonth.split(' '); if (parts.length !== 2) return null; const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]; const monthIndex = monthNames.findIndex(name => name === parts[0]); if (monthIndex === -1) return null; const month = (monthIndex + 1).toString().padStart(2, '0'); const year = parts[1]; return `${year}-${month}`; }
-        function addWatermarkAndSignatureToPdf(doc) { const pageCount = doc.getNumberOfPages(); const pageWidth = doc.internal.pageSize.getWidth(); const pageHeight = doc.internal.pageSize.getHeight(); for (let i = 1; i <= pageCount; i++) { doc.setPage(i); if (instituteLogo) { doc.saveGraphicsState(); doc.setGState(new doc.GState({ opacity: 0.1 })); const imgSize = Math.min(pageWidth, pageHeight) * 0.85; const x = (pageWidth - imgSize) / 2; const y = (pageHeight - imgSize) / 2; doc.addImage(instituteLogo, 'JPEG', x, y, imgSize, imgSize); doc.restoreGraphicsState(); } const sigY = pageHeight - 35; if (authorizedSignature) { doc.addImage(authorizedSignature, 'PNG', pageWidth - 55, sigY, 40, 15); } doc.setFontSize(10); doc.setFont("helvetica", "italic"); doc.text("Authorized Signature", pageWidth - 15, sigY + 20, { align: "right" }); doc.text("(Srikanta Banerjee)", pageWidth - 15, sigY + 25, { align: "right" }); } }
+// ১. নতুন ফুটার ফাংশন (এটি প্রতি পেজের নিচে ডেট ও সিগনেচার বসাবে)
+function addPageFooter(doc, dateStr) {
+    const pageCount = doc.getNumberOfPages();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 15;
+    const footerY = pageHeight - 20; // নিচ থেকে ২০ মিমি উপরে
 
-        function exportStudentDetailsAsPDF(studentId) { const student = students.find(s => s.id === studentId); if (!student) return; const { jsPDF } = window.jspdf; const doc = new jsPDF(); let y = 15; const addLine = (text, size, weight, margin) => { doc.setFontSize(size); doc.setFont('helvetica', weight); doc.text(text, 15, y); y += margin; if (y > 280) { doc.addPage(); y = 15; } }; doc.setFontSize(22); doc.setFont('helvetica', 'bold'); doc.text(`${INSTITUTE_NAME}`, 105, y, { align: 'center' }); y += 8; if (student.photo) { doc.addImage(student.photo, 'JPEG', 160, 15, 30, 30); } doc.setFontSize(14); doc.text('Student Report', 105, y, { align: 'center' }); y += 12; addLine(`Student Name: ${student.name}`, 16, 'bold', 8); addLine(`Serial No: ${student.serial_no}`, 11, 'normal', 6); addLine(`Class: ${student.class || 'N/A'}`, 11, 'normal', 6); addLine(`Monthly Fee: ₹${student.fee_amount || DEFAULT_FEE}`, 11, 'normal', 6); addLine(`Joining Date: ${new Date(student.joining_date).toLocaleDateString('en-IN')}`, 11, 'normal', 10); addLine('Contact Information', 14, 'bold', 8); addLine(`Guardian: ${student.guardian || 'N/A'}`, 11, 'normal', 6); addLine(`Phone: ${student.phone || 'N/A'}`, 11, 'normal', 6); addLine(`Email: ${student.email || 'N/A'}`, 11, 'normal', 6); addLine(`Address: ${student.address || 'N/A'}`, 11, 'normal', 10); addLine('Status History', 14, 'bold', 8); if (student.status.history && student.status.history.length > 0) { student.status.history.forEach(entry => { addLine(`${entry.status} on ${new Date(entry.date).toLocaleDateString('en-IN')} - Note: ${entry.note || 'N/A'}`, 10, 'normal', 6); }); } else { addLine('No status history found.', 10, 'italic', 6); } y += 4; addLine('Fee Payment History', 14, 'bold', 8); let feesFound = false; Object.keys(fees).sort().forEach(month => { if(wasStudentActiveDuringMonth(student, month)) { const feeRecord = fees[month]?.[student.id]; if (feeRecord?.status === 'paid') { addLine(`${month}: ₹${feeRecord.amount} (Paid on ${new Date(feeRecord.date).toLocaleDateString('en-IN')} - ${feeRecord.mode || 'Cash'} ${feeRecord.transactionId ? '- Txn: '+feeRecord.transactionId : ''})`, 10, 'normal', 6); feesFound = true; } else if (isMonthDue(month)) { addLine(`${month}: Due`, 10, 'normal', 6); feesFound = true; } } }); if (!feesFound) { addLine('No records found.', 10, 'italic', 6); } y += 4; addLine('Attendance Summary & Details', 14, 'bold', 8); let presentDates = [], absentDates = []; Object.keys(attendance).sort().reverse().forEach(date => { const entry = attendance[date]?.[student.id]; if (entry) { const status = (typeof entry === 'object' && entry !== null) ? entry.status : entry; const d = new Date(date); const formattedDate = `${d.toLocaleDateString('en-IN')} (${d.toLocaleDateString('en-IN', {weekday: 'long'})})`; if (status === 'present') presentDates.push(formattedDate); if (status === 'absent') absentDates.push(formattedDate); } }); addLine(`Total Present: ${presentDates.length}`, 11, 'bold', 6); addLine(`Total Absent: ${absentDates.length}`, 11, 'bold', 8); if(presentDates.length > 0) { addLine('Present Days (Recent):', 10, 'bold', 6); presentDates.forEach(d => addLine(`- ${d}`, 9, 'normal', 5)); y+=2; } if(absentDates.length > 0) { addLine('Absent Days (Recent):', 10, 'bold', 6); absentDates.forEach(d => addLine(`- ${d}`, 9, 'normal', 5)); } addWatermarkAndSignatureToPdf(doc); doc.save(`${student.name}_report.pdf`); }
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+
+        // ওয়াটারমার্ক (Watermark)
+        if (instituteLogo) {
+            doc.saveGraphicsState();
+            doc.setGState(new doc.GState({ opacity: 0.05 })); // খুব হালকা
+            const imgSize = 100;
+            doc.addImage(instituteLogo, 'JPEG', (pageWidth - imgSize) / 2, (pageHeight - imgSize) / 2, imgSize, imgSize);
+            doc.restoreGraphicsState();
+        }
+
+        // --- ফুটার এরিয়া ---
+        
+        // ১. বাম দিকে ডেট (Date on Bottom Left)
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(50);
+        doc.text(`Generated Date: ${dateStr}`, margin, footerY + 5);
+        
+        // পেজ নম্বর (মাঝখানে)
+        doc.text(`Page ${i} of ${pageCount}`, pageWidth / 2, footerY + 15, { align: 'center' });
+
+        // ২. ডান দিকে সিগনেচার (Signature on Bottom Right)
+        if (authorizedSignature) {
+            // সিগনেচার ইমেজ
+            doc.addImage(authorizedSignature, 'PNG', pageWidth - 50, footerY - 10, 35, 12);
+        }
+        
+        // সিগনেচার টেক্সট
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "bold");
+        doc.text("Authorized Signature", pageWidth - 15, footerY + 5, { align: "right" });
+        doc.setFont("helvetica", "italic");
+        doc.text(`(${MY_NAME})`, pageWidth - 15, footerY + 9, { align: "right" });
+    }
+}
+
+// ২. মেইন পিডিএফ ফাংশন (আপডেট করা)
+function exportStudentDetailsAsPDF(studentId) {
+    const student = students.find(s => s.id === studentId);
+    if (!student) return;
+
+    // ... ফাংশনের শুরুর ভেরিয়েবলগুলো ...
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const currentDate = new Date().toLocaleDateString('en-IN');
+
+    let y = 20;
+    const leftMargin = 15;
+    const lineHeight = 7;
+
+    // --- ১. হেডার সেকশন (লোগো সহ আপডেট করা) ---
+    
+    // লোগো বসানো (বাম দিকে)
+    if (instituteLogo) {
+        const logoSize = 20; // লোগোর সাইজ (ছোট)
+        // (x=15, y=15) পজিশনে লোগো বসবে
+        doc.addImage(instituteLogo, 'JPEG', leftMargin, 15, logoSize, logoSize);
+    }
+
+    // টাইটেল (সেন্টারে)
+    doc.setFontSize(20);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(0);
+    
+    // টাইটেলটি যাতে লোগোর উপরে না উঠে যায়, তাই একটু জায়গা রাখা হলো
+    // লোগো থাকলেও টাইটেল পেজের মাঝখানে (Center) থাকবে, দেখতে প্রোফেশনাল লাগবে
+    const titleLines = doc.splitTextToSize(INSTITUTE_NAME, 130); 
+    
+    // লোগো থাকলে টাইটেল একটু ডান দিক থেকে শুরু হবে না, মাঝখানেই থাকবে তবে y পজিশন ঠিক থাকবে
+    const titleY = instituteLogo ? 20 : 20; 
+    
+    doc.text(titleLines, pageWidth / 2, titleY, { align: 'center' });
+    y += (titleLines.length * 8) + 8; // স্পেস বাড়ানো হলো
+
+    // সাব-হেডার
+    doc.setFontSize(14);
+    doc.setTextColor(80);
+    doc.text("STUDENT PROFILE REPORT", pageWidth / 2, y, { align: 'center' });
+    y += 8;
+
+    // লাইন
+    doc.setDrawColor(100);
+    doc.setLineWidth(0.5);
+    doc.line(leftMargin, y, pageWidth - leftMargin, y);
+    y += 15;
+
+    // ... এরপর "২. ছবি এবং বেসিক তথ্য" সেকশন থেকে বাকি কোড একই থাকবে ...
+
+    // --- ২. ছবি এবং বেসিক তথ্য ---
+    if (student.photo) {
+        const photoSize = 35;
+        const photoX = pageWidth - leftMargin - photoSize;
+        const photoY = y;
+        doc.addImage(student.photo, 'JPEG', photoX, photoY, photoSize, photoSize);
+        doc.setDrawColor(0, 0, 0); 
+        doc.setLineWidth(1.0);     
+        doc.rect(photoX, photoY, photoSize, photoSize); 
+    } else {
+        doc.setDrawColor(200);
+        doc.setFillColor(240);
+        doc.rect(pageWidth - leftMargin - 35, y, 35, 35, 'FD');
+        doc.setFontSize(8);
+        doc.text("No Photo", pageWidth - leftMargin - 17.5, y + 17.5, {align:'center'});
+    }
+
+    doc.setFontSize(11);
+    doc.setTextColor(0);
+    const addInfo = (label, value) => {
+        doc.setFont("helvetica", "bold");
+        doc.text(label, leftMargin, y);
+        doc.setFont("helvetica", "normal");
+        doc.text(value || 'N/A', leftMargin + 35, y);
+        y += lineHeight;
+    };
+
+    addInfo("Name:", student.name);
+    addInfo("ID No:", student.serial_no.toString());
+    addInfo("Class:", student.class);
+    addInfo("Fees:", `Rs. ${student.fee_amount || DEFAULT_FEE}/-`);
+    addInfo("Joined:", new Date(student.joining_date).toLocaleDateString('en-IN'));
+    y += 5;
+
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("Contact Info", leftMargin, y);
+    y += 8;
+    
+    doc.setFontSize(11);
+    addInfo("Phone:", student.phone);
+    addInfo("Guardian:", student.guardian);
+    
+    doc.setFont("helvetica", "bold");
+    doc.text("Address:", leftMargin, y);
+    doc.setFont("helvetica", "normal");
+    const addrLines = doc.splitTextToSize(student.address || 'N/A', 80);
+    doc.text(addrLines, leftMargin + 35, y);
+    y += (addrLines.length * 6) + 10;
+
+    // --- ৩. পেমেন্ট রেকর্ড (Fees) ---
+    doc.setDrawColor(200); doc.setLineWidth(0.2);
+    doc.line(leftMargin, y, pageWidth - leftMargin, y);
+    y += 10;
+
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("Fee Payment History (Recent)", leftMargin, y);
+    y += 8;
+
+    doc.setFillColor(230);
+    doc.rect(leftMargin, y, pageWidth - (leftMargin*2), 8, 'F');
+    doc.setFontSize(10);
+    doc.text("Month", leftMargin + 5, y + 5);
+    doc.text("Amount", leftMargin + 50, y + 5);
+    doc.text("Status", leftMargin + 100, y + 5);
+    y += 12;
+
+    doc.setFont("helvetica", "normal");
+    let hasFees = false;
+    Object.keys(fees).sort().reverse().slice(0, 12).forEach(month => { // Last 12 records
+        if (wasStudentActiveDuringMonth(student, month)) {
+            const rec = fees[month]?.[student.id];
+            if (rec?.status === 'paid' || isMonthDue(month)) {
+                hasFees = true;
+                const monthName = new Date(month + '-01').toLocaleString('default', { month: 'short', year: 'numeric' });
+                doc.text(monthName, leftMargin + 5, y);
+                
+                if (rec?.status === 'paid') {
+                    doc.text(`Rs. ${rec.amount}`, leftMargin + 50, y);
+                    doc.setTextColor(0, 100, 0); 
+                    doc.text(`Paid (${new Date(rec.date).toLocaleDateString('en-IN')})`, leftMargin + 100, y);
+                } else {
+                    doc.text(`Rs. ${student.fee_amount}`, leftMargin + 50, y);
+                    doc.setTextColor(200, 0, 0); 
+                    doc.text("Due", leftMargin + 100, y);
+                }
+                doc.setTextColor(0);
+                y += 7;
+            }
+        }
+    });
+    if (!hasFees) doc.text("No recent records.", leftMargin + 5, y);
+    y += 10;
+
+    // --- ৪. এটেন্ডেন্স এবং নোট (Attendance Section) --- 
+    // (এই অংশটি আপনার মিসিং ছিল, এখন যোগ করা হলো)
+    
+    if (y > 220) { addPageFooter(doc, currentDate); doc.addPage(); y = 20; }
+
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("Attendance & Class Notes", leftMargin, y);
+    y += 8;
+
+    // টেবিল হেডার
+    doc.setFillColor(230);
+    doc.rect(leftMargin, y, pageWidth - (leftMargin*2), 8, 'F');
+    doc.setFontSize(10);
+    doc.text("Date", leftMargin + 5, y + 5);
+    doc.text("Status", leftMargin + 45, y + 5);
+    doc.text("Topic / Note", leftMargin + 85, y + 5);
+    y += 12;
+
+    doc.setFont("helvetica", "normal");
+    let hasAttendance = false;
+    
+    // এটেন্ডেন্স সর্ট করা (নতুন থেকে পুরনো)
+    const sortedDates = Object.keys(attendance).sort().reverse();
+
+    sortedDates.forEach(date => {
+        const entry = attendance[date]?.[student.id];
+        if (entry) {
+            hasAttendance = true;
+            const d = new Date(date);
+            const dateStr = d.toLocaleDateString('en-IN');
+            
+            // ডাটা বের করা
+            const status = (typeof entry === 'object') ? entry.status : entry;
+            const note = (typeof entry === 'object' && entry.note) ? entry.note : '';
+            
+            // ১. ডেট কলাম
+            doc.setTextColor(0);
+            doc.text(dateStr, leftMargin + 5, y);
+
+            // ২. স্ট্যাটাস কলাম (রঙিন)
+            if(status === 'present') {
+                doc.setTextColor(0, 128, 0); // Green
+                doc.text("Present", leftMargin + 45, y);
+            } else if(status === 'absent') {
+                doc.setTextColor(200, 0, 0); // Red
+                doc.text("Absent", leftMargin + 45, y);
+            }
+
+            // ৩. নোট কলাম (Note)
+            doc.setTextColor(80); // Dark Gray
+            const noteText = note ? note : '-';
+            // নোট বেশি বড় হলে যাতে পরের লাইনে যায়
+            const noteLines = doc.splitTextToSize(noteText, 95); 
+            doc.text(noteLines, leftMargin + 85, y);
+
+            // পরের লাইনের জন্য স্পেস হিসাব করা
+            const rowHeight = Math.max(7, noteLines.length * 5);
+            y += rowHeight;
+
+            // পেজ শেষ হলে নতুন পেজ
+            if (y > 270) {
+                addPageFooter(doc, currentDate);
+                doc.addPage();
+                y = 20;
+            }
+        }
+    });
+
+    if (!hasAttendance) {
+        doc.setTextColor(0);
+        doc.text("No attendance records found.", leftMargin + 5, y);
+    }
+
+    // --- ৫. ফুটার এবং সেভ ---
+    addPageFooter(doc, currentDate);
+    doc.save(`${student.name}_Profile.pdf`);
+}
         function calculateMonthStats(monthStr) { let income = 0; let studentCount = 0; if(fees[monthStr]) { Object.values(fees[monthStr]).forEach(record => { if(record.status === 'paid') income += record.amount; }); } students.forEach(student => { if(wasStudentActiveDuringMonth(student, monthStr)) { studentCount++; } }); return { income, studentCount }; }
 
         function updateYearlyChart() { 
@@ -2064,28 +2359,44 @@ async function addStudent() {
         }
 
         async function saveFee() { 
-            const studentId = parseInt(document.getElementById('feeStudentId').value); 
-            const month = document.getElementById('feeRecordMonth').value; 
-            const amount = parseFloat(document.getElementById('feeAmount').value); 
-            const date = document.getElementById('feeDate').value; 
-            const mode = document.getElementById('paymentMode').value; 
-            const txnId = document.getElementById('transactionId').value.trim(); 
-            
-            if (isNaN(amount) || amount <= 0) { Swal.fire('Error','Invalid amount.', 'error'); return; } 
-            if (!date) { Swal.fire('Error','Select date.', 'error'); return; } 
-            if (!fees[month]) fees[month] = {}; 
-            
-            let receiptNo = fees[month][studentId]?.receiptNo; 
-            if (!receiptNo) { 
-                receiptNo = Date.now().toString().slice(-6); 
-            }
-            fees[month][studentId] = { status: 'paid', amount, date, mode: mode, transactionId: txnId, receiptNo: receiptNo }; 
-            await saveData(); 
-            closeModal('feeModal'); 
-            Swal.fire({ title: 'Payment Recorded!', html: `<p>What would you like to do?</p><div style="display:flex; gap:5px; justify-content:center; flex-wrap:wrap;"><button class="btn-like btn-receipt" onclick="generatePaymentReceipt(${studentId}, '${month}')">Receipt</button><button class="btn-like btn-whatsapp" onclick="sendMsg('wa', ${studentId}, '${month}', ${amount}, false)">WhatsApp</button><button class="btn-like btn-sms" onclick="sendMsg('sms', ${studentId}, '${month}', ${amount}, false)">SMS</button><button class="btn-like btn-mail" onclick="sendMsg('mail', ${studentId}, '${month}', ${amount}, false)">Email</button></div>`, icon: 'success', showConfirmButton: false, showCloseButton: true }); 
-            loadAllData(); 
-        }
-
+    const studentId = parseInt(document.getElementById('feeStudentId').value); 
+    const month = document.getElementById('feeRecordMonth').value; 
+    const amount = parseFloat(document.getElementById('feeAmount').value); 
+    const date = document.getElementById('feeDate').value; 
+    const mode = document.getElementById('paymentMode').value; 
+    const txnId = document.getElementById('transactionId').value.trim(); 
+    
+    if (isNaN(amount) || amount <= 0) { Swal.fire('Error','Invalid amount.', 'error'); return; } 
+    if (!date) { Swal.fire('Error','Select date.', 'error'); return; } 
+    if (!fees[month]) fees[month] = {}; 
+    
+    let receiptNo = fees[month][studentId]?.receiptNo; 
+    if (!receiptNo) { 
+        receiptNo = Date.now().toString().slice(-6); 
+    }
+    fees[month][studentId] = { status: 'paid', amount, date, mode: mode, transactionId: txnId, receiptNo: receiptNo }; 
+    await saveData(); 
+    closeModal('feeModal'); 
+    
+    Swal.fire({ 
+        title: 'Payment Recorded!', 
+        html: `<p>What would you like to do?</p>
+               <div style="display:flex; gap:5px; justify-content:center; flex-wrap:wrap;">
+                   <button class="btn-like btn-receipt" onclick="generatePaymentReceipt(${studentId}, '${month}')">Receipt</button>
+                   <button class="btn-like btn-whatsapp" onclick="sendMsg('wa', ${studentId}, '${month}', ${amount}, false)">WhatsApp</button>
+                   <button class="btn-like btn-sms" onclick="sendMsg('sms', ${studentId}, '${month}', ${amount}, false)">SMS</button>
+                   <button class="btn-like btn-mail" onclick="sendMsg('mail', ${studentId}, '${month}', ${amount}, false)">Email</button>
+               </div>`, 
+        icon: 'success', 
+        showConfirmButton: true, 
+        confirmButtonText: 'Close',
+        confirmButtonColor: '#d33', // লাল রঙের ক্লোজ বাটন
+        showCloseButton: true,
+        allowOutsideClick: false // এই লাইনটি বাইরে ক্লিক বন্ধ করবে
+    }); 
+    
+    loadAllData(); 
+}
         function renderFees() { 
             const selectedMonth = document.getElementById('feeMonth').value, tableBody = document.querySelector('#feeTable tbody'); 
             tableBody.innerHTML = ''; 
@@ -2282,34 +2593,66 @@ async function addStudent() {
                 if (navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], title: 'Student ID Card', text: `ID Card for ${student.name}` }); } catch (err) { doc.save(fileName); } } else { doc.save(fileName); } 
             } else { doc.save(fileName); } 
         }
-        function renderAttendance() { 
-            const date = document.getElementById('attendanceDate').value, tableBody = document.querySelector('#attendanceTable tbody'); 
-            tableBody.innerHTML = ''; 
-            if (!date) return; 
-            
-            const timeInput = document.getElementById('attendanceTime');
-            if(!timeInput.value) {
-               const now = new Date(); const hours = now.getHours().toString().padStart(2, '0'); const mins = now.getMinutes().toString().padStart(2, '0'); timeInput.value = `${hours}:${mins}`;
-            }
+        // এই ফাংশনটি দিয়ে আগের renderAttendance ফাংশনটি বদলে দিন
+function renderAttendance() { 
+    const date = document.getElementById('attendanceDate').value;
+    const tableBody = document.querySelector('#attendanceTable tbody'); 
+    tableBody.innerHTML = ''; 
+    if (!date) return; 
 
-            students.filter(s => s.status?.isActive).forEach(student => { 
-                const entry = attendance[date]?.[student.id];
-                const status = (typeof entry === 'object' && entry !== null) ? entry.status : entry; 
-                
-                const statusText = status === 'present' ? 'Present' : (status === 'absent' ? 'Absent' : 'Not Marked');
-                const statusClass = status === 'present' ? 'status-present' : (status === 'absent' ? 'status-absent' : ''); 
-                
-                const hasGlobalDue = checkGlobalDues(student.id); 
-                const rowClass = hasGlobalDue ? 'has-dues-alert' : ''; 
-                
-                const row = document.createElement('tr');
-                if (rowClass) row.className = rowClass;
-                
-                row.innerHTML = `<td>${getStudentHtml(student)}</td><td class="${statusClass}">${statusText}</td><td class="action-buttons"><button class="btn-success" onclick="markAttendance(${student.id}, 'present')">P</button><button class="btn-danger" onclick="markAttendance(${student.id}, 'absent')">A</button><button class="btn-secondary" onclick="markAttendance(${student.id}, 'clear')">X</button></td>`;
-                tableBody.appendChild(row);
-            }); 
-            searchTable('searchAttendance', 'attendanceTable'); 
-        }
+    // টাইম সেট করা (যদি না থাকে)
+    const timeInput = document.getElementById('attendanceTime');
+    if(!timeInput.value) {
+       const now = new Date(); 
+       const hours = now.getHours().toString().padStart(2, '0'); 
+       const mins = now.getMinutes().toString().padStart(2, '0'); 
+       timeInput.value = `${hours}:${mins}`;
+    }
+
+    students.filter(s => s.status?.isActive).forEach(student => { 
+        const entry = attendance[date]?.[student.id];
+        
+        // স্ট্যাটাস এবং নোট বের করা
+        const status = (typeof entry === 'object' && entry !== null) ? entry.status : entry; 
+        const note = (typeof entry === 'object' && entry?.note) ? entry.note : '';
+        
+        const statusText = status === 'present' ? 'Present' : (status === 'absent' ? 'Absent' : 'Not Marked');
+        const statusClass = status === 'present' ? 'status-present' : (status === 'absent' ? 'status-absent' : ''); 
+        
+        // নোট থাকলে বাটনের রঙ হলুদ হবে
+        const noteBtnColor = note ? 'btn-warning' : 'btn-secondary';
+       const noteIcon = 'fas fa-pencil-alt';
+
+        const row = document.createElement('tr');
+        
+        // নোট থাকলে নামের নিচে দেখাবে
+        const noteDisplay = note ? `<div style="font-size:11px; color:#d97706; margin-top:2px; margin-left:55px;">📝 ${note}</div>` : '';
+
+// renderAttendance function er vitore row.innerHTML er ongsho ti erokom hobe:
+
+row.innerHTML = `
+    <td>
+        ${getStudentHtml(student)}
+        <div style="font-size:11px; color:#d97706; margin-top:2px; margin-left:55px;">
+            ${note ? '📝 ' + note : ''}
+        </div>
+    </td>
+    <td class="${statusClass}">${statusText}</td>
+    <td class="action-buttons">
+        <button class="btn-success" onclick="markAttendance(${student.id}, 'present')">P</button>
+        
+        <button class="btn-danger" onclick="markAttendance(${student.id}, 'absent')">A</button>
+        
+        <button class="${noteBtnColor}" onclick="addAttendanceNote(${student.id})" title="Edit Note">
+            <i class="${noteIcon}"></i>
+        </button>
+
+        <button class="btn-secondary" onclick="markAttendance(${student.id}, 'clear')">X</button>
+    </td>`;
+        tableBody.appendChild(row);
+    }); 
+    searchTable('searchAttendance', 'attendanceTable'); 
+}
 
         function loadStudentsList() { 
             const activeList = document.getElementById('activeStudentsList');
@@ -2349,25 +2692,139 @@ async function addStudent() {
             }); 
         }
 
-        function markAttendance(studentId, status) {
-            const date = document.getElementById('attendanceDate').value; 
-            if (!date) { Swal.fire('Alert','Please select a date.', 'warning'); return; } 
-            if (!attendance[date]) attendance[date] = {}; 
-            
-            if (status === 'clear') { delete attendance[date][studentId]; } 
-            else {
-                const timeInput = document.getElementById('attendanceTime').value; let timeToSave = timeInput;
-                if (!timeToSave) { const now = new Date(); const hours = now.getHours().toString().padStart(2, '0'); const mins = now.getMinutes().toString().padStart(2, '0'); timeToSave = `${hours}:${mins}`; }
-                attendance[date][studentId] = { status: status, time: timeToSave }; 
-            }
-            saveData().then(() => renderAttendance()); 
-        }
+        // এই ফাংশনটি দিয়ে আপনার পুরনো markAttendance ফাংশনটি রিপ্লেস করুন
+function markAttendance(studentId, status) {
+    const date = document.getElementById('attendanceDate').value; 
+    if (!date) { Swal.fire('Alert','Please select a date.', 'warning'); return; } 
+    
+    if (!attendance[date]) attendance[date] = {}; 
+    
+    // ১. আগে থেকে কোনো নোট বা ডেটা আছে কিনা তা দেখা
+    const currentEntry = attendance[date][studentId];
+    
+    // যদি আগের ডেটা অবজেক্ট হয় তবে নোট নেব, স্ট্রিং হলে (পুরনো ভার্সন) নোট নেই
+    let existingNote = '';
+    if (typeof currentEntry === 'object' && currentEntry !== null && currentEntry.note) {
+        existingNote = currentEntry.note;
+    }
 
-        function unmarkFee(studentId, month) { 
-            Swal.fire({ title: 'Unmark Payment?', text: "Mark fee as unpaid?", icon: 'warning', showCancelButton: true, confirmButtonText: 'Yes' }).then(async (result) => { 
-                if (result.isConfirmed && fees[month]?.[studentId]) { delete fees[month][studentId]; await saveData(); loadAllData(); Swal.fire('Success', 'Payment removed.', 'success'); } 
-            }); 
+    if (status === 'clear') { 
+        // ২. যদি নোট থাকে, তবে অবজেক্ট ডিলিট করবো না, শুধু স্ট্যাটাস নাল (null) করবো
+        if (existingNote) {
+            attendance[date][studentId] = { 
+                status: null,  // স্ট্যাটাস মুছে ফেলা হলো
+                time: '', 
+                note: existingNote // নোটটি রেখে দেওয়া হলো
+            };
+        } else {
+            // নোট না থাকলে পুরোটা ডিলিট
+            delete attendance[date][studentId]; 
         }
+    } else {
+        // ৩. P বা A চাপলে নতুন স্ট্যাটাসের সাথে পুরনো নোটটি আবার সেভ করা হবে
+        const timeInput = document.getElementById('attendanceTime').value; 
+        let timeToSave = timeInput;
+        if (!timeToSave) { 
+            const now = new Date(); 
+            const hours = now.getHours().toString().padStart(2, '0'); 
+            const mins = now.getMinutes().toString().padStart(2, '0'); 
+            timeToSave = `${hours}:${mins}`; 
+        }
+        
+        attendance[date][studentId] = { 
+            status: status, 
+            time: timeToSave,
+            note: existingNote // পুরনো নোটটি এখানে আবার বসিয়ে দেওয়া হলো
+        }; 
+    }
+    
+    saveData().then(() => renderAttendance()); 
+}
+        // নোট লেখার পপ-আপ ফাংশন
+async function addAttendanceNote(studentId) {
+    const date = document.getElementById('attendanceDate').value;
+    if (!date) { Swal.fire('Alert', 'Please select a date first.', 'warning'); return; }
+    
+    const currentEntry = attendance[date]?.[studentId] || {};
+    const existingNote = currentEntry.note || '';
+
+    const { value: text } = await Swal.fire({
+        title: 'Class Progress Note',
+        input: 'textarea',
+        inputLabel: 'আজ ক্লাসে কি শেখানো হলো?',
+        inputValue: existingNote,
+        placeholder: 'যেমন: C Major Scale শেখানো হয়েছে...',
+        showCancelButton: true,
+        confirmButtonText: 'Save Note',
+        confirmButtonColor: 'var(--primary)',
+        allowOutsideClick: false // এই লাইনটি বাইরে ক্লিক বন্ধ করবে
+    });
+
+    if (text !== undefined) {
+        if (!attendance[date]) attendance[date] = {};
+        
+        attendance[date][studentId] = {
+            ...currentEntry, 
+            note: text
+        };
+        
+        await saveData();
+        renderAttendance();
+
+        if (text.trim() !== "") {
+            const student = students.find(s => s.id === studentId);
+            const safeNote = text.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            
+            Swal.fire({
+                title: 'Note Saved!',
+                html: `
+                    <p style="font-size:14px; color:#666;">Do you want to send this note to <b>${student.name}</b>?</p>
+                    <div style="display:flex; gap:10px; justify-content:center; margin-top:15px;">
+                        <button class="btn-whatsapp" onclick="sendNoteAction('wa', ${studentId}, '${safeNote}', '${date}')" style="padding:10px 20px !important; font-size:14px;">
+                            <i class="fab fa-whatsapp"></i> WhatsApp
+                        </button>
+                        <button class="btn-sms" onclick="sendNoteAction('sms', ${studentId}, '${safeNote}', '${date}')" style="padding:10px 20px !important; font-size:14px;">
+                            <i class="fas fa-sms"></i> SMS
+                        </button>
+                    </div>
+                `,
+                icon: 'success',
+                showCloseButton: false, 
+                showConfirmButton: true,
+                confirmButtonText: 'Close',
+                confirmButtonColor: '#d33',
+                allowOutsideClick: false // এই লাইনটি বাইরে ক্লিক বন্ধ করবে
+            });
+        } else {
+            const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+            Toast.fire({ icon: 'success', title: 'Note cleared' });
+        }
+    }
+}
+        function unmarkFee(studentId, month) { 
+    Swal.fire({ 
+        title: 'Unmark Payment?', 
+        text: "Mark fee as unpaid?", 
+        icon: 'warning', 
+        showCancelButton: true, 
+        confirmButtonText: 'Yes',
+        cancelButtonColor: '#d33',
+        allowOutsideClick: false // ওয়ার্নিং পপ-আপ বাইরে ক্লিক করলে বন্ধ হবে না
+    }).then(async (result) => { 
+        if (result.isConfirmed && fees[month]?.[studentId]) { 
+            delete fees[month][studentId]; 
+            await saveData(); 
+            loadAllData(); 
+            Swal.fire({
+                title: 'Success', 
+                text: 'Payment removed.', 
+                icon: 'success',
+                confirmButtonColor: '#3085d6',
+                allowOutsideClick: false // সাকসেস মেসেজ বাইরে ক্লিক করলে বন্ধ হবে না
+            }); 
+        } 
+    }); 
+}
         
         function openFeeModal(studentId, month, isEdit = false) { 
             const modal = document.getElementById('feeModal'), amountInput = document.getElementById('feeAmount'), dateInput = document.getElementById('feeDate'); 
@@ -2507,49 +2964,96 @@ function showStudentDetails(studentId) {
     monthNames.forEach((m, idx) => { const opt = document.createElement('option'); opt.value = idx + 1; opt.text = m; if(idx === new Date().getMonth()) opt.selected = true; monthSelect.appendChild(opt); });
     renderStudentDetailsHistory();
     document.getElementById('exportPdfBtn').onclick = () => exportStudentDetailsAsPDF(studentId); 
+    renderStudentNotes(studentId);
     document.getElementById('studentDetailsModal').style.display = 'flex'; 
 }
         function renderStudentDetailsHistory() {
-            if(!currentlyViewingStudentId) return;
-            const student = students.find(s => s.id === currentlyViewingStudentId); if(!student) return;
-            const selectedYear = parseInt(document.getElementById('detailsFilterYear').value);
-            const selectedMonth = parseInt(document.getElementById('detailsFilterMonth').value);
-            const presentList = document.getElementById('modalPresentList'), absentList = document.getElementById('modalAbsentList'); presentList.innerHTML = absentList.innerHTML = ''; 
-            
-            Object.keys(attendance).sort().reverse().forEach(date => { 
-                const d = new Date(date);
-                if(d.getFullYear() === selectedYear && (d.getMonth() + 1) === selectedMonth) {
-                    const entry = attendance[date]?.[student.id];
-                    if(entry) {
-                        const dayName = d.toLocaleDateString('en-IN', { weekday: 'long' });
-                        let timeStr = ''; let status = entry;
-                        if(typeof entry === 'object' && entry !== null) {
-                            status = entry.status;
-                            if(entry.time) { const [h, m] = entry.time.split(':'); const ampm = h >= 12 ? 'PM' : 'AM'; const h12 = h % 12 || 12; timeStr = ` (${h12}:${m} ${ampm})`; }
-                        }
-                        const formattedDate = `${d.toLocaleDateString('en-IN')} (${dayName})${timeStr}`;
-                        if (status === 'present') { presentList.innerHTML += `<li style="padding:2px 0; border-bottom:1px solid #f9f9f9;">${formattedDate}</li>`; } 
-                        else if (status === 'absent') { absentList.innerHTML += `<li style="padding:2px 0; border-bottom:1px solid #f9f9f9;">${formattedDate}</li>`; }
-                    }
+    if(!currentlyViewingStudentId) return;
+    const student = students.find(s => s.id === currentlyViewingStudentId); if(!student) return;
+    
+    const selectedYear = parseInt(document.getElementById('detailsFilterYear').value);
+    const selectedMonth = parseInt(document.getElementById('detailsFilterMonth').value);
+    
+    // --- ATTENDANCE SECTION ---
+    const presentList = document.getElementById('modalPresentList'), absentList = document.getElementById('modalAbsentList'); 
+    presentList.innerHTML = absentList.innerHTML = ''; 
+    
+    Object.keys(attendance).sort().reverse().forEach(date => { 
+        const d = new Date(date);
+        if(d.getFullYear() === selectedYear && (d.getMonth() + 1) === selectedMonth) {
+            const entry = attendance[date]?.[student.id];
+            if(entry) {
+                const dayName = d.toLocaleDateString('en-IN', { weekday: 'long' });
+                let timeStr = ''; let status = entry;
+                if(typeof entry === 'object' && entry !== null) {
+                    status = entry.status;
+                    if(entry.time) { const [h, m] = entry.time.split(':'); const ampm = h >= 12 ? 'PM' : 'AM'; const h12 = h % 12 || 12; timeStr = ` (${h12}:${m} ${ampm})`; }
                 }
-            }); 
-            
-            if(!presentList.innerHTML) presentList.innerHTML = '<li>No records found</li>'; 
-            if(!absentList.innerHTML) absentList.innerHTML = '<li>No records found</li>'; 
-            
-            const paidList = document.getElementById('modalPaidList'); paidList.innerHTML = ''; 
-            const monthStr = `${selectedYear}-${selectedMonth.toString().padStart(2, '0')}`;
-            
-            if(wasStudentActiveDuringMonth(student, monthStr)) {
-                 const feeRecord = fees[monthStr]?.[student.id]; 
-                 if (feeRecord?.status === 'paid') { 
-                     let txnDisplay = feeRecord.transactionId ? ` <br><span style="font-size:0.85em; color:var(--text-muted);">Txn ID: ${feeRecord.transactionId}</span>` : ''; 
-                     paidList.innerHTML += `<li style="padding:2px 0; border-bottom:1px solid #f9f9f9;">${formatMonthYear(monthStr)}: ₹${feeRecord.amount} (${feeRecord.mode || 'Cash'}) - ${new Date(feeRecord.date).toLocaleDateString('en-IN')}${txnDisplay}</li>`; 
-                 } 
-                 else if (isMonthDue(monthStr)) { paidList.innerHTML += `<li class="unpaid" style="padding:2px 0;">${formatMonthYear(monthStr)}: Due</li>`; }
-                 else { paidList.innerHTML = `<li>${formatMonthYear(monthStr)}: Not Due/Pending</li>`; }
-            } else { paidList.innerHTML = `<li>Not active in this period</li>`; }
+                const formattedDate = `${d.toLocaleDateString('en-IN')} (${dayName})${timeStr}`;
+                if (status === 'present') { presentList.innerHTML += `<li style="padding:2px 0; border-bottom:1px solid #f9f9f9;">${formattedDate}</li>`; } 
+                else if (status === 'absent') { absentList.innerHTML += `<li style="padding:2px 0; border-bottom:1px solid #f9f9f9;">${formattedDate}</li>`; }
+            }
         }
+    }); 
+    
+    if(!presentList.innerHTML) presentList.innerHTML = '<li>No records found</li>'; 
+    if(!absentList.innerHTML) absentList.innerHTML = '<li>No records found</li>'; 
+    
+    // --- FEES SECTION (Updated for Transaction ID) ---
+    const paidList = document.getElementById('modalPaidList'); 
+    paidList.innerHTML = ''; 
+
+    for (let i = 1; i <= 12; i++) {
+        const monthNum = i.toString().padStart(2, '0');
+        const monthStr = `${selectedYear}-${monthNum}`;
+        const monthName = new Date(selectedYear, i - 1).toLocaleString('default', { month: 'short' });
+        
+        let content = '';
+        let style = 'padding: 8px 0; border-bottom: 1px solid #eee; font-size: 12px; display: flex; justify-content: space-between; align-items: flex-start;';
+
+        if(wasStudentActiveDuringMonth(student, monthStr)) {
+             const feeRecord = fees[monthStr]?.[student.id]; 
+             
+             if (feeRecord?.status === 'paid') { 
+                 // Payment Mode
+                 let modeInfo = feeRecord.mode ? ` <span style="color:#666; font-size:11px;">(${feeRecord.mode})</span>` : '';
+                 
+                 // Transaction ID display logic
+                 let txnDisplay = '';
+                 if(feeRecord.transactionId) {
+                     txnDisplay = `<div style="font-size:10px; color:#4f46e5; margin-top:2px;">Txn: ${feeRecord.transactionId}</div>`;
+                 }
+
+                 content = `
+                    <div style="flex:1;">
+                        <strong>${monthName}:</strong> <span style="color:var(--success);">Paid ₹${feeRecord.amount}</span>${modeInfo}
+                        ${txnDisplay}
+                    </div>
+                    <div style="font-size:10px; color:gray; text-align:right;">
+                        ${new Date(feeRecord.date).toLocaleDateString('en-IN')}
+                    </div>
+                 `;
+             } 
+             else if (isMonthDue(monthStr)) { 
+                 content = `<span><strong>${monthName}:</strong> <span style="color:var(--danger); font-weight:bold;">Due</span></span>`;
+                 style += ' background-color: rgba(239, 68, 68, 0.05);'; 
+             }
+             else { 
+                 const today = new Date();
+                 const checkDate = new Date(selectedYear, i, 0);
+                 if (checkDate > today) {
+                     content = `<span style="color:gray;">${monthName}: Upcoming</span>`;
+                 } else {
+                     content = `<span>${monthName}: Pending/Not Due</span>`;
+                 }
+             }
+        } else {
+             content = `<span style="color:#ccc;">${monthName}: Inactive</span>`;
+        }
+
+        paidList.innerHTML += `<li style="${style}">${content}</li>`;
+    }
+}
         
         function resetApp() { 
             Swal.fire({ title: 'Are you sure?', text: "This will permanently delete ALL data!", icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Yes, Reset Everything!' }).then(async (result) => { 
@@ -2557,7 +3061,234 @@ function showStudentDetails(studentId) {
             }) 
         }
         function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
-        window.onclick = (event) => { if (event.target.classList.contains('modal')) { event.target.style.display = 'none'; } };
+        async function exportToExcel() {
+    // ১. স্টুডেন্ট লিস্ট ডাটা তৈরি
+    const studentData = students.map(s => ({
+        ID: s.serial_no,
+        Name: s.name,
+        Class: s.class,
+        Fee: s.fee_amount,
+        Phone: s.phone,
+        Guardian: s.guardian,
+        Status: s.status?.isActive ? 'Active' : 'Inactive',
+        JoiningDate: s.joining_date
+    }));
+
+    // ২. ফি রেকর্ড ডাটা তৈরি
+    const feeData = [];
+    Object.keys(fees).forEach(month => {
+        Object.keys(fees[month]).forEach(studentId => {
+            const s = students.find(st => st.id == studentId);
+            if (s) {
+                const rec = fees[month][studentId];
+                feeData.push({
+                    Month: month,
+                    StudentName: s.name,
+                    Amount: rec.amount,
+                    Date: rec.date,
+                    Mode: rec.mode,
+                    TxnID: rec.transactionId || ''
+                });
+            }
+        });
+    });
+
+    // ৩. এটেন্ডেন্স ও নোট ডাটা তৈরি
+    const attendData = [];
+    Object.keys(attendance).forEach(date => {
+        Object.keys(attendance[date]).forEach(studentId => {
+            const s = students.find(st => st.id == studentId);
+            if (s) {
+                const entry = attendance[date][studentId];
+                const status = (typeof entry === 'object') ? entry.status : entry;
+                const note = (typeof entry === 'object') ? entry.note : '';
+                attendData.push({
+                    Date: date,
+                    StudentName: s.name,
+                    Status: status,
+                    ProgressNote: note // ক্লাসের নোট এখানে থাকবে
+                });
+            }
+        });
+    });
+
+    // ৪. এক্সেল ফাইল জেনারেট করা
+    const wb = XLSX.utils.book_new();
+    
+    const wsStudents = XLSX.utils.json_to_sheet(studentData);
+    XLSX.utils.book_append_sheet(wb, wsStudents, "Students List");
+
+    const wsFees = XLSX.utils.json_to_sheet(feeData);
+    XLSX.utils.book_append_sheet(wb, wsFees, "Fee Records");
+
+    const wsAttend = XLSX.utils.json_to_sheet(attendData);
+    XLSX.utils.book_append_sheet(wb, wsAttend, "Attendance & Notes");
+
+    // ৫. ফাইল সেভ করার অপশন (File Picker / Save As)
+    const fileName = `MusicClass_Data_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+    try {
+        // আধুনিক ব্রাউজারে ফোল্ডার বেছে নেওয়ার অপশন আসবে (Desktop & Some Mobiles)
+        if (window.showSaveFilePicker) {
+            const handle = await window.showSaveFilePicker({
+                suggestedName: fileName,
+                types: [{
+                    description: 'Excel File',
+                    accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] },
+                }],
+            });
+            const writable = await handle.createWritable();
+            const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+            await writable.write(wbout);
+            await writable.close();
+            Swal.fire('Success', 'Excel file exported successfully!', 'success');
+        } else {
+            // মোবাইল বা পুরনো ব্রাউজারে সরাসরি ডাউনলোড হবে
+            // (মোবাইলে সাধারণত এটি Downloads ফোল্ডারে যায়, যদি না ব্রাউজার সেটিংসে "Ask where to save files" অন থাকে)
+            XLSX.writeFile(wb, fileName);
+            Swal.fire('Success', 'File downloaded successfully to your Downloads folder.', 'success');
+        }
+    } catch (err) {
+        // ইউজার যদি ক্যানসেল করে দেয় বা এরর হয়
+        if (err.name !== 'AbortError') {
+            console.error(err);
+            // ব্যাকআপ হিসেবে সরাসরি ডাউনলোড
+            XLSX.writeFile(wb, fileName);
+        }
+    }
+}
+// ১. স্টুডেন্টের সব নোট বের করে দেখানোর ফাংশন
+function renderStudentNotes(studentId) {
+    const listContainer = document.getElementById('modalNotesList');
+    listContainer.innerHTML = '';
+    
+    let allNotes = [];
+    
+    Object.keys(attendance).forEach(date => {
+        const entry = attendance[date][studentId];
+        if (entry && typeof entry === 'object' && entry.note && entry.note.trim() !== "") {
+            allNotes.push({
+                date: date,
+                note: entry.note,
+                status: entry.status
+            });
+        }
+    });
+
+    allNotes.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    if (allNotes.length === 0) {
+        listContainer.innerHTML = '<li style="padding: 10px; text-align: center; color: var(--text-muted); font-size: 12px;">No notes found.</li>';
+        return;
+    }
+
+    allNotes.forEach(item => {
+        const d = new Date(item.date);
+        const dateStr = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' });
+        
+        const li = document.createElement('li');
+        li.style.cssText = "padding: 8px 10px; border-bottom: 1px solid var(--border-color); font-size: 12px;";
+        
+        // এখানে বক্সটি সরিয়ে শুধু টেক্সট রাখা হয়েছে
+        li.innerHTML = `
+            <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                <span style="font-weight:bold; color:var(--primary); font-size: 13px;">${dateStr}</span>
+            </div>
+            <div style="color:var(--text-main); line-height:1.5;">${item.note}</div>
+        `;
+        listContainer.appendChild(li);
+    });
+}
+
+// ২. নোট সার্চ/ফিল্টার করার ফাংশন
+function filterStudentNotes() {
+    const input = document.getElementById('noteSearchInput');
+    const filter = input.value.toUpperCase();
+    const ul = document.getElementById('modalNotesList');
+    const li = ul.getElementsByTagName('li');
+
+    for (let i = 0; i < li.length; i++) {
+        const textValue = li[i].textContent || li[i].innerText;
+        if (textValue.toUpperCase().indexOf(filter) > -1) {
+            li[i].style.display = "";
+        } else {
+            li[i].style.display = "none";
+        }
+    }
+}
+// এই ফাংশনটি মিসিং ছিল, তাই পিডিএফ হচ্ছিল না। এটি নিচে যোগ করুন:
+function addWatermarkAndSignatureToPdf(doc) {
+    const pageCount = doc.getNumberOfPages();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+
+        // ১. লোগো ওয়াটারমার্ক (Watermark)
+        if (instituteLogo) {
+            doc.saveGraphicsState();
+            doc.setGState(new doc.GState({ opacity: 0.1 })); // হালকা অপাসিটি
+            const imgDim = 80; // লোগোর সাইজ
+            doc.addImage(instituteLogo, 'JPEG', (pageWidth - imgDim) / 2, (pageHeight - imgDim) / 2, imgDim, imgDim);
+            doc.restoreGraphicsState();
+        }
+
+        // ২. ফুটার এবং সিগনেচার (Footer & Signature)
+        const footerY = pageHeight - 20;
+
+        // পেজ নম্বর
+        doc.setFontSize(8);
+        doc.setTextColor(100);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Page ${i} of ${pageCount}`, pageWidth / 2, footerY + 10, { align: 'center' });
+
+        // জেনারেটেড ডেট (বাম দিকে)
+        const dateStr = new Date().toLocaleDateString('en-IN');
+        doc.text(`Generated: ${dateStr}`, 15, footerY + 10);
+
+        // সিগনেচার (ডান দিকে)
+        if (authorizedSignature) {
+            doc.addImage(authorizedSignature, 'PNG', pageWidth - 50, footerY - 10, 35, 12);
+            doc.text("Authorized Signature", pageWidth - 15, footerY + 5, { align: "right" });
+        }
+    }
+}
+// নোট সেন্ড করার ফাংশন
+function sendNoteAction(type, studentId, note, rawDate) {
+    const student = students.find(s => s.id === studentId);
+    if (!student) {
+        Swal.fire('Error', 'Student not found!', 'error');
+        return;
+    }
+
+    // তারিখ ফরম্যাট করা (DD/MM/YYYY)
+    const dateObj = new Date(rawDate);
+    const dateStr = dateObj.toLocaleDateString('en-IN');
+
+    // সাবজেক্ট বা ক্লাস (যদি না থাকে তবে 'Music' বসবে)
+    const subject = student.class ? student.class : 'Music';
+
+    // আপনার দেওয়া নির্দিষ্ট ফরম্যাট অনুযায়ী মেসেজ বডি
+    const msgBody = `Dear ${student.name},\n\n` +
+                    `Here is the note for today's ${subject} class (${dateStr}):\n\n` +
+                    `"${note}"\n\n` +
+                    `Regards,\n` +
+                    `Srikanta Banerjee\n` +
+                    `(Guitar, Bass Guitar, Piano, Keyboard, Mandolin Classes)`;
+    
+    // WhatsApp বা SMS পাঠানো
+    if (type === 'wa') {
+        let cleanPhone = student.phone.replace(/[^0-9]/g, '');
+        // ইন্ডিয়ান নম্বরের জন্য 91 যোগ করা
+        if (cleanPhone.length === 10) cleanPhone = '91' + cleanPhone;
+        
+        window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msgBody)}`, '_blank');
+    } else if (type === 'sms') {
+        window.open(`sms:${student.phone}?body=${encodeURIComponent(msgBody)}`, '_self');
+    }
+}
+        
     </script>
 </body>
 </html>
