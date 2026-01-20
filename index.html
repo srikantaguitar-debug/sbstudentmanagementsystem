@@ -915,239 +915,211 @@
     </div>
 
     <script>
-        // --- 1. Firebase Configuration ---
-    const firebaseConfig = {
-        apiKey: "AIzaSyBDr_ANRX57trE7_1pkH2BaOeQsG0B-3LI",
-        authDomain: "student-management-syste-6a036.firebaseapp.com",
-        projectId: "student-management-syste-6a036",
-        storageBucket: "student-management-syste-6a036.firebasestorage.app",
-        messagingSenderId: "198959369817",
-        appId: "1:198959369817:web:f24dfd15b9d3d897d9eb48"
-    };
+        // --- 2. Firebase Config ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyBDr_ANRX57trE7_1pkH2BaOeQsG0B-3LI",
+            authDomain: "student-management-syste-6a036.firebaseapp.com",
+            projectId: "student-management-syste-6a036",
+            storageBucket: "student-management-syste-6a036.firebasestorage.app",
+            messagingSenderId: "198959369817",
+            appId: "1:198959369817:web:f24dfd15b9d3d897d9eb48"
+        };
 
-    // Initialize Firebase
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-    // Enable Offline Persistence
-    db.enablePersistence({ synchronizeTabs: true }).catch((err) => {
-        console.log("Persistence error:", err.code);
-    });
+        // --- 3. ENABLE OFFLINE PERSISTENCE (Fast & Offline) ---
+        // এটি ইন্টারনেট না থাকলেও অ্যাপকে সচল রাখবে এবং ক্যাশ থেকে ডাটা লোড করবে
+        db.enablePersistence({ synchronizeTabs: true })
+            .catch((err) => {
+                if (err.code == 'failed-precondition') {
+                    console.log('Multiple tabs open');
+                } else if (err.code == 'unimplemented') {
+                    console.log('Browser not supported');
+                }
+            });
 
-    const COLLECTION_NAME = 'music_classes';
-    const DOC_ID = 'main_data';
+        const COLLECTION_NAME = 'music_classes';
+        const DOC_ID = 'main_data';
 
-    // --- 2. Database Functions (Replaces IndexedDB) ---
+        // --- 4. Optimized Database Functions ---
 
-    async function openDB() {
-        // Firebase handles connection automatically
-        return true;
-    }
+        async function openDB() { return true; }
 
-    async function dbGet(key) {
-        try {
-            const docRef = db.collection(COLLECTION_NAME).doc(DOC_ID);
-            const doc = await docRef.get();
-            if (doc.exists) {
-                const data = doc.data();
-                return data[key] !== undefined ? data[key] : null;
-            }
-            return null;
-        } catch (error) {
-            console.error("Get Error:", error);
-            return null;
-        }
-    }
-
-    // এই নতুন ফাংশনটি পুরনো ডাটা রিপ্লেস করে নতুন ডাটা বসাবে
-    async function dbSet(key, value) {
-        try {
-            const docRef = db.collection(COLLECTION_NAME).doc(DOC_ID);
-            
-            // আমরা সরাসরি update ব্যবহার করব যাতে ফিল্ডটি পুরোপুরি রিপ্লেস হয়
-            await docRef.update({ [key]: value });
-            console.log("Updated to Cloud:", key);
-            
-        } catch (error) {
-            // যদি ডকুমেন্ট না থাকে (প্রথমবার), তবে নতুন তৈরি করবে
-            if (error.code === 'not-found') {
+        async function dbGet(key) {
+            try {
                 const docRef = db.collection(COLLECTION_NAME).doc(DOC_ID);
-                await docRef.set({ [key]: value });
-                console.log("Created & Saved:", key);
-            } else {
+                // আমরা প্রথমে ক্যাশ থেকে ডাটা খোঁজার চেষ্টা করব না, ফায়ারবেস নিজেই এটা হ্যান্ডেল করে
+                const doc = await docRef.get(); 
+                if (doc.exists) {
+                    const data = doc.data();
+                    return data[key] !== undefined ? data[key] : null;
+                }
+                return null;
+            } catch (error) {
+                console.log("Offline mode: Reading from cache...");
+                return null;
+            }
+        }
+
+        // Fast Save (Update logic)
+        async function dbSet(key, value) {
+            try {
+                const docRef = db.collection(COLLECTION_NAME).doc(DOC_ID);
+                // 'update' ব্যবহার করছি যাতে শুধু নির্দিষ্ট ফিল্ড চেঞ্জ হয়
+                // ইন্টারনেট না থাকলে এটি লোকাল মেমোরিতে সেভ হবে এবং পরে আপলোড হবে
+                docRef.set({ [key]: value }, { merge: true }); 
+                console.log("Saved (Background):", key);
+            } catch (error) {
                 console.error("Save Error:", error);
             }
         }
-    }
 
-    async function dbDelete(key) {
-        try {
+        async function dbDelete(key) {
+            try {
+                const docRef = db.collection(COLLECTION_NAME).doc(DOC_ID);
+                await docRef.update({ [key]: firebase.firestore.FieldValue.delete() });
+            } catch (error) { console.error("Delete Error:", error); }
+        }
+
+        async function dbClear() {
+            try { await db.collection(COLLECTION_NAME).doc(DOC_ID).delete(); }
+            catch (error) { console.error("Clear Error:", error); }
+        }
+
+        // --- 5. Data Migration (One time) ---
+        async function syncOldDataToFirebase() {
+            // চেক করছি অনলাইনে ডাটা আছে কিনা
             const docRef = db.collection(COLLECTION_NAME).doc(DOC_ID);
-            await docRef.update({ [key]: firebase.firestore.FieldValue.delete() });
-        } catch (error) {
-            console.error("Delete Error:", error);
-        }
-    }
+            const doc = await docRef.get();
+            
+            if (doc.exists) {
+                console.log("Online data found. Skip migration.");
+                return;
+            }
 
-    async function dbClear() {
-        try {
-            await db.collection(COLLECTION_NAME).doc(DOC_ID).delete();
-        } catch (error) {
-            console.error("Clear Error:", error);
-        }
-    }
+            // যদি অনলাইনে ডাটা না থাকে, শুধু তখনই লোকাল ডাটা আপলোড হবে
+            const lsPin = localStorage.getItem('app_pin');
+            if (lsPin) {
+                Swal.fire({ title: 'Syncing...', text: 'Uploading local data...', didOpen: () => Swal.showLoading() });
+                
+                const dataToUpload = {};
+                if(localStorage.getItem('app_pin')) dataToUpload['app_pin'] = localStorage.getItem('app_pin');
+                if(localStorage.getItem('students')) dataToUpload['students'] = JSON.parse(localStorage.getItem('students'));
+                if(localStorage.getItem('attendance')) dataToUpload['attendance'] = JSON.parse(localStorage.getItem('attendance'));
+                if(localStorage.getItem('fees')) dataToUpload['fees'] = JSON.parse(localStorage.getItem('fees'));
+                if(localStorage.getItem('studentSerialCounter')) dataToUpload['studentSerialCounter'] = localStorage.getItem('studentSerialCounter');
+                if(localStorage.getItem('instituteLogo')) dataToUpload['instituteLogo'] = localStorage.getItem('instituteLogo');
+                if(localStorage.getItem('authorizedSignature')) dataToUpload['authorizedSignature'] = localStorage.getItem('authorizedSignature');
 
-    // --- 3. Data Migration (Old Phone Data -> Cloud) ---
-    
-    async function syncOldDataToFirebase() {
-        const onlinePin = await dbGet('app_pin');
-        if (onlinePin) {
-            console.log("Cloud data found. No migration needed.");
-            return; 
+                await docRef.set(dataToUpload, { merge: true });
+                Swal.fire('Success', 'Data synced!', 'success');
+            } else {
+                await dbSet('app_pin', '1234');
+            }
         }
 
-        console.log("Checking local data...");
-        // Check IndexedDB
-        const idbData = await new Promise((resolve) => {
-            const req = indexedDB.open('MusicClassManagerDB', 2);
-            req.onerror = () => resolve(null);
-            req.onsuccess = (e) => {
-                const idb = e.target.result;
-                if (!idb.objectStoreNames.contains('appData')) { resolve(null); return; }
-                const tx = idb.transaction(['appData'], 'readonly');
-                const store = tx.objectStore('appData');
-                const getAll = store.getAllKeys();
-                getAll.onsuccess = () => {
-                    const keys = getAll.result;
-                    const data = {};
-                    let count = 0;
-                    if(keys.length === 0) { resolve(null); return; }
-                    keys.forEach(key => {
-                        store.get(key).onsuccess = (ev) => {
-                            data[key] = ev.target.result;
-                            count++;
-                            if(count === keys.length) resolve(data);
-                        };
-                    });
-                };
-            };
+        // --- 6. App Logic & Initialization ---
+        
+        if ('serviceWorker' in navigator) { 
+            window.addEventListener('load', () => { navigator.serviceWorker.register('./serviceWorker.js').catch(console.error); }); 
+        }
+        
+        let lastCheckedDate = new Date().toDateString();
+        function startClock() {
+            setInterval(() => {
+                const now = new Date();
+                document.getElementById('liveClock').textContent = now.toLocaleString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+                if (now.toDateString() !== lastCheckedDate) {
+                    lastCheckedDate = now.toDateString();
+                    document.getElementById('attendanceDate').valueAsDate = now;
+                    renderAttendance();
+                }
+            }, 1000);
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => { 
+            await syncOldDataToFirebase();
+            await loadInstituteLogo(); 
+            await loadAuthSignature(); 
+            loadTheme(); 
+            
+            // App Start Logic
+            secureAction(() => { initApp(); startClock(); }, true); 
+            document.querySelector('.close-pin').style.display = 'none'; 
         });
 
-        if (idbData) {
-            Swal.fire({ title: 'Syncing...', text: 'Uploading data to cloud...', didOpen: () => Swal.showLoading() });
-            for (const [key, value] of Object.entries(idbData)) { await dbSet(key, value); }
-            Swal.fire('Success', 'Data moved to cloud!', 'success');
-            return;
+        // Theme Functions
+        function toggleTheme() {
+            const body = document.body;
+            const newTheme = body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('app_theme', newTheme);
+            updateThemeButton(newTheme);
+        }
+        function loadTheme() {
+            const t = localStorage.getItem('app_theme') || 'light';
+            document.body.setAttribute('data-theme', t);
+            updateThemeButton(t);
+        }
+        function updateThemeButton(theme) {
+            const btn = document.getElementById('themeToggleBtn');
+            if(btn) btn.innerHTML = theme === 'dark' ? '<i class="fas fa-sun"></i> Switch to Light Mode' : '<i class="fas fa-moon"></i> Switch to Dark Mode';
         }
 
-        // Check LocalStorage
-        const lsPin = localStorage.getItem('app_pin');
-        if (lsPin) {
-            Swal.fire({ title: 'Syncing...', didOpen: () => Swal.showLoading() });
-            await dbSet('app_pin', lsPin);
-            if(localStorage.getItem('students')) await dbSet('students', JSON.parse(localStorage.getItem('students')));
-            if(localStorage.getItem('attendance')) await dbSet('attendance', JSON.parse(localStorage.getItem('attendance')));
-            if(localStorage.getItem('fees')) await dbSet('fees', JSON.parse(localStorage.getItem('fees')));
-            if(localStorage.getItem('instituteLogo')) await dbSet('instituteLogo', localStorage.getItem('instituteLogo'));
-            Swal.fire('Success', 'Local data uploaded!', 'success');
-        } else {
-            await dbSet('app_pin', '1234');
-        }
-    }
+        async function checkBackupStatus() {} // No backup warning needed
 
-    // --- 4. App Initialization ---
-
-    if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./serviceWorker.js').catch(console.error); }); }
-    
-    let lastCheckedDate = new Date().toDateString();
-    function startClock() {
-        setInterval(() => {
+        // --- SUPER FAST INIT APP (Parallel Loading) ---
+        async function initApp() { 
             const now = new Date();
-            const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
-            document.getElementById('liveClock').textContent = now.toLocaleString('en-IN', options);
-            if (now.toDateString() !== lastCheckedDate) {
-                lastCheckedDate = now.toDateString();
-                document.getElementById('attendanceDate').valueAsDate = now;
-                renderAttendance();
-            }
-        }, 1000);
-    }
-
-    document.addEventListener('DOMContentLoaded', async () => { 
-        await syncOldDataToFirebase();
-        await loadInstituteLogo(); 
-        await loadAuthSignature(); 
-        loadTheme(); 
-        secureAction(() => { initApp(); startClock(); }, true); 
-        document.querySelector('.close-pin').style.display = 'none'; 
-    });
-
-    function toggleTheme() {
-        const body = document.body;
-        const newTheme = body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-        body.setAttribute('data-theme', newTheme);
-        localStorage.setItem('app_theme', newTheme);
-        updateThemeButton(newTheme);
-    }
-    function loadTheme() {
-        const savedTheme = localStorage.getItem('app_theme') || 'light';
-        document.body.setAttribute('data-theme', savedTheme);
-        updateThemeButton(savedTheme);
-    }
-    function updateThemeButton(theme) {
-        const btn = document.getElementById('themeToggleBtn');
-        if(btn) {
-            btn.innerHTML = theme === 'dark' ? '<i class="fas fa-sun"></i> Switch to Light Mode' : '<i class="fas fa-moon"></i> Switch to Dark Mode';
-            btn.className = theme === 'dark' ? 'btn btn-warning w-100 mb-3' : 'btn btn-secondary w-100 mb-3';
-        }
-    }
-
-    async function initApp() { 
-        const now = new Date();
-        document.getElementById('attendanceDate').valueAsDate = now;
-        const hours = now.getHours().toString().padStart(2, '0');
-        const mins = now.getMinutes().toString().padStart(2, '0');
-        document.getElementById('attendanceTime').value = `${hours}:${mins}`;
-        
-        const currentMonthStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`; 
-        const prevDate = new Date(now);
-        prevDate.setMonth(prevDate.getMonth() - 1);
-        const prevMonthStr = `${prevDate.getFullYear()}-${(prevDate.getMonth() + 1).toString().padStart(2, '0')}`;
-
-        document.getElementById('feeMonth').value = currentMonthStr; 
-        document.getElementById('reportMonth').value = currentMonthStr; 
-        document.getElementById('reportYear').value = now.getFullYear(); 
-        document.getElementById('idCardIssueDate').valueAsDate = now; 
-        document.getElementById('analyticsYear').value = now.getFullYear(); 
-        document.getElementById('compMonth1').value = prevMonthStr;
-        document.getElementById('compMonth2').value = currentMonthStr;
-
-        toggleReportInputs(); 
-
-        try {
-            // Fetch ALL data from Cloud
-            const sData = await dbGet('students'); 
-            students = (sData || []).map(migrateStudentData); 
-            attendance = (await dbGet('attendance')) || {}; 
-            fees = (await dbGet('fees')) || {}; 
-            reminders = (await dbGet('reminders')) || []; 
-            studentSerialCounter = parseInt(await dbGet('studentSerialCounter')) || 1; 
+            document.getElementById('attendanceDate').valueAsDate = now;
+            document.getElementById('attendanceTime').value = now.toLocaleTimeString('en-GB', {hour: '2-digit', minute:'2-digit'});
             
-            loadAllData(); 
-        } catch(e) {
-            console.error("Init Error:", e);
+            const currentMonthStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`; 
+            const prevDate = new Date(now);
+            prevDate.setMonth(prevDate.getMonth() - 1);
+            const prevMonthStr = `${prevDate.getFullYear()}-${(prevDate.getMonth() + 1).toString().padStart(2, '0')}`;
+
+            document.getElementById('feeMonth').value = currentMonthStr; 
+            document.getElementById('reportMonth').value = currentMonthStr; 
+            document.getElementById('reportYear').value = now.getFullYear(); 
+            document.getElementById('idCardIssueDate').valueAsDate = now; 
+            document.getElementById('analyticsYear').value = now.getFullYear(); 
+            document.getElementById('compMonth1').value = prevMonthStr;
+            document.getElementById('compMonth2').value = currentMonthStr;
+
+            toggleReportInputs(); 
+
+            try {
+                // Parallel Loading: সব ডাটা একসাথে লোড হবে (Fastest Way)
+                const [sData, aData, fData, rData, scData] = await Promise.all([
+                    dbGet('students'),
+                    dbGet('attendance'),
+                    dbGet('fees'),
+                    dbGet('reminders'),
+                    dbGet('studentSerialCounter')
+                ]);
+
+                students = (sData || []).map(migrateStudentData); 
+                attendance = aData || {}; 
+                fees = fData || {}; 
+                reminders = rData || []; 
+                studentSerialCounter = parseInt(scData) || 1; 
+                
+                loadAllData(); 
+            } catch(e) {
+                console.error("Init Error:", e);
+                // অফলাইন মোডে এরর হলে ফাঁকা অ্যারে দিয়ে অ্যাপ চালু রাখবে
+                if(!students) students = [];
+                if(!attendance) attendance = {};
+            }
+
+            document.getElementById('attendanceDate').addEventListener('change', renderAttendance); 
+            document.getElementById('feeMonth').addEventListener('change', renderFees); 
+            
+            comparePeriods(); 
+            updateYearlyChart();
         }
-
-        document.getElementById('attendanceDate').addEventListener('change', renderAttendance); 
-        document.getElementById('feeMonth').addEventListener('change', renderFees); 
-        
-        comparePeriods(); 
-        updateYearlyChart();
-    }
-
-    async function checkBackupStatus() { 
-        // Not needed for cloud version
-    }
 
         const INSTITUTE_NAME = "Guitar, Bass Guitar, Piano, Keyboard, Mandolin Classes"; 
         const MY_NAME = "Srikanta Banerjee"; 
