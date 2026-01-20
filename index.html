@@ -959,12 +959,24 @@
         }
     }
 
+    // এই নতুন ফাংশনটি পুরনো ডাটা রিপ্লেস করে নতুন ডাটা বসাবে
     async function dbSet(key, value) {
         try {
             const docRef = db.collection(COLLECTION_NAME).doc(DOC_ID);
-            await docRef.set({ [key]: value }, { merge: true });
+            
+            // আমরা সরাসরি update ব্যবহার করব যাতে ফিল্ডটি পুরোপুরি রিপ্লেস হয়
+            await docRef.update({ [key]: value });
+            console.log("Updated to Cloud:", key);
+            
         } catch (error) {
-            console.error("Set Error:", error);
+            // যদি ডকুমেন্ট না থাকে (প্রথমবার), তবে নতুন তৈরি করবে
+            if (error.code === 'not-found') {
+                const docRef = db.collection(COLLECTION_NAME).doc(DOC_ID);
+                await docRef.set({ [key]: value });
+                console.log("Created & Saved:", key);
+            } else {
+                console.error("Save Error:", error);
+            }
         }
     }
 
