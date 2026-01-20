@@ -1025,11 +1025,28 @@
             window.addEventListener('load', () => { navigator.serviceWorker.register('./serviceWorker.js').catch(console.error); }); 
         }
         
-        let lastCheckedDate = new Date().toDateString();
+let lastCheckedDate = new Date().toDateString();
+
         function startClock() {
             setInterval(() => {
                 const now = new Date();
-                document.getElementById('liveClock').textContent = now.toLocaleString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+                
+                // ১. এখানে তারিখ এবং সময় দুটোর সেটিং দেওয়া হলো
+                const options = { 
+                    weekday: 'short', // বার (যেমন: Sun, Mon)
+                    day: 'numeric',   // দিন (যেমন: 20)
+                    month: 'short',   // মাস (যেমন: Jan)
+                    year: 'numeric',  // বছর (যেমন: 2026)
+                    hour: '2-digit', 
+                    minute: '2-digit', 
+                    second: '2-digit', 
+                    hour12: true 
+                };
+
+                // ২. স্ক্রিনে সেট করা
+                document.getElementById('liveClock').textContent = now.toLocaleString('en-IN', options);
+
+                // ৩. তারিখ পাল্টালে অটোমেটিক হাজিরা তারিখ বদলানোর লজিক (আগের মতোই)
                 if (now.toDateString() !== lastCheckedDate) {
                     lastCheckedDate = now.toDateString();
                     document.getElementById('attendanceDate').valueAsDate = now;
