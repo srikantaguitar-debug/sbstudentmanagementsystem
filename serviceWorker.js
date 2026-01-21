@@ -1,50 +1,25 @@
-const CACHE_NAME = 'music-manager-v2';
-const ASSETS_TO_CACHE = [
-    './',
-    './index.html',
-    './manifest.json',
-    'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap',
-    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
-    'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
-    'https://cdn.jsdelivr.net/npm/sweetalert2@11',
-    'https://cdn.jsdelivr.net/npm/chart.js'
+// ফাইলের নাম: serviceWorker.js
+const CACHE_NAME = "music-manager-v1";
+const ASSETS = [
+  "./", // বর্তমান ফোল্ডার
+  "./index.html", // আপনার মূল HTML ফাইলের নাম যদি index.html হয়
+  "./manifest.json",
+  "./icon-192.png"
+  // অন্য কোনো ছবি বা ফাইল থাকলে এখানে লিখুন
 ];
 
-// Install Service Worker
-self.addEventListener('install', (event) => {
-    event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => {
-            return cache.addAll(ASSETS_TO_CACHE);
-        })
-    );
+self.addEventListener("install", (e) => {
+  e.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(ASSETS);
+    })
+  );
 });
 
-// Activate Service Worker
-self.addEventListener('activate', (event) => {
-    event.waitUntil(
-        caches.keys().then((cacheNames) => {
-            return Promise.all(
-                cacheNames.map((cache) => {
-                    if (cache !== CACHE_NAME) {
-                        return caches.delete(cache);
-                    }
-                })
-            );
-        })
-    );
-});
-
-// Fetch Strategy: Stale While Revalidate (Load fast from cache, update in background)
-self.addEventListener('fetch', (event) => {
-    event.respondWith(
-        caches.match(event.request).then((cachedResponse) => {
-            const fetchPromise = fetch(event.request).then((networkResponse) => {
-                caches.open(CACHE_NAME).then((cache) => {
-                    cache.put(event.request, networkResponse.clone());
-                });
-                return networkResponse;
-            });
-            return cachedResponse || fetchPromise;
-        })
-    );
+self.addEventListener("fetch", (e) => {
+  e.respondWith(
+    caches.match(e.request).then((response) => {
+      return response || fetch(e.request);
+    })
+  );
 });
