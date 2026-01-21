@@ -6,6 +6,7 @@
     <title>Music Classes Manager (Pro)</title>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4f46e5">
@@ -363,6 +364,18 @@
     </style>
 </head>
 <body>
+<div id="loginOverlay" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-body); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; color: var(--text-main);">
+    <div style="background: var(--bg-card); padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 85%; max-width: 350px; text-align: center; border: 1px solid var(--border-color);">
+        <h2 style="color: var(--primary); margin-bottom: 20px;">Manager Login</h2>
+        <input type="email" id="loginEmail" placeholder="Email Address" style="width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-main); box-sizing: border-box;">
+        <input type="password" id="loginPassword" placeholder="Password" style="width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-main); box-sizing: border-box;">
+        
+        <button onclick="handleLogin()" style="width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px;">
+            <i class="fas fa-sign-in-alt"></i> Login
+        </button>
+        <p id="loginError" style="color: var(--danger); font-size: 12px; margin-top: 15px; display: none;"></p>
+    </div>
+</div>
 
 <div id="welcomeNoteTemplate">
     <div class="wn-watermark"><img id="wnWatermarkImg" src="" style="width:100%;"></div>
@@ -738,6 +751,13 @@
                         <button class="btn-info" onclick="changeAppPin()">Save</button>
                     </div>
                 </div>
+                <div class="dashboard-card" style="border-top-color: var(--danger);">
+    <label>Account Status</label>
+    <div style="margin-top: 5px; font-size: 12px; color: var(--text-muted); margin-bottom: 10px;" id="currentUserDisplay">Checking status...</div>
+    <button class="btn-danger" onclick="handleLogout()" style="width:100%;">
+        <i class="fas fa-sign-out-alt"></i> Logout
+    </button>
+</div>
                 <div class="dashboard-card">
                     <label>Backup Data</label>
                     <button class="btn-primary btn-google" onclick="secureAction(exportData)" style="width:100%; margin-top:5px;"><i class="fab fa-google-drive"></i> Backup</button>
@@ -872,11 +892,15 @@
             <input type="file" id="editStudentCamera" accept="image/*" capture="environment" onchange="handlePhotoSelection(this, 'edit')" style="display:none;">
             <input type="file" id="editStudentGallery" accept="image/*" onchange="handlePhotoSelection(this, 'edit')" style="display:none;">
             <div style="text-align: center; margin-bottom: 15px;">
-                <div onclick="openPhotoSourceModal('edit')" style="width: 80px; height: 80px; border-radius: 50%; overflow: hidden; margin: 0 auto; border: 2px solid #000; position: relative;">
-                    <img id="editPhotoPreview" src="" style="width: 100%; height: 100%; object-fit: cover;">
-                    <div style="position: absolute; bottom: 0; background: rgba(0,0,0,0.5); width: 100%; color: white; font-size: 10px;">EDIT</div>
-                </div>
-            </div>
+    <div onclick="openPhotoSourceModal('edit')" style="width: 80px; height: 80px; border-radius: 50%; overflow: hidden; margin: 0 auto; border: 2px solid #000; position: relative; cursor: pointer;">
+        <img id="editPhotoPreview" src="" style="width: 100%; height: 100%; object-fit: cover;">
+        <div style="position: absolute; bottom: 0; background: rgba(0,0,0,0.5); width: 100%; color: white; font-size: 10px;">EDIT</div>
+    </div>
+    
+    <button type="button" onclick="removeEditPhoto()" style="margin-top: 5px; background: #ef4444; color: white; border: none; padding: 4px 10px; border-radius: 4px; font-size: 11px; cursor: pointer;">
+        <i class="fas fa-trash"></i> Remove Photo
+    </button>
+</div>
             <div class="form-grid">
                 <div class="form-group"><label>Name</label><input type="text" id="editStudentName"></div>
                 <div class="form-group"><label>Class</label><input type="text" id="editStudentClass"></div>
@@ -940,7 +964,7 @@
             });
 
         const COLLECTION_NAME = 'music_classes';
-        const DOC_ID = 'main_data';
+let DOC_ID = 'main_data'; // এটি const থেকে let করা হলো
 
         // --- 4. Optimized Database Functions ---
 
@@ -1054,17 +1078,97 @@ let lastCheckedDate = new Date().toDateString();
                 }
             }, 1000);
         }
+// --- NEW AUTH & STARTUP LOGIC ---
+const auth = firebase.auth();
 
-        document.addEventListener('DOMContentLoaded', async () => { 
-            await syncOldDataToFirebase();
-            await loadInstituteLogo(); 
-            await loadAuthSignature(); 
-            loadTheme(); 
+document.addEventListener('DOMContentLoaded', async () => {
+    loadTheme(); // থিম লোড হবে সবার আগে
+
+    // Auth State Check (Online/Offline)
+    auth.onAuthStateChanged(async (user) => {
+        const loginOverlay = document.getElementById('loginOverlay');
+        const userDisplay = document.getElementById('currentUserDisplay');
+
+        if (user) {
+            // ১. ইউজার লগইন অবস্থায় আছে
+            console.log("Logged in:", user.email);
+            if(userDisplay) userDisplay.textContent = `User: ${user.email}`;
             
-            // App Start Logic
-            secureAction(() => { initApp(); startClock(); }, true); 
-            document.querySelector('.close-pin').style.display = 'none'; 
+            // ২. লগইন স্ক্রিন সরান
+            loginOverlay.style.display = 'none';
+
+            // ৩. ইউজারের নিজস্ব ডাটাবেস সেট করুন
+            DOC_ID = user.uid; 
+
+            // ৪. ডাটা সিঙ্ক ও লোড করুন
+            await syncOldDataToFirebase();
+            await loadInstituteLogo();
+            await loadAuthSignature();
+
+            // ৫. পিন স্ক্রিন দেখান (সিকিউরিটির জন্য)
+            // পিন দিলেই অ্যাপ খুলবে
+            secureAction(() => { 
+                initApp(); 
+                startClock(); 
+            }, true); // true মানে এটি অ্যাপ স্টার্টের পিন
+
+        } else {
+            // ইউজার লগআউট অবস্থায় আছে
+            console.log("No user.");
+            // ১. লগইন স্ক্রিন দেখান
+            loginOverlay.style.display = 'flex';
+            // ২. পিন স্ক্রিন থাকলে লুকান
+            document.getElementById('securityOverlay').style.display = 'none';
+        }
+    });
+});
+
+// লগইন ফাংশন
+function handleLogin() {
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    const errorMsg = document.getElementById('loginError');
+
+    if (!email || !password) {
+        errorMsg.textContent = "Email and password required!";
+        errorMsg.style.display = 'block';
+        return;
+    }
+
+    // লোডিং দেখান
+    const loginBtn = document.querySelector('#loginOverlay button');
+    const originalText = loginBtn.innerHTML;
+    loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
+
+    auth.signInWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+            // সফল হলে onAuthStateChanged অটোমেটিক কাজ করবে
+        })
+        .catch((error) => {
+            console.error(error);
+            errorMsg.textContent = "Error: " + error.message;
+            errorMsg.style.display = 'block';
+            loginBtn.innerHTML = originalText;
         });
+}
+
+// লগআউট ফাংশন
+function handleLogout() {
+    Swal.fire({
+        title: 'Logout?',
+        text: "You need internet to login again.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        confirmButtonText: 'Yes, Logout'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            auth.signOut().then(() => {
+                window.location.reload();
+            });
+        }
+    });
+}
 
         // Theme Functions
         function toggleTheme() {
@@ -1085,6 +1189,20 @@ let lastCheckedDate = new Date().toDateString();
         }
 
         async function checkBackupStatus() {} // No backup warning needed
+// ১. এই ভেরিয়েবলটি যোগ করুন (স্ক্রিপ্টের শুরুতে অন্য ভেরিয়েবলের সাথে)
+let isPhotoDeletedInEdit = false;
+
+// ২. এই ফাংশনটি যোগ করুন (অন্যান্য ফাংশনের সাথে)
+function removeEditPhoto() {
+    // প্রিভিউতে ডিফল্ট ছবি দেখানো
+    document.getElementById('editPhotoPreview').src = 'https://via.placeholder.com/100?text=No+Photo';
+    
+    // এডিট করা ছবি নাল (Null) করা
+    currentEditPhotoBase64 = null; 
+    
+    // ফ্ল্যাগ সত্য করা যাতে সেভ করার সময় ছবি মুছে যায়
+    isPhotoDeletedInEdit = true;
+}
 
         // --- SUPER FAST INIT APP (Parallel Loading) ---
         async function initApp() { 
@@ -1352,7 +1470,15 @@ let lastCheckedDate = new Date().toDateString();
 
         let pendingAction = null, pinInput = "";
         function secureAction(callback, isInit = false) { pendingAction = callback; pinInput = ""; updatePinDots(); document.querySelector('.close-pin').style.display = isInit ? 'none' : 'block'; document.getElementById('securityOverlay').style.display = 'flex'; }
-        function closePinScreen() { document.getElementById('securityOverlay').style.display = 'none'; pendingAction = null; pinInput = ""; }
+        function closePinScreen() { 
+    // যদি অ্যাপ চালু না হয়ে থাকে (অর্থাৎ students অ্যারে খালি), তাহলে পিন ক্লোজ করা যাবে না
+    if (!students || students.length === 0) {
+        return; 
+    }
+    document.getElementById('securityOverlay').style.display = 'none'; 
+    pendingAction = null; 
+    pinInput = ""; 
+}
         function pressPin(key) { if (key === 'C') pinInput = ""; else if (pinInput.length < 4) pinInput += key; updatePinDots(); }
         function updatePinDots() { document.querySelectorAll('.pin-dot').forEach((dot, index) => { index < pinInput.length ? dot.classList.add('filled') : dot.classList.remove('filled'); }); }
         async function submitPin() { const currentPin = await dbGet('app_pin'); if (pinInput === currentPin) { document.getElementById('securityOverlay').style.display = 'none'; if (pendingAction) pendingAction(); pendingAction = null; pinInput = ""; } else { alert("Incorrect PIN"); pinInput = ""; updatePinDots(); } }
@@ -1694,7 +1820,42 @@ async function addStudent() {
         function openPhotoSourceModal(context) { photoSelectionContext = context; document.getElementById('photoSourceModal').style.display = 'flex'; }
         function triggerCamera() { closeModal('photoSourceModal'); const id = photoSelectionContext === 'add' ? 'addStudentCamera' : 'editStudentCamera'; document.getElementById(id).click(); }
         function triggerGallery() { closeModal('photoSourceModal'); const id = photoSelectionContext === 'add' ? 'addStudentGallery' : 'editStudentGallery'; document.getElementById(id).click(); }
-        function handlePhotoSelection(input, context) { const file = input.files[0]; if (file) { const reader = new FileReader(); reader.onload = function(e) { const img = new Image(); img.onload = function() { const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); const maxWidth = 150; const scaleSize = maxWidth / img.width; canvas.width = maxWidth; canvas.height = img.height * scaleSize; ctx.drawImage(img, 0, 0, canvas.width, canvas.height); const base64 = canvas.toDataURL('image/jpeg', 0.7); if (context === 'add') { currentPhotoBase64 = base64; document.getElementById('photoPreview').src = base64; document.getElementById('photoPreview').style.display = 'block'; document.getElementById('photoPlaceholder').style.display = 'none'; } else { currentEditPhotoBase64 = base64; document.getElementById('editPhotoPreview').src = base64; } }; img.src = e.target.result; }; reader.readAsDataURL(file); } }
+       function handlePhotoSelection(input, context) {
+    const file = input.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // সাইজ কমানো হচ্ছে (আগে ১৫০ ছিল, এখন ১২০ করা হলো)
+                const maxWidth = 120; 
+                const scaleSize = maxWidth / img.width;
+                canvas.width = maxWidth;
+                canvas.height = img.height * scaleSize;
+                
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                
+                // কোয়ালিটি ০.৭ থেকে কমিয়ে ০.৪ করা হলো (সাইজ অনেক কমবে)
+                const base64 = canvas.toDataURL('image/jpeg', 0.4); 
+
+                if (context === 'add') {
+                    currentPhotoBase64 = base64;
+                    document.getElementById('photoPreview').src = base64;
+                    document.getElementById('photoPreview').style.display = 'block';
+                    document.getElementById('photoPlaceholder').style.display = 'none';
+                } else {
+                    currentEditPhotoBase64 = base64;
+                    document.getElementById('editPhotoPreview').src = base64;
+                }
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+}
 
         async function importData(event) { 
             const file = event.target.files[0]; if (!file) return; 
@@ -2956,60 +3117,54 @@ async function addAttendanceNote(studentId) {
         }
         
         function openEditStudentModal(id) { 
-    const student = students.find(s => s.id === id); if(!student) return; 
+    const student = students.find(s => s.id === id); 
+    if(!student) return; 
+
+    // --- এই লাইনটি যোগ করুন ---
+    isPhotoDeletedInEdit = false; // মডাল খোলার সময় রিসেট
+    // -------------------------
+
     document.getElementById('editStudentId').value = student.id; 
     document.getElementById('editStudentName').value = student.name; 
-    document.getElementById('editStudentClass').value = student.class; 
-    document.getElementById('editStudentDay').value = student.class_day || ""; 
-    document.getElementById('editStudentTime').value = student.class_time || ""; 
-    document.getElementById('editStudentFee').value = student.fee_amount; 
-    document.getElementById('editStudentEmail').value = student.email; 
-    document.getElementById('editGuardianName').value = student.guardian; 
-    document.getElementById('editPhone').value = student.phone; 
-    document.getElementById('editAddress').value = student.address; 
+    // ... বাকি কোড আগের মতোই থাকবে ...
     document.getElementById('editStudentDOB').value = student.dob || ""; 
     
-    // Reset variables
     currentEditPhotoBase64 = null; 
-    currentStudentSignature = null; // Important Fix: Signature variable reset kora holo
-
-    document.getElementById('editStudentCamera').value = ""; 
-    document.getElementById('editStudentGallery').value = ""; 
     
-    if(student.photo) { document.getElementById('editPhotoPreview').src = student.photo; } 
-    else { document.getElementById('editPhotoPreview').src = 'https://via.placeholder.com/100?text=No+Photo'; } 
+    // ছবি লোড করার লজিক
+    if(student.photo) { 
+        document.getElementById('editPhotoPreview').src = student.photo; 
+    } else { 
+        document.getElementById('editPhotoPreview').src = 'https://via.placeholder.com/100?text=No+Photo'; 
+    } 
     
     document.getElementById('editStudentModal').style.display = 'flex'; 
 }
-        async function saveStudentChanges() { 
-    const id = parseInt(document.getElementById('editStudentId').value), student = students.find(s => s.id === id); 
+       async function saveStudentChanges() { 
+    const id = parseInt(document.getElementById('editStudentId').value);
+    const student = students.find(s => s.id === id); 
     if(!student) return; 
     
     student.name = document.getElementById('editStudentName').value.trim(); 
-    if(!student.name) { Swal.fire('Error','Student name is required.', 'error'); return; } 
+    if(!student.name) { Swal.fire('Error','Name required.', 'error'); return; } 
     
-    // Update Photo if changed
-    if(currentEditPhotoBase64) { student.photo = currentEditPhotoBase64; } 
-    
-    // Important Fix: Update Signature if changed
-    if(currentStudentSignature) { 
-        student.student_signature = currentStudentSignature; 
+    // --- ছবি সেভ বা ডিলিট করার লজিক ---
+    if(currentEditPhotoBase64) { 
+        // ১. নতুন ছবি দিলে সেটা আপডেট হবে
+        student.photo = currentEditPhotoBase64; 
+    } else if (isPhotoDeletedInEdit) {
+        // ২. রিমুভ বাটনে চাপলে ছবি নাল (Delete) হবে
+        student.photo = null;
     }
+    // কিছু না করলে পুরনো ছবিই থাকবে
+    // ---------------------------------
 
-    student.class = document.getElementById('editStudentClass').value.trim(); 
-    student.class_day = document.getElementById('editStudentDay').value; 
-    student.class_time = document.getElementById('editStudentTime').value; 
-    student.fee_amount = parseFloat(document.getElementById('editStudentFee').value) || DEFAULT_FEE; 
-    student.email = document.getElementById('editStudentEmail').value.trim(); 
-    student.guardian = document.getElementById('editGuardianName').value.trim(); 
-    student.phone = document.getElementById('editPhone').value.trim(); 
-    student.address = document.getElementById('editAddress').value.trim(); 
-    student.dob = document.getElementById('editStudentDOB').value; 
+    // ... বাকি কোড আগের মতোই থাকবে ...
     
     await saveData(); 
     closeModal('editStudentModal'); 
     loadAllData(); 
-    Swal.fire('Saved', 'Student details updated.', 'success'); 
+    Swal.fire('Saved', 'Details updated successfully.', 'success'); 
 }
 function showStudentDetails(studentId) { 
     const student = students.find(s => s.id === studentId); 
