@@ -1,11 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
+<head> <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Music Classes Manager (Pro)</title>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4f46e5">
@@ -427,6 +431,19 @@
         </div>
     </div>
 </div>
+<div id="loginOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-body); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-main);">
+    <div style="background: var(--bg-card); padding: 30px; border-radius: 16px; box-shadow: var(--shadow); width: 90%; max-width: 350px; text-align: center; border: 1px solid var(--border-color);">
+        <h2 style="color: var(--primary); margin-bottom: 20px;">Music Manager Login</h2>
+        <div class="form-group">
+            <input type="email" id="loginEmail" placeholder="Email Address" style="margin-bottom: 15px;">
+        </div>
+        <div class="form-group">
+            <input type="password" id="loginPassword" placeholder="Password" style="margin-bottom: 20px;">
+        </div>
+        <button class="btn-primary" onclick="handleLogin()" style="width: 100%; padding: 12px;">Login</button>
+        <p id="loginError" style="color: var(--danger); font-size: 12px; margin-top: 10px; display: none;"></p>
+    </div>
+</div>
     <div id="securityOverlay">
         <span class="close-pin" onclick="closePinScreen()" style="position: absolute; top: 30px; right: 20px; font-size: 30px; opacity: 0.7;">&times;</span>
         <div style="font-size: 20px; letter-spacing: 2px; margin-bottom: 20px; opacity: 0.9;">ENTER PIN</div>
@@ -744,6 +761,11 @@
                     <button class="btn-success" onclick="secureAction(exportToExcel)" style="width:100%; margin-top:10px; background: #1D6F42;">
     <i class="fas fa-file-excel"></i> Export to Excel (Secure)
 </button>
+<hr style="margin: 15px 0; border-top: 1px solid var(--border-color);">
+<label>Account</label>
+<button class="btn-danger" onclick="handleLogout()" style="width:100%; background: #cb1829;">
+    <i class="fas fa-sign-out-alt"></i> Logout from Device
+</button>
                     <hr style="margin: 15px 0; border-top: 1px solid var(--border-color);">
                     <label>Restore / Reset</label>
                     <button class="btn-warning" onclick="secureAction(() => document.getElementById('importFile').click())" style="width:100%;"><i class="fas fa-file-upload"></i> Restore JSON</button>
@@ -927,9 +949,10 @@
 
         const app = firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+        const auth = firebase.auth();
 
         // --- 3. ENABLE OFFLINE PERSISTENCE (Fast & Offline) ---
-        // এটি ইন্টারনেট না থাকলেও অ্যাপকে সচল রাখবে এবং ক্যাশ থেকে ডাটা লোড করবে
+        // এই অংশটি এখন ঠিক আছে (কোনো লগইন এরর কোড নেই)
         db.enablePersistence({ synchronizeTabs: true })
             .catch((err) => {
                 if (err.code == 'failed-precondition') {
@@ -943,9 +966,9 @@
         const DOC_ID = 'main_data';
 
         // --- 4. Optimized Database Functions ---
-
         async function openDB() { return true; }
 
+        // ... এরপর dbGet ফাংশন থেকে বাকি সব ঠিক আছে ...
         async function dbGet(key) {
             try {
                 const docRef = db.collection(COLLECTION_NAME).doc(DOC_ID);
@@ -1061,10 +1084,97 @@ let lastCheckedDate = new Date().toDateString();
             await loadAuthSignature(); 
             loadTheme(); 
             
-            // App Start Logic
-            secureAction(() => { initApp(); startClock(); }, true); 
-            document.querySelector('.close-pin').style.display = 'none'; 
+            // --- AUTHENTICATION LOGIC ---
+
+// 1. Handle Login (Email/Pass)
+// ... ওপরের কনফিগারেশন কোড ...
+
+// এই ফাংশনটি যেন অন্য কোনো ব্রাকেটের {} ভেতরে না থাকে
+// 1. Handle Login (Email/Pass)
+function handleLogin() {
+    const email = document.getElementById('loginEmail').value;
+    const pass = document.getElementById('loginPassword').value;
+    const errorEl = document.getElementById('loginError');
+
+    if(!email || !pass) {
+        errorEl.textContent = "Please enter email and password";
+        errorEl.style.display = 'block';
+        return;
+    }
+
+    Swal.fire({ title: 'Logging in...', didOpen: () => Swal.showLoading() });
+
+    auth.signInWithEmailAndPassword(email, pass)
+        .then((userCredential) => {
+            // Login Success
+            localStorage.setItem('isLoggedIn', 'true');
+            Swal.close();
+            document.getElementById('loginOverlay').style.display = 'none';
+            checkPinAndStart();
+        })
+        .catch((error) => {
+            Swal.close();
+            Swal.fire('Error', 'Invalid Email or Password', 'error');
+            errorEl.textContent = "Invalid Email or Password!";
+            errorEl.style.display = 'block';
+            console.error(error);
         });
+}
+
+// 2. Handle Logout
+function handleLogout() {
+    Swal.fire({
+        title: 'Logout?',
+        text: "You will need internet to login again.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, Logout'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            auth.signOut().then(() => {
+                localStorage.removeItem('isLoggedIn'); // লোকাল ফ্ল্যাগ রিমুভ
+                window.location.reload(); // পেজ রিলোড দিলে লগইন পেজ আসবে
+            });
+        }
+    });
+}
+
+// 3. Check PIN and Start App (Offline Friendly Logic)
+async function checkPinAndStart() {
+    // পিন চেক করার জন্য পিন স্ক্রিন ওপেন করা
+    // আমরা existing 'secureAction' ফাংশনটি ব্যবহার করব অ্যাপ স্টার্ট করার জন্য
+    
+    // পিন স্ক্রিন দেখানোর আগে আমরা মেইন অ্যাপ লোড করে রাখব কিন্তু পিন ওভারলে দিয়ে ঢাকা থাকবে
+    await initApp(); 
+    startClock();
+    
+    // পিন স্ক্রিন ফোর্স করা
+    secureAction(() => {
+        console.log("App Unlocked via PIN");
+    }, true); // true = isInit (close button লুকানো থাকবে)
+}
+            // App Start Logic
+            document.addEventListener('DOMContentLoaded', async () => { 
+    await syncOldDataToFirebase();
+    await loadInstituteLogo(); 
+    await loadAuthSignature(); 
+    loadTheme(); 
+    
+    // --- NEW STARTUP LOGIC ---
+    const localLoginState = localStorage.getItem('isLoggedIn');
+
+    if (localLoginState === 'true') {
+        // যদি ইউজার আগে লগইন করে থাকে
+        document.getElementById('loginOverlay').style.display = 'none';
+        // পিন স্ক্রিন এবং অ্যাপ চালু করো (ইন্টারনেট না থাকলেও কাজ করবে)
+        checkPinAndStart();
+    } else {
+        // যদি লগইন না করা থাকে
+        document.getElementById('loginOverlay').style.display = 'flex';
+        // পিন স্ক্রিন বা অ্যাপ কিছুই লোড হবে না যতক্ষণ না লগইন হচ্ছে
+        document.getElementById('securityOverlay').style.display = 'none';
+    }
+});
 
         // Theme Functions
         function toggleTheme() {
