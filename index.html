@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Music Classes Manager (Pro)</title>
+    <link rel="manifest" href="manifest.json"> </head>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -989,28 +990,21 @@ let DOC_ID = 'main_data'; // এটি const থেকে let করা হল�
             }
         }
 
-// এই ফাংশনটি নিশ্চিত করে যে ডাটা ইন্টারনেটে সেভ হয়েছে
 async function dbSet(key, value) {
     try {
-        // ১. ইউজার লগইন আছে কিনা চেক করা
         const user = firebase.auth().currentUser;
-        if (!user) {
-            console.error("User not logged in. Save failed.");
-            return;
-        }
+        if (!user) return;
 
         const docRef = db.collection(COLLECTION_NAME).doc(DOC_ID);
-        
-        // ২. ডাটা ক্লিন করা (যাতে undefined এরর না আসে)
         const cleanValue = JSON.parse(JSON.stringify(value, (k, v) => v === undefined ? null : v));
 
-        // ৩. 'await' ব্যবহার করা যাতে সেভ হওয়া পর্যন্ত অপেক্ষা করে
-        await docRef.set({ [key]: cleanValue }, { merge: true });
-        
-        console.log(`Saved successfully: ${key}`);
+        // .set() এর আগে await সরিয়ে দিন যাতে অফলাইনে কোডটি আটকে না যায়
+        docRef.set({ [key]: cleanValue }, { merge: true })
+            .then(() => console.log(`${key} synced with server`))
+            .catch((err) => console.log(`${key} saved locally, waiting for network...`));
+            
     } catch (error) {
         console.error("Save Error:", error);
-        throw error; // এরর হলে importData কে জানাবে
     }
 }
 
@@ -1059,10 +1053,25 @@ async function dbSet(key, value) {
         }
 
         // --- 6. App Logic & Initialization ---
-        
-        if ('serviceWorker' in navigator) { 
-            window.addEventListener('load', () => { navigator.serviceWorker.register('./serviceWorker.js').catch(console.error); }); 
+
+// সার্ভিস ওয়ার্কার রেজিস্টার করা (অফলাইন মোডের জন্য)
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./serviceWorker.js')
+            .then((reg) => console.log('Service Worker Registered', reg.scope))
+            .catch((err) => console.log('Service Worker Failed', err));
+    });
+}
+
+// ফায়ারবেস অফলাইন পারসিসটেন্স (স্পিড বাড়ানোর জন্য সেটিংস সহ)
+db.enablePersistence({ synchronizeTabs: false }) // 'false' দিলে অ্যাপ ফাস্ট হয়
+    .catch((err) => {
+        if (err.code == 'failed-precondition') {
+            console.log('Multiple tabs open');
+        } else if (err.code == 'unimplemented') {
+            console.log('Browser not supported');
         }
+    });
         
 let lastCheckedDate = new Date().toDateString();
 
