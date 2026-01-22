@@ -989,18 +989,30 @@ let DOC_ID = 'main_data'; // এটি const থেকে let করা হল�
             }
         }
 
-        // Fast Save (Update logic)
-        async function dbSet(key, value) {
-            try {
-                const docRef = db.collection(COLLECTION_NAME).doc(DOC_ID);
-                // 'update' ব্যবহার করছি যাতে শুধু নির্দিষ্ট ফিল্ড চেঞ্জ হয়
-                // ইন্টারনেট না থাকলে এটি লোকাল মেমোরিতে সেভ হবে এবং পরে আপলোড হবে
-                docRef.set({ [key]: value }, { merge: true }); 
-                console.log("Saved (Background):", key);
-            } catch (error) {
-                console.error("Save Error:", error);
-            }
+// এই ফাংশনটি নিশ্চিত করে যে ডাটা ইন্টারনেটে সেভ হয়েছে
+async function dbSet(key, value) {
+    try {
+        // ১. ইউজার লগইন আছে কিনা চেক করা
+        const user = firebase.auth().currentUser;
+        if (!user) {
+            console.error("User not logged in. Save failed.");
+            return;
         }
+
+        const docRef = db.collection(COLLECTION_NAME).doc(DOC_ID);
+        
+        // ২. ডাটা ক্লিন করা (যাতে undefined এরর না আসে)
+        const cleanValue = JSON.parse(JSON.stringify(value, (k, v) => v === undefined ? null : v));
+
+        // ৩. 'await' ব্যবহার করা যাতে সেভ হওয়া পর্যন্ত অপেক্ষা করে
+        await docRef.set({ [key]: cleanValue }, { merge: true });
+        
+        console.log(`Saved successfully: ${key}`);
+    } catch (error) {
+        console.error("Save Error:", error);
+        throw error; // এরর হলে importData কে জানাবে
+    }
+}
 
         async function dbDelete(key) {
             try {
@@ -1901,86 +1913,136 @@ async function addStudent() {
     }
 }
 
-        // এই ফাংশনটি দিয়ে আপনার আগের importData ফাংশনটি রিপ্লেস করুন
-async function importData(event) { 
-    const file = event.target.files[0]; 
-    if (!file) return; 
-    
-    const reader = new FileReader(); 
-    reader.onload = function(e) { 
-        try { 
-            const json = e.target.result; 
-            let importedData = JSON.parse(json); 
+// ১. ডাটা ক্লিন করার ফাংশন
+function sanitizeData(obj) {
+    if (obj === undefined) return null;
+    // Date object বা undefined ভ্যালু ফিক্স করা
+    return JSON.parse(JSON.stringify(obj, (k, v) => v === undefined ? null : v));
+}
 
-            if (!importedData || !Array.isArray(importedData.students)) { 
-                throw new Error("Invalid Data Format"); 
-            } 
+// ২. ডাটাবেসে সেভ করার ফাংশন
+async function dbSet(key, value) {
+    try {
+        const user = firebase.auth().currentUser;
+        if (!user) throw new Error("User not logged in.");
 
-            Swal.fire({ 
-                title: 'Restore Data?', 
-                text: `Found ${importedData.students.length} students. This will look for errors and fix database.`, 
-                icon: 'question', 
-                showCancelButton: true, 
-                confirmButtonText: 'Yes, Restore' 
-            }).then(async (result) => { 
-                if (result.isConfirmed) { 
+        // ইউজারের নিজস্ব ID ব্যবহার করা হচ্ছে (DOC_ID ভেরিয়েবলের ওপর ভরসা না করে)
+        const docRef = db.collection(COLLECTION_NAME).doc(user.uid);
+        
+        const cleanValue = sanitizeData(value);
+        await docRef.set({ [key]: cleanValue }, { merge: true });
+        
+        console.log(`✅ Saved: ${key}`);
+    } catch (error) {
+        console.error(`❌ Save Error (${key}):`, error);
+        // এখানে এরর throw করছি না যাতে বাকি প্রসেস চলতে থাকে
+    }
+}
+
+// ৩. মেইন ইমপোর্ট ফাংশন (Progress Bar সহ)
+async function importData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    event.target.value = ''; 
+
+    // লগইন চেক
+    const user = firebase.auth().currentUser;
+    if (!user) {
+        Swal.fire('Login Required', 'Please login to restore data.', 'error');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            const json = e.target.result;
+            const importedData = JSON.parse(json);
+
+            if (!importedData || !importedData.students) {
+                Swal.fire('Error', 'File content is invalid.', 'error');
+                return;
+            }
+
+            Swal.fire({
+                title: 'Ready to Restore',
+                text: `Found ${importedData.students.length} students. This will OVERWRITE existing data.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Start Upload',
+                confirmButtonColor: '#d33'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
                     
+                    // ১. ভেরিয়েবল আপডেট
+                    students = importedData.students.map(migrateStudentData);
+                    attendance = importedData.attendance || {};
+                    fees = importedData.fees || {};
+                    reminders = importedData.reminders || [];
+                    studentSerialCounter = importedData.studentSerialCounter || 1;
+
+                    // ২. স্টুডেন্ট আপলোড (Progress Bar সহ)
+                    let successCount = 0;
+                    const total = students.length;
+                    const batchSize = 10; // ব্যাচ সাইজ কমানো হলো (সেফটির জন্য)
+
+                    for (let i = 0; i < total; i += batchSize) {
+                        const chunk = students.slice(i, i + batchSize);
+                        
+                        // লোডিং স্ক্রিন আপডেট করা
+                        Swal.fire({
+                            title: 'Uploading Data...',
+                            html: `Processing students: <b>${i} to ${Math.min(i + batchSize, total)}</b> of ${total}<br>
+                                   <progress value="${i}" max="${total}" style="width: 100%"></progress>`,
+                            allowOutsideClick: false,
+                            showConfirmButton: false
+                        });
+
+                        const promises = chunk.map(student => {
+                            const cleanStudent = sanitizeData(student);
+                            // সরাসরি user.uid ব্যবহার করা হচ্ছে
+                            return db.collection(COLLECTION_NAME).doc(user.uid)
+                                     .collection('students').doc(String(cleanStudent.id))
+                                     .set(cleanStudent)
+                                     .then(() => successCount++)
+                                     .catch(err => console.error(`Failed ID ${student.id}:`, err));
+                        });
+                        
+                        await Promise.all(promises);
+                    }
+
+                    // ৩. বাকি ডাটা সেভ
                     Swal.fire({
-                        title: 'Restoring...', 
-                        html: 'Uploading data to secure server...<br><b>Please do not close the app.</b>',
+                        title: 'Finalizing...',
+                        html: 'Saving attendance and settings...',
                         allowOutsideClick: false,
                         didOpen: () => Swal.showLoading()
                     });
 
-                    // ১. মেমোরি ভেরিয়েবলে ডাটা সেট করা
-                    students = (importedData.students || []).map(migrateStudentData); 
-                    attendance = importedData.attendance || {}; 
-                    fees = importedData.fees || {}; 
-                    reminders = importedData.reminders || []; 
-                    studentSerialCounter = importedData.studentSerialCounter || (students.length + 1); 
+                    await dbSet('attendance', attendance);
+                    await dbSet('fees', fees);
+                    await dbSet('reminders', reminders);
+                    await dbSet('studentSerialCounter', studentSerialCounter);
                     
                     if(importedData.instituteLogo) await dbSet('instituteLogo', importedData.instituteLogo);
                     if(importedData.authorizedSignature) await dbSet('authorizedSignature', importedData.authorizedSignature);
 
-                    // ২. স্টুডেন্টদের ব্যাচ আকারে আপলোড করা (যাতে ব্রাউজার হ্যাং না হয় এবং ডাটা সেভ হয়)
-                    const batchSize = 50; 
-                    let totalUploaded = 0;
+                    // ৪. সাকসেস
+                    Swal.fire({
+                        title: 'Complete!',
+                        text: `Successfully restored ${successCount} out of ${total} students.`,
+                        icon: 'success'
+                    }).then(() => {
+                        loadAllData();
+                    });
+                }
+            });
 
-                    for (let i = 0; i < students.length; i += batchSize) {
-                        const chunk = students.slice(i, i + batchSize);
-                        const promises = chunk.map(student => {
-                            // এই লাইনটিই আসল কাজ করবে: স্টুডেন্টদের সাব-কালেকশনে সেভ করবে
-                            return db.collection(COLLECTION_NAME).doc(DOC_ID)
-                                     .collection('students').doc(String(student.id)).set(student);
-                        });
-                        
-                        await Promise.all(promises);
-                        totalUploaded += chunk.length;
-                        
-                        Swal.update({
-                            html: `Restoring...<br><b>Uploaded: ${totalUploaded} / ${students.length}</b><br>Please wait...`
-                        });
-                    }
-
-                    // ৩. অন্যান্য ডাটা সেভ করা
-                    await saveData(); 
-                    
-                    // ৪. স্ক্রিন রিফ্রেশ করা
-                    await loadInstituteLogo(); 
-                    await loadAuthSignature(); 
-                    loadAllData(); 
-                    
-                    Swal.fire('Success', 'Data restored successfully! You can now refresh safely.', 'success'); 
-                } 
-            }); 
-        } catch (error) { 
-            console.error(error); 
-            Swal.fire('Error', 'Failed to load backup file. Check format.', 'error'); 
-        } finally { 
-            event.target.value = null; 
-        } 
-    }; 
-    reader.readAsText(file); 
+        } catch (error) {
+            console.error("Restore Crash:", error);
+            Swal.fire('Error', 'Process failed: ' + error.message, 'error');
+        }
+    };
+    reader.readAsText(file);
 }
 
         function openStatusChangeModal(id, toActive) { document.getElementById('statusChangeStudentId').value = id; document.getElementById('statusChangeToActive').value = toActive; document.getElementById('statusChangeTitle').textContent = toActive ? 'Activate Student' : 'Deactivate Student'; document.getElementById('statusDate').valueAsDate = new Date(); document.getElementById('statusNote').value = ''; document.getElementById('statusChangeModal').style.display = 'flex'; }
