@@ -1,22 +1,20 @@
 {
-    "name": "Music Class Manager",
-    "short_name": "Music Mgr",
-    "start_url": "./index.html",
-    "display": "standalone",
-    "background_color": "#f3f4f6",
-    "theme_color": "#4f46e5",
-    "description": "Manage music students, attendance, and fees.",
-    "orientation": "portrait-primary",
-    "icons": [
-        {
-            "src": "icon-192.png",
-            "sizes": "192x192",
-            "type": "image/png"
-        },
-        {
-            "src": "icon-512.png",
-            "sizes": "512x512",
-            "type": "image/png"
-        }
-    ]
+  "name": "Music Classes Manager",
+  "short_name": "MusicMgr",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f3f4f6",
+  "theme_color": "#4f46e5",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2907/2907253.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2907/2907253.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
 }
