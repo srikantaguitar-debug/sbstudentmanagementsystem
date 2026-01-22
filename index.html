@@ -1916,7 +1916,6 @@ async function addStudent() {
 // ১. ডাটা ক্লিন করার ফাংশন
 function sanitizeData(obj) {
     if (obj === undefined) return null;
-    // Date object বা undefined ভ্যালু ফিক্স করা
     return JSON.parse(JSON.stringify(obj, (k, v) => v === undefined ? null : v));
 }
 
@@ -1925,30 +1924,27 @@ async function dbSet(key, value) {
     try {
         const user = firebase.auth().currentUser;
         if (!user) throw new Error("User not logged in.");
-
-        // ইউজারের নিজস্ব ID ব্যবহার করা হচ্ছে (DOC_ID ভেরিয়েবলের ওপর ভরসা না করে)
+        
         const docRef = db.collection(COLLECTION_NAME).doc(user.uid);
-        
         const cleanValue = sanitizeData(value);
-        await docRef.set({ [key]: cleanValue }, { merge: true });
         
+        await docRef.set({ [key]: cleanValue }, { merge: true });
         console.log(`✅ Saved: ${key}`);
     } catch (error) {
         console.error(`❌ Save Error (${key}):`, error);
-        // এখানে এরর throw করছি না যাতে বাকি প্রসেস চলতে থাকে
+        throw new Error(`Failed to save ${key}`);
     }
 }
 
-// ৩. মেইন ইমপোর্ট ফাংশন (Progress Bar সহ)
+// ৩. মেইন ইমপোর্ট ফাংশন (Live Counter সহ)
 async function importData(event) {
     const file = event.target.files[0];
     if (!file) return;
     event.target.value = ''; 
 
-    // লগইন চেক
     const user = firebase.auth().currentUser;
     if (!user) {
-        Swal.fire('Login Required', 'Please login to restore data.', 'error');
+        Swal.fire('Login Required', 'Please login first.', 'error');
         return;
     }
 
@@ -1959,13 +1955,13 @@ async function importData(event) {
             const importedData = JSON.parse(json);
 
             if (!importedData || !importedData.students) {
-                Swal.fire('Error', 'File content is invalid.', 'error');
+                Swal.fire('Error', 'Invalid backup file.', 'error');
                 return;
             }
 
             Swal.fire({
                 title: 'Ready to Restore',
-                text: `Found ${importedData.students.length} students. This will OVERWRITE existing data.`,
+                text: `Found ${importedData.students.length} students.`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonText: 'Start Upload',
@@ -1973,73 +1969,92 @@ async function importData(event) {
             }).then(async (result) => {
                 if (result.isConfirmed) {
                     
-                    // ১. ভেরিয়েবল আপডেট
+                    // ১. ভেরিয়েবল আপডেট
                     students = importedData.students.map(migrateStudentData);
                     attendance = importedData.attendance || {};
                     fees = importedData.fees || {};
                     reminders = importedData.reminders || [];
                     studentSerialCounter = importedData.studentSerialCounter || 1;
 
-                    // ২. স্টুডেন্ট আপলোড (Progress Bar সহ)
-                    let successCount = 0;
                     const total = students.length;
-                    const batchSize = 10; // ব্যাচ সাইজ কমানো হলো (সেফটির জন্য)
+                    let loadedCount = 0; // লাইভ কাউন্টার শুরু
+
+                    // ২. লোডিং স্ক্রিন ওপেন করা (HTML ID সহ)
+                    Swal.fire({
+                        title: 'Uploading Students...',
+                        html: `
+                            <h2 style="color: green; font-weight: bold;" id="live-counter">0</h2>
+                            <p>out of <b>${total}</b> uploaded</p>
+                            <progress id="live-progress" value="0" max="${total}" style="width: 100%; height: 20px;"></progress>
+                            <br><span style="color:red; font-size:12px;">Do not close or refresh!</span>
+                        `,
+                        allowOutsideClick: false,
+                        showConfirmButton: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    // ৩. স্টুডেন্ট আপলোড (Batch Process)
+                    const batchSize = 10; 
 
                     for (let i = 0; i < total; i += batchSize) {
                         const chunk = students.slice(i, i + batchSize);
                         
-                        // লোডিং স্ক্রিন আপডেট করা
-                        Swal.fire({
-                            title: 'Uploading Data...',
-                            html: `Processing students: <b>${i} to ${Math.min(i + batchSize, total)}</b> of ${total}<br>
-                                   <progress value="${i}" max="${total}" style="width: 100%"></progress>`,
-                            allowOutsideClick: false,
-                            showConfirmButton: false
-                        });
-
                         const promises = chunk.map(student => {
                             const cleanStudent = sanitizeData(student);
-                            // সরাসরি user.uid ব্যবহার করা হচ্ছে
+                            
                             return db.collection(COLLECTION_NAME).doc(user.uid)
                                      .collection('students').doc(String(cleanStudent.id))
                                      .set(cleanStudent)
-                                     .then(() => successCount++)
-                                     .catch(err => console.error(`Failed ID ${student.id}:`, err));
+                                     .then(() => {
+                                         // ✅ প্রতিটি স্টুডেন্ট আপলোড হওয়ার সাথে সাথে কাউন্টার আপডেট হবে
+                                         loadedCount++;
+                                         
+                                         // HTML আপডেট করা
+                                         const counterEl = document.getElementById('live-counter');
+                                         const progressEl = document.getElementById('live-progress');
+                                         
+                                         if (counterEl) counterEl.innerText = loadedCount;
+                                         if (progressEl) progressEl.value = loadedCount;
+                                     });
                         });
                         
+                        // ব্যাচ শেষ হওয়ার জন্য অপেক্ষা
                         await Promise.all(promises);
                     }
 
-                    // ৩. বাকি ডাটা সেভ
-                    Swal.fire({
-                        title: 'Finalizing...',
-                        html: 'Saving attendance and settings...',
-                        allowOutsideClick: false,
-                        didOpen: () => Swal.showLoading()
-                    });
+                    // ৪. বাকি ডাটা সেভ
+                    const titleEl = Swal.getHtmlContainer().querySelector('h2'); // টাইটেল ধরা
+                    if(titleEl) titleEl.innerText = "Saving Settings...";
 
-                    await dbSet('attendance', attendance);
-                    await dbSet('fees', fees);
-                    await dbSet('reminders', reminders);
-                    await dbSet('studentSerialCounter', studentSerialCounter);
-                    
-                    if(importedData.instituteLogo) await dbSet('instituteLogo', importedData.instituteLogo);
-                    if(importedData.authorizedSignature) await dbSet('authorizedSignature', importedData.authorizedSignature);
+                    try {
+                        await dbSet('attendance', attendance);
+                        await dbSet('fees', fees);
+                        await dbSet('reminders', reminders);
+                        await dbSet('studentSerialCounter', studentSerialCounter);
+                        
+                        if(importedData.instituteLogo) await dbSet('instituteLogo', importedData.instituteLogo);
+                        if(importedData.authorizedSignature) await dbSet('authorizedSignature', importedData.authorizedSignature);
 
-                    // ৪. সাকসেস
-                    Swal.fire({
-                        title: 'Complete!',
-                        text: `Successfully restored ${successCount} out of ${total} students.`,
-                        icon: 'success'
-                    }).then(() => {
-                        loadAllData();
-                    });
+                        // ৫. সাকসেস
+                        Swal.fire({
+                            title: 'Complete!',
+                            text: `Successfully uploaded all ${loadedCount} students.`,
+                            icon: 'success'
+                        }).then(() => {
+                            loadAllData();
+                        });
+
+                    } catch (saveError) {
+                        Swal.fire('Save Failed', 'Internet error. Check console.', 'error');
+                    }
                 }
             });
 
         } catch (error) {
             console.error("Restore Crash:", error);
-            Swal.fire('Error', 'Process failed: ' + error.message, 'error');
+            Swal.fire('Error', error.message, 'error');
         }
     };
     reader.readAsText(file);
