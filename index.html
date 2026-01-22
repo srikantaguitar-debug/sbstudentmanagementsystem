@@ -1207,19 +1207,7 @@ function removeEditPhoto() {
     isPhotoDeletedInEdit = true;
 }
 
-// নতুন ফাংশন: ছাত্রদের আলাদা ফোল্ডার থেকে লোড করা
-async function loadStudentsFromSubCollection() {
-    try {
-        const snapshot = await db.collection(COLLECTION_NAME).doc(DOC_ID).collection('students').get();
-        if (snapshot.empty) {
-            return [];
-        }
-        return snapshot.docs.map(doc => doc.data());
-    } catch (error) {
-        console.error("Error loading students:", error);
-        return [];
-    }
-}
+
 // নতুন ফাংশন: ছাত্রদের আলাদা সাব-কালেকশন থেকে লোড করা
 async function loadStudentsFromSubCollection() {
     try {
@@ -1232,7 +1220,8 @@ async function loadStudentsFromSubCollection() {
     }
 }
         // --- SUPER FAST INIT APP (Parallel Loading) ---
-        async function initApp() { 
+        // এই ফাংশনটি দিয়ে আগের initApp ফাংশনটি রিপ্লেস করুন
+async function initApp() { 
     const now = new Date();
     document.getElementById('attendanceDate').valueAsDate = now;
     document.getElementById('attendanceTime').value = now.toLocaleTimeString('en-GB', {hour: '2-digit', minute:'2-digit'});
@@ -1253,20 +1242,35 @@ async function loadStudentsFromSubCollection() {
     toggleReportInputs(); 
 
     try {
-        // পরিবর্তন: এখানে dbGet('students') এর বদলে নতুন ফাংশন ব্যবহার করা হয়েছে
-        const [sData, aData, fData, rData, scData] = await Promise.all([
-            loadStudentsFromSubCollection(), 
+        // ১. সাব-কালেকশন থেকে স্টুডেন্ট লোড করার চেষ্টা
+        let loadedStudents = await loadStudentsFromSubCollection();
+
+        // ২. যদি সাব-কালেকশনে স্টুডেন্ট না থাকে, তবে মেইন ডকুমেন্ট চেক করা (Legacy Support)
+        if (loadedStudents.length === 0) {
+            const legacyStudents = await dbGet('students');
+            if (legacyStudents && Array.isArray(legacyStudents) && legacyStudents.length > 0) {
+                console.log("Found legacy data, migrating...");
+                // লিগ্যাসি ডাটা পাওয়া গেলে তা লোড করা এবং ব্যাকগ্রাউন্ডে নতুন ফোল্ডারে পাঠানো
+                loadedStudents = legacyStudents.map(migrateStudentData);
+                
+                loadedStudents.forEach(st => {
+                     db.collection(COLLECTION_NAME).doc(DOC_ID).collection('students').doc(String(st.id)).set(st);
+                });
+            }
+        }
+
+        const [aData, fData, rData, scData] = await Promise.all([
             dbGet('attendance'),
             dbGet('fees'),
             dbGet('reminders'),
             dbGet('studentSerialCounter')
         ]);
 
-        students = sData || []; 
+        students = loadedStudents || []; 
         attendance = aData || {}; 
         fees = fData || {}; 
         reminders = rData || []; 
-        studentSerialCounter = parseInt(scData) || 1; 
+        studentSerialCounter = parseInt(scData) || (students.length > 0 ? students.length + 1 : 1); 
         
         loadAllData(); 
     } catch(e) {
@@ -1897,7 +1901,8 @@ async function addStudent() {
     }
 }
 
-        async function importData(event) { 
+        // এই ফাংশনটি দিয়ে আপনার আগের importData ফাংশনটি রিপ্লেস করুন
+async function importData(event) { 
     const file = event.target.files[0]; 
     if (!file) return; 
     
@@ -1913,7 +1918,7 @@ async function addStudent() {
 
             Swal.fire({ 
                 title: 'Restore Data?', 
-                text: "This will restore your data to the new system.", 
+                text: `Found ${importedData.students.length} students. This will look for errors and fix database.`, 
                 icon: 'question', 
                 showCancelButton: true, 
                 confirmButtonText: 'Yes, Restore' 
@@ -1922,12 +1927,12 @@ async function addStudent() {
                     
                     Swal.fire({
                         title: 'Restoring...', 
-                        html: 'Preparing data...<br><b>Do not close the app.</b>',
+                        html: 'Uploading data to secure server...<br><b>Please do not close the app.</b>',
                         allowOutsideClick: false,
                         didOpen: () => Swal.showLoading()
                     });
 
-                    // ১. মেমোরিতে ডাটা লোড করা
+                    // ১. মেমোরি ভেরিয়েবলে ডাটা সেট করা
                     students = (importedData.students || []).map(migrateStudentData); 
                     attendance = importedData.attendance || {}; 
                     fees = importedData.fees || {}; 
@@ -1937,34 +1942,40 @@ async function addStudent() {
                     if(importedData.instituteLogo) await dbSet('instituteLogo', importedData.instituteLogo);
                     if(importedData.authorizedSignature) await dbSet('authorizedSignature', importedData.authorizedSignature);
 
-                    // ২. আসল কাজ: লুপ চালিয়ে (One by one) আপলোড করা - যাতে হ্যাং না হয়
-                    let completed = 0;
-                    for (const student of students) {
-                        try {
-                            await db.collection(COLLECTION_NAME).doc(DOC_ID).collection('students').doc(String(student.id)).set(student);
-                            completed++;
-                            // প্রোগ্রেস আপডেট দেখানো
-                            Swal.update({
-                                html: `Restoring...<br><b>Uploaded: ${completed} / ${students.length}</b><br>Please wait...`
-                            });
-                        } catch (err) {
-                            console.error("Failed to upload student:", student.name, err);
-                        }
+                    // ২. স্টুডেন্টদের ব্যাচ আকারে আপলোড করা (যাতে ব্রাউজার হ্যাং না হয় এবং ডাটা সেভ হয়)
+                    const batchSize = 50; 
+                    let totalUploaded = 0;
+
+                    for (let i = 0; i < students.length; i += batchSize) {
+                        const chunk = students.slice(i, i + batchSize);
+                        const promises = chunk.map(student => {
+                            // এই লাইনটিই আসল কাজ করবে: স্টুডেন্টদের সাব-কালেকশনে সেভ করবে
+                            return db.collection(COLLECTION_NAME).doc(DOC_ID)
+                                     .collection('students').doc(String(student.id)).set(student);
+                        });
+                        
+                        await Promise.all(promises);
+                        totalUploaded += chunk.length;
+                        
+                        Swal.update({
+                            html: `Restoring...<br><b>Uploaded: ${totalUploaded} / ${students.length}</b><br>Please wait...`
+                        });
                     }
 
-                    // ৩. বাকি ডাটা সেভ করা
+                    // ৩. অন্যান্য ডাটা সেভ করা
                     await saveData(); 
                     
+                    // ৪. স্ক্রিন রিফ্রেশ করা
                     await loadInstituteLogo(); 
                     await loadAuthSignature(); 
                     loadAllData(); 
                     
-                    Swal.fire('Success', 'Data restored successfully!', 'success'); 
+                    Swal.fire('Success', 'Data restored successfully! You can now refresh safely.', 'success'); 
                 } 
             }); 
         } catch (error) { 
             console.error(error); 
-            Swal.fire('Error', 'Failed to load backup file. Check Console.', 'error'); 
+            Swal.fire('Error', 'Failed to load backup file. Check format.', 'error'); 
         } finally { 
             event.target.value = null; 
         } 
@@ -3321,15 +3332,16 @@ async function addAttendanceNote(studentId) {
     
     document.getElementById('editStudentModal').style.display = 'flex'; 
 }
-       async function saveStudentChanges() { 
+       // এই ফাংশনটি দিয়ে আগের saveStudentChanges ফাংশনটি রিপ্লেস করুন
+async function saveStudentChanges() { 
     const id = parseInt(document.getElementById('editStudentId').value);
-    // ইনডেক্স খুঁজে বের করা
-    const studentIndex = students.findIndex(s => s.id === id); 
+    
+    // লোকাল মেমোরিতে স্টুডেন্ট খুঁজে বের করা
+    const studentIndex = students.findIndex(s => s.id === id);
+    if (studentIndex === -1) return;
+    
     const student = students[studentIndex];
-    
-    if(!student) return; 
-    
-    // ডাটা আপডেট করা
+
     student.name = document.getElementById('editStudentName').value.trim(); 
     if(!student.name) { Swal.fire('Error','Name required.', 'error'); return; } 
 
@@ -3355,10 +3367,11 @@ async function addAttendanceNote(studentId) {
         student.student_signature = currentStudentSignature;
     }
 
-    // ১. লোকাল আপডেট
+    // ১. লোকাল আপডেট (যাতে রিফ্রেশ ছাড়াও সাথে সাথে পরিবর্তন দেখা যায়)
     students[studentIndex] = student;
 
-    // ২. ডাটাবেস আপডেট (Specific Document)
+    // ২. ডাটাবেস আপডেট (যাতে রিফ্রেশ করলে ডাটা থাকে)
+    // আমরা সরাসরি নির্দিষ্ট ডকুমেন্টটি আপডেট করছি
     await db.collection(COLLECTION_NAME).doc(DOC_ID).collection('students').doc(String(id)).set(student);
     
     closeModal('editStudentModal'); 
