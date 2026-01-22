@@ -373,9 +373,6 @@
         <button onclick="handleLogin()" style="width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px;">
             <i class="fas fa-sign-in-alt"></i> Login
         </button>
-        <button onclick="handleSignUp()" style="width: 100%; padding: 12px; background: var(--secondary); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px; margin-top: 10px;">
-    <i class="fas fa-user-plus"></i> Create Account
-</button>
         <p id="loginError" style="color: var(--danger); font-size: 12px; margin-top: 15px; display: none;"></p>
     </div>
 </div>
@@ -1207,80 +1204,57 @@ function removeEditPhoto() {
     isPhotoDeletedInEdit = true;
 }
 
-// নতুন ফাংশন: ছাত্রদের আলাদা ফোল্ডার থেকে লোড করা
-async function loadStudentsFromSubCollection() {
-    try {
-        const snapshot = await db.collection(COLLECTION_NAME).doc(DOC_ID).collection('students').get();
-        if (snapshot.empty) {
-            return [];
-        }
-        return snapshot.docs.map(doc => doc.data());
-    } catch (error) {
-        console.error("Error loading students:", error);
-        return [];
-    }
-}
-// নতুন ফাংশন: ছাত্রদের আলাদা সাব-কালেকশন থেকে লোড করা
-async function loadStudentsFromSubCollection() {
-    try {
-        const snapshot = await db.collection(COLLECTION_NAME).doc(DOC_ID).collection('students').get();
-        if (snapshot.empty) return [];
-        return snapshot.docs.map(doc => doc.data());
-    } catch (error) {
-        console.error("Error loading students:", error);
-        return [];
-    }
-}
         // --- SUPER FAST INIT APP (Parallel Loading) ---
         async function initApp() { 
-    const now = new Date();
-    document.getElementById('attendanceDate').valueAsDate = now;
-    document.getElementById('attendanceTime').value = now.toLocaleTimeString('en-GB', {hour: '2-digit', minute:'2-digit'});
-    
-    const currentMonthStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`; 
-    const prevDate = new Date(now);
-    prevDate.setMonth(prevDate.getMonth() - 1);
-    const prevMonthStr = `${prevDate.getFullYear()}-${(prevDate.getMonth() + 1).toString().padStart(2, '0')}`;
+            const now = new Date();
+            document.getElementById('attendanceDate').valueAsDate = now;
+            document.getElementById('attendanceTime').value = now.toLocaleTimeString('en-GB', {hour: '2-digit', minute:'2-digit'});
+            
+            const currentMonthStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`; 
+            const prevDate = new Date(now);
+            prevDate.setMonth(prevDate.getMonth() - 1);
+            const prevMonthStr = `${prevDate.getFullYear()}-${(prevDate.getMonth() + 1).toString().padStart(2, '0')}`;
 
-    document.getElementById('feeMonth').value = currentMonthStr; 
-    document.getElementById('reportMonth').value = currentMonthStr; 
-    document.getElementById('reportYear').value = now.getFullYear(); 
-    document.getElementById('idCardIssueDate').valueAsDate = now; 
-    document.getElementById('analyticsYear').value = now.getFullYear(); 
-    document.getElementById('compMonth1').value = prevMonthStr;
-    document.getElementById('compMonth2').value = currentMonthStr;
+            document.getElementById('feeMonth').value = currentMonthStr; 
+            document.getElementById('reportMonth').value = currentMonthStr; 
+            document.getElementById('reportYear').value = now.getFullYear(); 
+            document.getElementById('idCardIssueDate').valueAsDate = now; 
+            document.getElementById('analyticsYear').value = now.getFullYear(); 
+            document.getElementById('compMonth1').value = prevMonthStr;
+            document.getElementById('compMonth2').value = currentMonthStr;
 
-    toggleReportInputs(); 
+            toggleReportInputs(); 
 
-    try {
-        // পরিবর্তন: এখানে dbGet('students') এর বদলে নতুন ফাংশন ব্যবহার করা হয়েছে
-        const [sData, aData, fData, rData, scData] = await Promise.all([
-            loadStudentsFromSubCollection(), 
-            dbGet('attendance'),
-            dbGet('fees'),
-            dbGet('reminders'),
-            dbGet('studentSerialCounter')
-        ]);
+            try {
+                // Parallel Loading: সব ডাটা একসাথে লোড হবে (Fastest Way)
+                const [sData, aData, fData, rData, scData] = await Promise.all([
+                    dbGet('students'),
+                    dbGet('attendance'),
+                    dbGet('fees'),
+                    dbGet('reminders'),
+                    dbGet('studentSerialCounter')
+                ]);
 
-        students = sData || []; 
-        attendance = aData || {}; 
-        fees = fData || {}; 
-        reminders = rData || []; 
-        studentSerialCounter = parseInt(scData) || 1; 
-        
-        loadAllData(); 
-    } catch(e) {
-        console.error("Init Error:", e);
-        if(!students) students = [];
-        if(!attendance) attendance = {};
-    }
+                students = (sData || []).map(migrateStudentData); 
+                attendance = aData || {}; 
+                fees = fData || {}; 
+                reminders = rData || []; 
+                studentSerialCounter = parseInt(scData) || 1; 
+                
+                loadAllData(); 
+            } catch(e) {
+                console.error("Init Error:", e);
+                // অফলাইন মোডে এরর হলে ফাঁকা অ্যারে দিয়ে অ্যাপ চালু রাখবে
+                if(!students) students = [];
+                if(!attendance) attendance = {};
+            }
 
-    document.getElementById('attendanceDate').addEventListener('change', renderAttendance); 
-    document.getElementById('feeMonth').addEventListener('change', renderFees); 
-    
-    comparePeriods(); 
-    updateYearlyChart();
-}
+            document.getElementById('attendanceDate').addEventListener('change', renderAttendance); 
+            document.getElementById('feeMonth').addEventListener('change', renderFees); 
+            
+            comparePeriods(); 
+            updateYearlyChart();
+        }
 
         const INSTITUTE_NAME = "Guitar, Bass Guitar, Piano, Keyboard, Mandolin Classes"; 
         const MY_NAME = "Srikanta Banerjee"; 
@@ -1679,7 +1653,6 @@ async function addStudent() {
         return; 
     } 
 
-    // প্রিভিউ লজিক (যা ছিল তাই)
     let photoDisplay = '';
     if (currentPhotoBase64) {
         photoDisplay = `<img src="${currentPhotoBase64}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #000; margin-bottom: 10px;">`;
@@ -1725,7 +1698,7 @@ async function addStudent() {
         cancelButtonText: 'Edit / Cancel',
         confirmButtonColor: 'var(--success)',
         cancelButtonColor: 'var(--danger)',
-        allowOutsideClick: false 
+        allowOutsideClick: false // এই লাইনটি বাইরে ক্লিক বন্ধ করবে
     });
 
     if (result.isConfirmed) {
@@ -1749,16 +1722,9 @@ async function addStudent() {
             status: { isActive: true, history: [{ status: 'Active', date: new Date().toISOString().split('T')[0], note: 'Joined' }] } 
         }; 
 
-        // ১. লোকাল অ্যারেতে যোগ করা
         students.push(newStudent); 
+        await saveData(); 
         
-        // ২. ডাটাবেসে আলাদা ফাইল হিসেবে সেভ করা (NEW CODE)
-        await db.collection(COLLECTION_NAME).doc(DOC_ID).collection('students').doc(String(newStudent.id)).set(newStudent);
-        
-        // ৩. সিরিয়াল নাম্বার আপডেট করা
-        await dbSet('studentSerialCounter', studentSerialCounter);
-        
-        // ইনপুট ক্লিয়ার করা
         document.getElementById('studentName').value = ''; 
         document.getElementById('studentClass').value = ''; 
         document.getElementById('studentFee').value = ''; 
@@ -1796,17 +1762,11 @@ async function addStudent() {
             confirmButtonColor: '#d33', 
             confirmButtonText: 'Done / Close',
             showCloseButton: true,
-            allowOutsideClick: false 
+            allowOutsideClick: false // এই লাইনটি বাইরে ক্লিক বন্ধ করবে
         });
     } 
 }
-        async function saveData() { 
-    // students বাদে বাকি সব সেভ হবে
-    await dbSet('attendance', attendance); 
-    await dbSet('fees', fees); 
-    await dbSet('reminders', reminders); 
-    await dbSet('studentSerialCounter', studentSerialCounter); 
-}
+        async function saveData() { await dbSet('students', students); await dbSet('attendance', attendance); await dbSet('fees', fees); await dbSet('reminders', reminders); await dbSet('studentSerialCounter', studentSerialCounter); }
         function loadAllData() { renderDashboard(); loadStudentsList(); renderAttendance(); renderFees(); renderReminders(); }
         
         async function exportData() { 
@@ -1898,105 +1858,24 @@ async function addStudent() {
 }
 
         async function importData(event) { 
-    const file = event.target.files[0]; 
-    if (!file) return; 
-    
-    const reader = new FileReader(); 
-    reader.onload = function(e) { 
-        try { 
-            const json = e.target.result; 
-            let importedData = JSON.parse(json); 
+            const file = event.target.files[0]; if (!file) return; 
+            const reader = new FileReader(); reader.onload = function(e) { try { const json = e.target.result; let importedData = JSON.parse(json); if (!importedData || !Array.isArray(importedData.students)) { throw new Error("Invalid Data Format"); } Swal.fire({ title: 'Overwrite Data?', text: "This will replace all current data.", icon: 'warning', showCancelButton: true, confirmButtonText: 'Yes, Import' }).then(async (result) => { if (result.isConfirmed) { 
+                students = (importedData.students || []).map(migrateStudentData); 
+                attendance = importedData.attendance || {}; 
+                fees = importedData.fees || {}; 
+                reminders = importedData.reminders || []; 
+                studentSerialCounter = importedData.studentSerialCounter || (students.length + 1); 
+                
+                if(importedData.instituteLogo) await dbSet('instituteLogo', importedData.instituteLogo);
+                if(importedData.authorizedSignature) await dbSet('authorizedSignature', importedData.authorizedSignature);
 
-            if (!importedData || !Array.isArray(importedData.students)) { 
-                throw new Error("Invalid Data Format"); 
-            } 
-
-            Swal.fire({ 
-                title: 'Restore Data?', 
-                text: "This will restore your data to the new system.", 
-                icon: 'question', 
-                showCancelButton: true, 
-                confirmButtonText: 'Yes, Restore' 
-            }).then(async (result) => { 
-                if (result.isConfirmed) { 
-                    
-                    Swal.fire({
-                        title: 'Restoring...', 
-                        html: 'Preparing data...<br><b>Do not close the app.</b>',
-                        allowOutsideClick: false,
-                        didOpen: () => Swal.showLoading()
-                    });
-
-                    // ১. মেমোরিতে ডাটা লোড করা
-                    students = (importedData.students || []).map(migrateStudentData); 
-                    attendance = importedData.attendance || {}; 
-                    fees = importedData.fees || {}; 
-                    reminders = importedData.reminders || []; 
-                    studentSerialCounter = importedData.studentSerialCounter || (students.length + 1); 
-                    
-                    if(importedData.instituteLogo) await dbSet('instituteLogo', importedData.instituteLogo);
-                    if(importedData.authorizedSignature) await dbSet('authorizedSignature', importedData.authorizedSignature);
-
-                    // ২. আসল কাজ: লুপ চালিয়ে (One by one) আপলোড করা - যাতে হ্যাং না হয়
-                    let completed = 0;
-                    for (const student of students) {
-                        try {
-                            await db.collection(COLLECTION_NAME).doc(DOC_ID).collection('students').doc(String(student.id)).set(student);
-                            completed++;
-                            // প্রোগ্রেস আপডেট দেখানো
-                            Swal.update({
-                                html: `Restoring...<br><b>Uploaded: ${completed} / ${students.length}</b><br>Please wait...`
-                            });
-                        } catch (err) {
-                            console.error("Failed to upload student:", student.name, err);
-                        }
-                    }
-
-                    // ৩. বাকি ডাটা সেভ করা
-                    await saveData(); 
-                    
-                    await loadInstituteLogo(); 
-                    await loadAuthSignature(); 
-                    loadAllData(); 
-                    
-                    Swal.fire('Success', 'Data restored successfully!', 'success'); 
-                } 
-            }); 
-        } catch (error) { 
-            console.error(error); 
-            Swal.fire('Error', 'Failed to load backup file. Check Console.', 'error'); 
-        } finally { 
-            event.target.value = null; 
-        } 
-    }; 
-    reader.readAsText(file); 
-}
+                await saveData(); await loadInstituteLogo(); await loadAuthSignature(); loadAllData(); Swal.fire('Success', 'Data imported successfully!', 'success'); } }); } catch (error) { console.error(error); Swal.fire('Error', 'Failed to load backup file. Please check the file.', 'error'); } finally { event.target.value = null; } }; reader.readAsText(file); 
+        }
 
         function openStatusChangeModal(id, toActive) { document.getElementById('statusChangeStudentId').value = id; document.getElementById('statusChangeToActive').value = toActive; document.getElementById('statusChangeTitle').textContent = toActive ? 'Activate Student' : 'Deactivate Student'; document.getElementById('statusDate').valueAsDate = new Date(); document.getElementById('statusNote').value = ''; document.getElementById('statusChangeModal').style.display = 'flex'; }
-        async function saveStatusChange() { 
-    const id = parseInt(document.getElementById('statusChangeStudentId').value); 
-    const toActive = document.getElementById('statusChangeToActive').value === 'true'; 
-    const note = document.getElementById('statusNote').value.trim(); 
-    const statusDate = document.getElementById('statusDate').value; 
-    
-    if (!statusDate) { Swal.fire('Error', 'Please select a date.', 'error'); return; } 
-    
-    const student = students.find(s => s.id === id); 
-    if (student) { 
-        student.status.isActive = toActive; 
-        student.status.history.unshift({ status: toActive ? 'Active' : 'Inactive', date: statusDate, note: note || (toActive ? 'Re-activated' : 'Deactivated') }); 
-        
-        // ডাটাবেসে আপডেট (Specific Document Update)
-        await db.collection(COLLECTION_NAME).doc(DOC_ID).collection('students').doc(String(id)).update({
-            status: student.status
-        });
+        async function saveStatusChange() { const id = parseInt(document.getElementById('statusChangeStudentId').value); const toActive = document.getElementById('statusChangeToActive').value === 'true'; const note = document.getElementById('statusNote').value.trim(); const statusDate = document.getElementById('statusDate').value; if (!statusDate) { Swal.fire('Error', 'Please select a date.', 'error'); return; } const student = students.find(s => s.id === id); if (student) { student.status.isActive = toActive; student.status.history.unshift({ status: toActive ? 'Active' : 'Inactive', date: statusDate, note: note || (toActive ? 'Re-activated' : 'Deactivated') }); await saveData(); loadAllData(); closeModal('statusChangeModal'); Swal.fire('Updated', `Status changed.`, 'success'); } }
 
-        await saveData(); // (Optional: attendance or counters if needed)
-        loadAllData(); 
-        closeModal('statusChangeModal'); 
-        Swal.fire('Updated', `Status changed.`, 'success'); 
-    } 
-}        function formatTime12H(timeStr) {
+        function formatTime12H(timeStr) {
             if(!timeStr) return '';
             const [h, m] = timeStr.split(':');
             const ampm = h >= 12 ? 'PM' : 'AM';
@@ -2167,69 +2046,81 @@ async function addStudent() {
         
         function checkBirthday(dobString) { if (!dobString) return false; const today = new Date(); const dob = new Date(dobString); return today.getDate() === dob.getDate() && today.getMonth() === dob.getMonth(); }
         function updateReminderDay() { const dateVal = document.getElementById('reminderDate').value; if (dateVal) { const date = new Date(dateVal); const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']; document.getElementById('reminderDay').value = days[date.getDay()]; } }
-        async function addReminder() { 
-    const text = document.getElementById('reminderText').value.trim(); 
-    const day = document.getElementById('reminderDay').value; 
-    const dateVal = document.getElementById('reminderDate').value; // Tarikh nawa holo
+        async function addReminder() {
+    const text = document.getElementById('reminderText').value.trim();
+    const day = document.getElementById('reminderDay').value;
+    const dateVal = document.getElementById('reminderDate').value; // তারিখ নেওয়া হলো
 
-    if(!text) { 
-        Swal.fire('Error', 'Please enter reminder text.', 'error'); 
-        return; 
-    } 
+    if (!text) {
+        Swal.fire('Error', 'Please enter reminder text.', 'error');
+        return;
+    }
 
-    // Ekhane 'date' property add kora holo
-    reminders.push({ id: Date.now(), text: text, day: day, date: dateVal }); 
+    // নতুন অবজেক্টে 'date' ফিল্ড যুক্ত করা হলো
+    reminders.push({ 
+        id: Date.now(), 
+        text: text, 
+        day: day, 
+        date: dateVal // তারিখ সেভ করা হচ্ছে
+    }); 
+
+    await saveData();
     
-    await saveData(); 
+    // ইনপুট ক্লিয়ার করা
+    document.getElementById('reminderText').value = '';
+    document.getElementById('reminderDate').value = '';
     
-    document.getElementById('reminderText').value = ''; 
-    document.getElementById('reminderDate').value = ''; 
-    renderReminders(); 
-    
-    Swal.fire('Added', 'Reminder added successfully.', 'success'); 
+    renderReminders();
+    Swal.fire('Added', 'Reminder added successfully.', 'success');
 }
         async function deleteReminder(id) { reminders = reminders.filter(r => r.id !== id); await saveData(); renderReminders(); }
-        function renderReminders() { 
-    const listContainer = document.getElementById('reminderListContainer'); 
-    listContainer.innerHTML = ''; 
-    const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]; 
+        function renderReminders() {
+    const listContainer = document.getElementById('reminderListContainer');
+    listContainer.innerHTML = '';
     
-    days.forEach(day => { 
-        const dayReminders = reminders.filter(r => r.day === day); 
+    const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+    
+    days.forEach(day => {
+        // ওই বারের সব রিমাইন্ডার ফিল্টার করা
+        const dayReminders = reminders.filter(r => r.day === day);
         
-        if(dayReminders.length > 0) { 
-            const dayHeader = document.createElement('h4'); 
-            dayHeader.style.cssText = "margin: 15px 0 5px 0; color: var(--primary); font-size:14px; border-bottom:1px solid var(--border-color); padding-bottom: 5px;"; 
+        if (dayReminders.length > 0) {
+            // বারের নাম (Header)
+            const dayHeader = document.createElement('h4');
+            dayHeader.style.cssText = "margin: 15px 0 5px 0; color: var(--primary); font-size:14px; border-bottom:1px solid var(--border-color); padding-bottom: 2px;";
             dayHeader.textContent = day; 
-            listContainer.appendChild(dayHeader); 
+            listContainer.appendChild(dayHeader);
             
-            dayReminders.forEach(r => { 
-                // Tarikh format kora (DD/MM/YYYY)
-                let dateDisplay = "";
-                if(r.date) {
+            dayReminders.forEach(r => {
+                const div = document.createElement('div');
+                div.className = 'reminder-item';
+                
+                // তারিখ ফরম্যাট করা (যদি তারিখ থাকে)
+                let dateDisplay = '';
+                if (r.date) {
                     const d = new Date(r.date);
-                    dateDisplay = `<div style="font-size:10px; color:var(--text-muted); margin-top:2px;">📅 ${d.toLocaleDateString('en-IN')}</div>`;
+                    // তারিখ দেখাবে এভাবে: 25/08/2026
+                    const dateStr = d.toLocaleDateString('en-IN'); 
+                    dateDisplay = `<div style="font-size:10px; color:var(--text-muted); margin-top:2px;">📅 ${dateStr}</div>`;
                 }
 
-                const div = document.createElement('div'); 
-                div.className = 'reminder-item'; 
-                // Ekhane design change kora hoyeche date dekhanor jonno
                 div.innerHTML = `
                     <div style="flex:1;">
                         <span style="font-weight:500;">${r.text}</span>
                         ${dateDisplay}
                     </div> 
-                    <button class="btn-danger" style="padding:5px 10px; height:30px;" onclick="deleteReminder(${r.id})">
+                    <button class="btn-danger" style="padding:5px 10px; margin-left:10px;" onclick="deleteReminder(${r.id})">
                         <i class="fas fa-trash"></i>
-                    </button>`; 
-                listContainer.appendChild(div); 
-            }); 
-        } 
-    }); 
-    
-    if(reminders.length === 0) { 
-        listContainer.innerHTML = '<p style="text-align:center; color:var(--text-muted); font-size:12px; margin-top:20px;">No reminders set.</p>'; 
-    } 
+                    </button>
+                `;
+                listContainer.appendChild(div);
+            });
+        }
+    });
+
+    if (reminders.length === 0) {
+        listContainer.innerHTML = '<p style="text-align:center; color:var(--text-muted); font-size:12px; margin-top:20px;">No reminders set.</p>';
+    }
 }
         function renderDashboard() { 
             const activeStudents = students.filter(s => s.status?.isActive); 
@@ -3323,44 +3214,26 @@ async function addAttendanceNote(studentId) {
 }
        async function saveStudentChanges() { 
     const id = parseInt(document.getElementById('editStudentId').value);
-    // ইনডেক্স খুঁজে বের করা
-    const studentIndex = students.findIndex(s => s.id === id); 
-    const student = students[studentIndex];
-    
+    const student = students.find(s => s.id === id); 
     if(!student) return; 
     
-    // ডাটা আপডেট করা
     student.name = document.getElementById('editStudentName').value.trim(); 
     if(!student.name) { Swal.fire('Error','Name required.', 'error'); return; } 
-
-    student.class = document.getElementById('editStudentClass').value;
-    student.class_day = document.getElementById('editStudentDay').value;
-    student.class_time = document.getElementById('editStudentTime').value;
-    student.fee_amount = parseFloat(document.getElementById('editStudentFee').value);
-    student.phone = document.getElementById('editPhone').value;
-    student.guardian = document.getElementById('editGuardianName').value;
-    student.email = document.getElementById('editStudentEmail').value;
-    student.address = document.getElementById('editAddress').value;
-    student.dob = document.getElementById('editStudentDOB').value;
     
-    // ছবি লজিক
+    // --- ছবি সেভ বা ডিলিট করার লজিক ---
     if(currentEditPhotoBase64) { 
+        // ১. নতুন ছবি দিলে সেটা আপডেট হবে
         student.photo = currentEditPhotoBase64; 
     } else if (isPhotoDeletedInEdit) {
+        // ২. রিমুভ বাটনে চাপলে ছবি নাল (Delete) হবে
         student.photo = null;
     }
-    
-    // সিগনেচার লজিক
-    if(currentStudentSignature) {
-        student.student_signature = currentStudentSignature;
-    }
+    // কিছু না করলে পুরনো ছবিই থাকবে
+    // ---------------------------------
 
-    // ১. লোকাল আপডেট
-    students[studentIndex] = student;
-
-    // ২. ডাটাবেস আপডেট (Specific Document)
-    await db.collection(COLLECTION_NAME).doc(DOC_ID).collection('students').doc(String(id)).set(student);
+    // ... বাকি কোড আগের মতোই থাকবে ...
     
+    await saveData(); 
     closeModal('editStudentModal'); 
     loadAllData(); 
     Swal.fire('Saved', 'Details updated successfully.', 'success'); 
@@ -3758,38 +3631,6 @@ function sendNoteAction(type, studentId, note, rawDate) {
     } else if (type === 'sms') {
         window.open(`sms:${student.phone}?body=${encodeURIComponent(msgBody)}`, '_self');
     }
-}
-// এই ফাংশনটি স্ক্রিপ্টের শেষে যোগ করুন
-function handleSignUp() {
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
-    const errorMsg = document.getElementById('loginError');
-
-    if (!email || !password) {
-        errorMsg.textContent = "Email and password required for Sign Up!";
-        errorMsg.style.display = 'block';
-        return;
-    }
-    if (password.length < 6) {
-        errorMsg.textContent = "Password must be at least 6 characters.";
-        errorMsg.style.display = 'block';
-        return;
-    }
-
-    const loginBtn = document.querySelector('#loginOverlay button:last-of-type');
-    const originalText = loginBtn.innerHTML;
-    loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
-
-    auth.createUserWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-            Swal.fire('Success', 'Account Created! Logging in...', 'success');
-        })
-        .catch((error) => {
-            console.error(error);
-            errorMsg.textContent = "Error: " + error.message;
-            errorMsg.style.display = 'block';
-            loginBtn.innerHTML = originalText;
-        });
 }
         
     </script>
