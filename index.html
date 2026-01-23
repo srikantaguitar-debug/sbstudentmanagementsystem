@@ -2328,7 +2328,28 @@ async function importData(event) {
             const classCounts = activeStudents.reduce((acc, student) => { const className = student.class || 'Unassigned'; acc[className] = (acc[className] || 0) + 1; return acc; }, {}); const classListEl = document.getElementById('classStrengthList'); classListEl.innerHTML = ''; Object.entries(classCounts).sort().forEach(([className, count]) => { classListEl.innerHTML += `<li onclick="showClassStudents('${className}')" style="cursor:pointer; color:var(--text-main);"><strong>${className}:</strong> <span>${count} students</span></li>`; }); 
             let monthlyCollected = 0, monthlyDueAmount = 0, yearlyCollected = 0, yearlyDueAmount = 0; const currentYear = new Date().getFullYear(), currentMonthStr = `${currentYear}-${(new Date().getMonth() + 1).toString().padStart(2, '0')}`; 
             
-            const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]; const todayName = days[new Date().getDay()]; const todaysReminders = reminders.filter(r => r.day === todayName); const rBox = document.getElementById('dashboardRemindersBox'); const rList = document.getElementById('dashboardReminderList'); if(todaysReminders.length > 0) { rList.innerHTML = ''; todaysReminders.forEach(r => { rList.innerHTML += `<div style="padding:8px; border-bottom:1px solid #fde68a; font-size:13px; color:var(--text-main);">• ${r.text}</div>`; }); rBox.style.display = 'block'; } else { rBox.style.display = 'none'; }
+            const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]; const todayName = days[new Date().getDay()]; const todaysReminders = reminders.filter(r => r.day === todayName);
+const rBox = document.getElementById('dashboardRemindersBox'); 
+const rList = document.getElementById('dashboardReminderList'); 
+
+if(todaysReminders.length > 0) { 
+    rList.innerHTML = ''; 
+    todaysReminders.forEach(r => { 
+        rList.innerHTML += `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; border-bottom:1px solid rgba(245, 158, 11, 0.3); font-size:13px; color:var(--text-main);">
+                <span style="flex:1;">• ${r.text}</span>
+                <button onclick="markReminderDone(${r.id})" style="background:var(--success); border:none; color:white; border-radius:50%; width:24px; height:24px; cursor:pointer; display:flex; align-items:center; justify-content:center; margin-left:10px;">
+                    <i class="fas fa-check" style="font-size:10px;"></i>
+                </button>
+            </div>
+        `; 
+    }); 
+    rBox.style.display = 'block'; 
+} else { 
+    rBox.style.display = 'none'; 
+}
+
+// --- আপডেটের শেষ ---
             
             students.forEach(student => { 
                 for (let i = 0; i < 12; i++) { 
@@ -3145,10 +3166,9 @@ function renderAttendance() {
     const date = document.getElementById('attendanceDate').value;
     const tableBody = document.querySelector('#attendanceTable tbody'); 
     tableBody.innerHTML = ''; 
-    
     if (!date) return; 
 
-    // টাইম ইনপুট চেক
+    // টাইম সেট করা (যদি না থাকে)
     const timeInput = document.getElementById('attendanceTime');
     if(!timeInput.value) {
        const now = new Date(); 
@@ -3157,55 +3177,48 @@ function renderAttendance() {
        timeInput.value = `${hours}:${mins}`;
     }
 
-    // শুধুমাত্র অ্যাক্টিভ স্টুডেন্টদের দেখাবে
     students.filter(s => s.status?.isActive).forEach(student => { 
         const entry = attendance[date]?.[student.id];
         
         // স্ট্যাটাস এবং নোট বের করা
-        let status = null;
-        let note = '';
-
-        if (entry) {
-            if (typeof entry === 'object') {
-                status = entry.status;
-                note = entry.note || '';
-            } else {
-                // পুরনো ডাটার সাপোর্টের জন্য
-                status = entry; 
-            }
-        }
+        const status = (typeof entry === 'object' && entry !== null) ? entry.status : entry; 
+        const note = (typeof entry === 'object' && entry?.note) ? entry.note : '';
         
         const statusText = status === 'present' ? 'Present' : (status === 'absent' ? 'Absent' : 'Not Marked');
         const statusClass = status === 'present' ? 'status-present' : (status === 'absent' ? 'status-absent' : ''); 
         
         // নোট থাকলে বাটনের রঙ হলুদ হবে
         const noteBtnColor = note ? 'btn-warning' : 'btn-secondary';
-        const noteIcon = 'fas fa-pencil-alt';
+       const noteIcon = 'fas fa-pencil-alt';
 
         const row = document.createElement('tr');
         
-        row.innerHTML = `
-            <td>
-                ${getStudentHtml(student)}
-                <div style="font-size:11px; color:#d97706; margin-top:2px; margin-left:55px;">
-                    ${note ? '📝 ' + note : ''}
-                </div>
-            </td>
-            <td class="${statusClass}" style="font-weight:bold;">${statusText}</td>
-            <td class="action-buttons">
-                <button class="btn-success" onclick="markAttendance(${student.id}, 'present')">P</button>
-                
-                <button class="btn-danger" onclick="markAttendance(${student.id}, 'absent')">A</button>
-                
-                <button class="${noteBtnColor}" onclick="addAttendanceNote(${student.id})" title="Edit Note">
-                    <i class="${noteIcon}"></i>
-                </button>
+        // নোট থাকলে নামের নিচে দেখাবে
+        const noteDisplay = note ? `<div style="font-size:11px; color:#d97706; margin-top:2px; margin-left:55px;">📝 ${note}</div>` : '';
 
-                <button class="btn-secondary" onclick="markAttendance(${student.id}, 'clear')">X</button>
-            </td>`;
+// renderAttendance function er vitore row.innerHTML er ongsho ti erokom hobe:
+
+row.innerHTML = `
+    <td>
+        ${getStudentHtml(student)}
+        <div style="font-size:11px; color:#d97706; margin-top:2px; margin-left:55px;">
+            ${note ? '📝 ' + note : ''}
+        </div>
+    </td>
+    <td class="${statusClass}">${statusText}</td>
+    <td class="action-buttons">
+        <button class="btn-success" onclick="markAttendance(${student.id}, 'present')">P</button>
+        
+        <button class="btn-danger" onclick="markAttendance(${student.id}, 'absent')">A</button>
+        
+        <button class="${noteBtnColor}" onclick="addAttendanceNote(${student.id})" title="Edit Note">
+            <i class="${noteIcon}"></i>
+        </button>
+
+        <button class="btn-secondary" onclick="markAttendance(${student.id}, 'clear')">X</button>
+    </td>`;
         tableBody.appendChild(row);
     }); 
-    
     searchTable('searchAttendance', 'attendanceTable'); 
 }
 
@@ -3248,61 +3261,52 @@ function renderAttendance() {
         }
 
         // এই ফাংশনটি দিয়ে আপনার পুরনো markAttendance ফাংশনটি রিপ্লেস করুন
-async function markAttendance(studentId, status) {
-    const date = document.getElementById('attendanceDate').value;
-    if (!date) { Swal.fire('Alert','Please select a date.', 'warning'); return; }
+function markAttendance(studentId, status) {
+    const date = document.getElementById('attendanceDate').value; 
+    if (!date) { Swal.fire('Alert','Please select a date.', 'warning'); return; } 
     
-    // ১. যদি ওই তারিখের ডাটা অবজেক্ট না থাকে, তবে তৈরি করা
-    if (!attendance[date]) attendance[date] = {};
+    if (!attendance[date]) attendance[date] = {}; 
     
-    // ২. আগের নোট আছে কিনা চেক করা (যাতে নোট মুছে না যায়)
+    // ১. আগে থেকে কোনো নোট বা ডেটা আছে কিনা তা দেখা
     const currentEntry = attendance[date][studentId];
-    let existingNote = '';
     
-    // যদি আগের এন্ট্রি থাকে এবং সেটি অবজেক্ট হয়, তবে নোটটি রেখে দেব
+    // যদি আগের ডেটা অবজেক্ট হয় তবে নোট নেব, স্ট্রিং হলে (পুরনো ভার্সন) নোট নেই
+    let existingNote = '';
     if (typeof currentEntry === 'object' && currentEntry !== null && currentEntry.note) {
         existingNote = currentEntry.note;
     }
 
-    // ৩. স্ট্যাটাস আপডেট লজিক
-    if (status === 'clear') {
-        // Clear দিলে শুধু স্ট্যাটাস নাল হবে, নোট থাকবে
+    if (status === 'clear') { 
+        // ২. যদি নোট থাকে, তবে অবজেক্ট ডিলিট করবো না, শুধু স্ট্যাটাস নাল (null) করবো
         if (existingNote) {
             attendance[date][studentId] = { 
-                status: null, 
+                status: null,  // স্ট্যাটাস মুছে ফেলা হলো
                 time: '', 
-                note: existingNote 
+                note: existingNote // নোটটি রেখে দেওয়া হলো
             };
         } else {
-            // নোট না থাকলে পুরো রেকর্ড ডিলিট
+            // নোট না থাকলে পুরোটা ডিলিট
             delete attendance[date][studentId]; 
         }
     } else {
-        // P বা A দিলে নতুন স্ট্যাটাস বসবে
-        // টাইম সেট করা
-        let timeToSave = document.getElementById('attendanceTime').value;
-        if (!timeToSave) {
-            const now = new Date();
-            timeToSave = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+        // ৩. P বা A চাপলে নতুন স্ট্যাটাসের সাথে পুরনো নোটটি আবার সেভ করা হবে
+        const timeInput = document.getElementById('attendanceTime').value; 
+        let timeToSave = timeInput;
+        if (!timeToSave) { 
+            const now = new Date(); 
+            const hours = now.getHours().toString().padStart(2, '0'); 
+            const mins = now.getMinutes().toString().padStart(2, '0'); 
+            timeToSave = `${hours}:${mins}`; 
         }
         
         attendance[date][studentId] = { 
             status: status, 
             time: timeToSave,
-            note: existingNote 
+            note: existingNote // পুরনো নোটটি এখানে আবার বসিয়ে দেওয়া হলো
         }; 
     }
     
-    // ৪. [গুরুত্বপূর্ণ] ডাটাবেসে সেভ হওয়ার আগেই পেজ আপডেট করুন
-    renderAttendance(); 
-    
-    // ৫. ব্যাকগ্রাউন্ডে সেভ হোক (ইউজারকে অপেক্ষা করতে হবে না)
-    try {
-        await saveData();
-    } catch (error) {
-        console.error("Save failed:", error);
-        // সেভ না হলে ইউজারকে জানানো যেতে পারে (অপশনাল)
-    }
+    saveData().then(() => renderAttendance()); 
 }
         // নোট লেখার পপ-আপ ফাংশন
 async function addAttendanceNote(studentId) {
@@ -3927,6 +3931,30 @@ function handleSignUp() {
             errorMsg.style.display = 'block';
             loginBtn.innerHTML = originalText;
         });
+}
+// ড্যাশবোর্ড থেকে রিমাইন্ডার মার্ক করার ফাংশন
+async function markReminderDone(id) {
+    // ১. রিমাইন্ডারটি লিস্ট থেকে মুছে ফেলা
+    reminders = reminders.filter(r => r.id !== id);
+    
+    // ২. ডাটাবেসে সেভ করা
+    await saveData();
+    
+    // ৩. ড্যাশবোর্ড রিফ্রেশ করা (যাতে সাথে সাথে চলে যায়)
+    renderDashboard();
+    
+    // ৪. কনফার্মেশন মেসেজ (অপশনাল)
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true
+    });
+    Toast.fire({
+        icon: 'success',
+        title: 'Reminder marked as done'
+    });
 }
         
     </script>
