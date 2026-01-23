@@ -1523,8 +1523,58 @@ async function initApp() {
 }
         function pressPin(key) { if (key === 'C') pinInput = ""; else if (pinInput.length < 4) pinInput += key; updatePinDots(); }
         function updatePinDots() { document.querySelectorAll('.pin-dot').forEach((dot, index) => { index < pinInput.length ? dot.classList.add('filled') : dot.classList.remove('filled'); }); }
-        async function submitPin() { const currentPin = await dbGet('app_pin'); if (pinInput === currentPin) { document.getElementById('securityOverlay').style.display = 'none'; if (pendingAction) pendingAction(); pendingAction = null; pinInput = ""; } else { alert("Incorrect PIN"); pinInput = ""; updatePinDots(); } }
-        async function changeAppPin() { const newPin = document.getElementById('newAppPin').value; if (newPin.length === 4 && !isNaN(newPin)) { await dbSet('app_pin', newPin); Swal.fire('Success', 'PIN changed successfully.', 'success'); document.getElementById('newAppPin').value = ''; } else { Swal.fire('Error', 'PIN must be 4 digits.', 'error'); } }
+        // ১. এই ফাংশনটি দিয়ে আগের submitPin রিপ্লেস করুন
+async function submitPin() {
+    // প্রথমে লোকাল মেমোরি থেকে পিন খোঁজা (অফলাইনের জন্য)
+    let currentPin = localStorage.getItem('app_pin');
+
+    // যদি লোকাল মেমোরিতে না থাকে, তখন ডাটাবেস চেক করবে
+    if (!currentPin) {
+        currentPin = await dbGet('app_pin');
+        // ডাটাবেস থেকে পেলে সেটা লোকাল মেমোরিতে সেভ করে রাখা
+        if (currentPin) localStorage.setItem('app_pin', currentPin);
+    }
+
+    // যদি কোথাও পিন না থাকে, ডিফল্ট পিন '1234'
+    if (!currentPin) currentPin = '1234';
+
+    if (pinInput === currentPin) {
+        document.getElementById('securityOverlay').style.display = 'none';
+        if (pendingAction) pendingAction();
+        pendingAction = null;
+        pinInput = "";
+    } else {
+        // ভুল পিন দিলে ভাইব্রেশন বা এলার্ট
+        pinInput = "";
+        updatePinDots();
+        Swal.fire({
+            icon: 'error',
+            title: 'Incorrect PIN',
+            text: 'Try again (Default: 1234)',
+            timer: 1500,
+            showConfirmButton: false,
+            toast: true,
+            position: 'top'
+        });
+    }
+}
+        // ২. এই ফাংশনটি দিয়ে আগের changeAppPin রিপ্লেস করুন
+async function changeAppPin() { 
+    const newPin = document.getElementById('newAppPin').value; 
+    
+    if (newPin.length === 4 && !isNaN(newPin)) { 
+        // ১. ডাটাবেসে সেভ করা
+        await dbSet('app_pin', newPin); 
+        
+        // ২. ফোনের লোকাল মেমোরিতেও সেভ করা (অফলাইনের জন্য জরুরি)
+        localStorage.setItem('app_pin', newPin);
+        
+        Swal.fire('Success', 'PIN changed successfully.', 'success'); 
+        document.getElementById('newAppPin').value = ''; 
+    } else { 
+        Swal.fire('Error', 'PIN must be 4 digits.', 'error'); 
+    } 
+}
         
         function sendWelcomeMsg(type, studentId) {
             const student = students.find(s => s.id === studentId);
@@ -1936,17 +1986,11 @@ async function dbSet(key, value) {
     }
 }
 
-// ৩. মেইন ইমপোর্ট ফাংশন (Live Counter সহ)
+// ২. এই ফাংশনটি দিয়ে আগের importData রিপ্লেস করুন
 async function importData(event) {
     const file = event.target.files[0];
     if (!file) return;
     event.target.value = ''; 
-
-    const user = firebase.auth().currentUser;
-    if (!user) {
-        Swal.fire('Login Required', 'Please login first.', 'error');
-        return;
-    }
 
     const reader = new FileReader();
     reader.onload = async function(e) {
@@ -1959,107 +2003,57 @@ async function importData(event) {
                 return;
             }
 
-            Swal.fire({
-                title: 'Ready to Restore',
-                text: `Found ${importedData.students.length} students.`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Start Upload',
-                confirmButtonColor: '#d33'
-            }).then(async (result) => {
-                if (result.isConfirmed) {
-                    
-                    // ১. ভেরিয়েবল আপডেট
-                    students = importedData.students.map(migrateStudentData);
-                    attendance = importedData.attendance || {};
-                    fees = importedData.fees || {};
-                    reminders = importedData.reminders || [];
-                    studentSerialCounter = importedData.studentSerialCounter || 1;
+            // ১. অ্যাপের মেমোরিতে ডাটা লোড (Instant Load)
+            students = importedData.students.map(migrateStudentData);
+            attendance = importedData.attendance || {};
+            fees = importedData.fees || {};
+            reminders = importedData.reminders || [];
+            studentSerialCounter = importedData.studentSerialCounter || 1;
+            
+            // লোগো ও সিগনেচার আপডেট
+            if(importedData.instituteLogo) instituteLogo = importedData.instituteLogo;
+            if(importedData.authorizedSignature) authorizedSignature = importedData.authorizedSignature;
 
-                    const total = students.length;
-                    let loadedCount = 0; // লাইভ কাউন্টার শুরু
-
-                    // ২. লোডিং স্ক্রিন ওপেন করা (HTML ID সহ)
-                    Swal.fire({
-                        title: 'Uploading Students...',
-                        html: `
-                            <h2 style="color: green; font-weight: bold;" id="live-counter">0</h2>
-                            <p>out of <b>${total}</b> uploaded</p>
-                            <progress id="live-progress" value="0" max="${total}" style="width: 100%; height: 20px;"></progress>
-                            <br><span style="color:red; font-size:12px;">Do not close or refresh!</span>
-                        `,
-                        allowOutsideClick: false,
-                        showConfirmButton: false,
-                        didOpen: () => {
-                            Swal.showLoading();
-                        }
+            // ২. স্ক্রিন রিফ্রেশ (সাথে সাথে ডাটা দেখাবে)
+            loadAllData();
+            
+            // ৩. ব্যাকগ্রাউন্ড সিঙ্ক (ইন্টারনেট পেলে সার্ভারে যাবে)
+            // আমরা await ব্যবহার করছি না, তাই ইউজারকে অপেক্ষা করতে হবে না
+            const user = firebase.auth().currentUser;
+            if (user) {
+                // Settings Save
+                dbSet('attendance', attendance).catch(console.error);
+                dbSet('fees', fees).catch(console.error);
+                dbSet('reminders', reminders).catch(console.error);
+                dbSet('studentSerialCounter', studentSerialCounter).catch(console.error);
+                if(instituteLogo) dbSet('instituteLogo', instituteLogo).catch(console.error);
+                
+                // Students Batch Save (Background)
+                const batchSize = 50; 
+                for (let i = 0; i < students.length; i += batchSize) {
+                    const chunk = students.slice(i, i + batchSize);
+                    chunk.forEach(s => {
+                         db.collection(COLLECTION_NAME).doc(user.uid)
+                           .collection('students').doc(String(s.id))
+                           .set(s).catch(err => console.log("Sync pending for student: " + s.name));
                     });
-
-                    // ৩. স্টুডেন্ট আপলোড (Batch Process)
-                    const batchSize = 10; 
-
-                    for (let i = 0; i < total; i += batchSize) {
-                        const chunk = students.slice(i, i + batchSize);
-                        
-                        const promises = chunk.map(student => {
-                            const cleanStudent = sanitizeData(student);
-                            
-                            return db.collection(COLLECTION_NAME).doc(user.uid)
-                                     .collection('students').doc(String(cleanStudent.id))
-                                     .set(cleanStudent)
-                                     .then(() => {
-                                         // ✅ প্রতিটি স্টুডেন্ট আপলোড হওয়ার সাথে সাথে কাউন্টার আপডেট হবে
-                                         loadedCount++;
-                                         
-                                         // HTML আপডেট করা
-                                         const counterEl = document.getElementById('live-counter');
-                                         const progressEl = document.getElementById('live-progress');
-                                         
-                                         if (counterEl) counterEl.innerText = loadedCount;
-                                         if (progressEl) progressEl.value = loadedCount;
-                                     });
-                        });
-                        
-                        // ব্যাচ শেষ হওয়ার জন্য অপেক্ষা
-                        await Promise.all(promises);
-                    }
-
-                    // ৪. বাকি ডাটা সেভ
-                    const titleEl = Swal.getHtmlContainer().querySelector('h2'); // টাইটেল ধরা
-                    if(titleEl) titleEl.innerText = "Saving Settings...";
-
-                    try {
-                        await dbSet('attendance', attendance);
-                        await dbSet('fees', fees);
-                        await dbSet('reminders', reminders);
-                        await dbSet('studentSerialCounter', studentSerialCounter);
-                        
-                        if(importedData.instituteLogo) await dbSet('instituteLogo', importedData.instituteLogo);
-                        if(importedData.authorizedSignature) await dbSet('authorizedSignature', importedData.authorizedSignature);
-
-                        // ৫. সাকসেস
-                        Swal.fire({
-                            title: 'Complete!',
-                            text: `Successfully uploaded all ${loadedCount} students.`,
-                            icon: 'success'
-                        }).then(() => {
-                            loadAllData();
-                        });
-
-                    } catch (saveError) {
-                        Swal.fire('Save Failed', 'Internet error. Check console.', 'error');
-                    }
                 }
+            }
+
+            // ৪. সাকসেস মেসেজ
+            Swal.fire({
+                title: 'Restored Locally!',
+                text: `Loaded ${students.length} students instantly. Data will sync to cloud automatically when internet is available.`,
+                icon: 'success'
             });
 
         } catch (error) {
-            console.error("Restore Crash:", error);
-            Swal.fire('Error', error.message, 'error');
+            console.error("Restore Error:", error);
+            Swal.fire('Error', 'Failed to parse file.', 'error');
         }
     };
     reader.readAsText(file);
 }
-
         function openStatusChangeModal(id, toActive) { document.getElementById('statusChangeStudentId').value = id; document.getElementById('statusChangeToActive').value = toActive; document.getElementById('statusChangeTitle').textContent = toActive ? 'Activate Student' : 'Deactivate Student'; document.getElementById('statusDate').valueAsDate = new Date(); document.getElementById('statusNote').value = ''; document.getElementById('statusChangeModal').style.display = 'flex'; }
         async function saveStatusChange() { 
     const id = parseInt(document.getElementById('statusChangeStudentId').value); 
@@ -2926,7 +2920,8 @@ function exportStudentDetailsAsPDF(studentId) {
             }
         }
 
-        async function saveFee() { 
+        // ১. এই ফাংশনটি দিয়ে আগের saveFee রিপ্লেস করুন
+async function saveFee() { 
     const studentId = parseInt(document.getElementById('feeStudentId').value); 
     const month = document.getElementById('feeRecordMonth').value; 
     const amount = parseFloat(document.getElementById('feeAmount').value); 
@@ -2936,34 +2931,40 @@ function exportStudentDetailsAsPDF(studentId) {
     
     if (isNaN(amount) || amount <= 0) { Swal.fire('Error','Invalid amount.', 'error'); return; } 
     if (!date) { Swal.fire('Error','Select date.', 'error'); return; } 
+    
+    // ১. লোকাল ডাটা আপডেট (Local Update)
     if (!fees[month]) fees[month] = {}; 
     
     let receiptNo = fees[month][studentId]?.receiptNo; 
     if (!receiptNo) { 
         receiptNo = Date.now().toString().slice(-6); 
     }
-    fees[month][studentId] = { status: 'paid', amount, date, mode: mode, transactionId: txnId, receiptNo: receiptNo }; 
-    await saveData(); 
-    closeModal('feeModal'); 
     
+    fees[month][studentId] = { status: 'paid', amount, date, mode: mode, transactionId: txnId, receiptNo: receiptNo }; 
+    
+    // ২. UI বন্ধ করা এবং রিফ্রেশ (Instant UI Update)
+    closeModal('feeModal'); 
+    renderFees(); // সাথে সাথে টেবিলে দেখাবে
+
+    // ৩. ব্যাকগ্রাউন্ডে সেভ (Background Sync)
+    saveData().catch(e => console.log("Saved locally, will sync when online.")); 
+    
+    // ৪. সাকসেস মেসেজ
     Swal.fire({ 
         title: 'Payment Recorded!', 
-        html: `<p>What would you like to do?</p>
+        html: `<p>Saved locally. Will sync automatically.</p>
                <div style="display:flex; gap:5px; justify-content:center; flex-wrap:wrap;">
                    <button class="btn-like btn-receipt" onclick="generatePaymentReceipt(${studentId}, '${month}')">Receipt</button>
                    <button class="btn-like btn-whatsapp" onclick="sendMsg('wa', ${studentId}, '${month}', ${amount}, false)">WhatsApp</button>
                    <button class="btn-like btn-sms" onclick="sendMsg('sms', ${studentId}, '${month}', ${amount}, false)">SMS</button>
-                   <button class="btn-like btn-mail" onclick="sendMsg('mail', ${studentId}, '${month}', ${amount}, false)">Email</button>
                </div>`, 
         icon: 'success', 
         showConfirmButton: true, 
         confirmButtonText: 'Close',
-        confirmButtonColor: '#d33', // লাল রঙের ক্লোজ বাটন
+        confirmButtonColor: '#d33',
         showCloseButton: true,
-        allowOutsideClick: false // এই লাইনটি বাইরে ক্লিক বন্ধ করবে
+        allowOutsideClick: false 
     }); 
-    
-    loadAllData(); 
 }
         function renderFees() { 
             const selectedMonth = document.getElementById('feeMonth').value, tableBody = document.querySelector('#feeTable tbody'); 
@@ -3161,7 +3162,7 @@ function exportStudentDetailsAsPDF(studentId) {
                 if (navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], title: 'Student ID Card', text: `ID Card for ${student.name}` }); } catch (err) { doc.save(fileName); } } else { doc.save(fileName); } 
             } else { doc.save(fileName); } 
         }
-        // এই ফাংশনটি দিয়ে আগের renderAttendance ফাংশনটি বদলে দিন
+// এই ফাংশনটি দিয়ে আগের renderAttendance ফাংশনটি বদলে দিন
 function renderAttendance() { 
     const date = document.getElementById('attendanceDate').value;
     const tableBody = document.querySelector('#attendanceTable tbody'); 
@@ -3187,36 +3188,37 @@ function renderAttendance() {
         const statusText = status === 'present' ? 'Present' : (status === 'absent' ? 'Absent' : 'Not Marked');
         const statusClass = status === 'present' ? 'status-present' : (status === 'absent' ? 'status-absent' : ''); 
         
-        // নোট থাকলে বাটনের রঙ হলুদ হবে
         const noteBtnColor = note ? 'btn-warning' : 'btn-secondary';
-       const noteIcon = 'fas fa-pencil-alt';
+        const noteIcon = 'fas fa-pencil-alt';
 
         const row = document.createElement('tr');
         
-        // নোট থাকলে নামের নিচে দেখাবে
-        const noteDisplay = note ? `<div style="font-size:11px; color:#d97706; margin-top:2px; margin-left:55px;">📝 ${note}</div>` : '';
-
-// renderAttendance function er vitore row.innerHTML er ongsho ti erokom hobe:
-
-row.innerHTML = `
-    <td>
-        ${getStudentHtml(student)}
-        <div style="font-size:11px; color:#d97706; margin-top:2px; margin-left:55px;">
-            ${note ? '📝 ' + note : ''}
-        </div>
-    </td>
-    <td class="${statusClass}">${statusText}</td>
-    <td class="action-buttons">
-        <button class="btn-success" onclick="markAttendance(${student.id}, 'present')">P</button>
+        // --- এই অংশটুকু নতুন যোগ করা হলো ---
+        // যদি ফি ডিউ থাকে তবে লাল দেখাবে (Fees Tab এর মতো)
+        if (checkGlobalDues(student.id)) {
+            row.classList.add('has-dues-alert'); 
+        }
+        // ----------------------------------
         
-        <button class="btn-danger" onclick="markAttendance(${student.id}, 'absent')">A</button>
-        
-        <button class="${noteBtnColor}" onclick="addAttendanceNote(${student.id})" title="Edit Note">
-            <i class="${noteIcon}"></i>
-        </button>
+        row.innerHTML = `
+            <td>
+                ${getStudentHtml(student)}
+                <div style="font-size:11px; color:#d97706; margin-top:2px; margin-left:55px;">
+                    ${note ? '📝 ' + note : ''}
+                </div>
+            </td>
+            <td class="${statusClass}">${statusText}</td>
+            <td class="action-buttons">
+                <button class="btn-success" onclick="markAttendance(${student.id}, 'present')">P</button>
+                
+                <button class="btn-danger" onclick="markAttendance(${student.id}, 'absent')">A</button>
+                
+                <button class="${noteBtnColor}" onclick="addAttendanceNote(${student.id})" title="Edit Note">
+                    <i class="${noteIcon}"></i>
+                </button>
 
-        <button class="btn-secondary" onclick="markAttendance(${student.id}, 'clear')">X</button>
-    </td>`;
+                <button class="btn-secondary" onclick="markAttendance(${student.id}, 'clear')">X</button>
+            </td>`;
         tableBody.appendChild(row);
     }); 
     searchTable('searchAttendance', 'attendanceTable'); 
@@ -3260,55 +3262,62 @@ row.innerHTML = `
             }); 
         }
 
-        // এই ফাংশনটি দিয়ে আপনার পুরনো markAttendance ফাংশনটি রিপ্লেস করুন
+// এই ফাংশনটি দিয়ে আগের markAttendance ফাংশনটি বদলে দিন
 function markAttendance(studentId, status) {
     const date = document.getElementById('attendanceDate').value; 
     if (!date) { Swal.fire('Alert','Please select a date.', 'warning'); return; } 
     
+    // ১. লোকাল ভেরিয়েবল আপডেট
     if (!attendance[date]) attendance[date] = {}; 
     
-    // ১. আগে থেকে কোনো নোট বা ডেটা আছে কিনা তা দেখা
     const currentEntry = attendance[date][studentId];
-    
-    // যদি আগের ডেটা অবজেক্ট হয় তবে নোট নেব, স্ট্রিং হলে (পুরনো ভার্সন) নোট নেই
     let existingNote = '';
+    
+    // নোট থাকলে তা সংরক্ষণ করা
     if (typeof currentEntry === 'object' && currentEntry !== null && currentEntry.note) {
         existingNote = currentEntry.note;
     }
 
     if (status === 'clear') { 
-        // ২. যদি নোট থাকে, তবে অবজেক্ট ডিলিট করবো না, শুধু স্ট্যাটাস নাল (null) করবো
         if (existingNote) {
-            attendance[date][studentId] = { 
-                status: null,  // স্ট্যাটাস মুছে ফেলা হলো
-                time: '', 
-                note: existingNote // নোটটি রেখে দেওয়া হলো
-            };
+            // নোট থাকলে শুধু স্ট্যাটাস নাল হবে, নোট থাকবে
+            attendance[date][studentId] = { status: null, time: '', note: existingNote };
         } else {
-            // নোট না থাকলে পুরোটা ডিলিট
+            // নোট না থাকলে লোকাল ডাটা ডিলিট
             delete attendance[date][studentId]; 
+
+            // 🔥 FIX: সার্ভার থেকেও নির্দিষ্ট ফিল্ডটি ডিলিট করার কমান্ড পাঠানো
+            const user = firebase.auth().currentUser;
+            if(user) {
+                const deletePath = `attendance.${date}.${studentId}`;
+                db.collection(COLLECTION_NAME).doc(user.uid).update({
+                    [deletePath]: firebase.firestore.FieldValue.delete()
+                }).catch(e => console.log("Delete queued for offline sync."));
+            }
         }
     } else {
-        // ৩. P বা A চাপলে নতুন স্ট্যাটাসের সাথে পুরনো নোটটি আবার সেভ করা হবে
-        const timeInput = document.getElementById('attendanceTime').value; 
-        let timeToSave = timeInput;
+        // টাইম সেট করা
+        let timeToSave = document.getElementById('attendanceTime').value; 
         if (!timeToSave) { 
             const now = new Date(); 
-            const hours = now.getHours().toString().padStart(2, '0'); 
-            const mins = now.getMinutes().toString().padStart(2, '0'); 
-            timeToSave = `${hours}:${mins}`; 
+            timeToSave = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`; 
         }
         
         attendance[date][studentId] = { 
             status: status, 
             time: timeToSave,
-            note: existingNote // পুরনো নোটটি এখানে আবার বসিয়ে দেওয়া হলো
+            note: existingNote 
         }; 
     }
     
-    saveData().then(() => renderAttendance()); 
+    // ২. UI আপডেট করুন সাথে সাথে
+    renderAttendance(); 
+
+    // ৩. বাকি ডাটা ব্যাকগ্রাউন্ডে সেভ করুন
+    saveData().catch(err => console.log("Background Sync Pending...")); 
 }
         // নোট লেখার পপ-আপ ফাংশন
+// ৩. এই ফাংশনটি দিয়ে আগের addAttendanceNote রিপ্লেস করুন
 async function addAttendanceNote(studentId) {
     const date = document.getElementById('attendanceDate').value;
     if (!date) { Swal.fire('Alert', 'Please select a date first.', 'warning'); return; }
@@ -3321,14 +3330,15 @@ async function addAttendanceNote(studentId) {
         input: 'textarea',
         inputLabel: 'আজ ক্লাসে কি শেখানো হলো?',
         inputValue: existingNote,
-        placeholder: 'যেমন: C Major Scale শেখানো হয়েছে...',
+        placeholder: 'যেমন: C Major Scale শেখানো হয়েছে...',
         showCancelButton: true,
         confirmButtonText: 'Save Note',
         confirmButtonColor: 'var(--primary)',
-        allowOutsideClick: false // এই লাইনটি বাইরে ক্লিক বন্ধ করবে
+        allowOutsideClick: false 
     });
 
     if (text !== undefined) {
+        // ১. লোকাল আপডেট
         if (!attendance[date]) attendance[date] = {};
         
         attendance[date][studentId] = {
@@ -3336,32 +3346,35 @@ async function addAttendanceNote(studentId) {
             note: text
         };
         
-        await saveData();
+        // ২. স্ক্রিন আপডেট (Instant)
         renderAttendance();
 
+        // ৩. ব্যাকগ্রাউন্ড সেভ
+        saveData().catch(e => console.log("Note saved locally, syncing later."));
+
+        // ৪. অপশন দেখানো (Sync এর জন্য অপেক্ষা না করে)
         if (text.trim() !== "") {
             const student = students.find(s => s.id === studentId);
             const safeNote = text.replace(/'/g, "\\'").replace(/"/g, '&quot;');
             
+            // ছোট টোস্ট মেসেজ দিয়ে অপশন দেখানো
             Swal.fire({
                 title: 'Note Saved!',
                 html: `
-                    <p style="font-size:14px; color:#666;">Do you want to send this note to <b>${student.name}</b>?</p>
+                    <p style="font-size:14px; color:#666;">Send to <b>${student.name}</b>?</p>
                     <div style="display:flex; gap:10px; justify-content:center; margin-top:15px;">
-                        <button class="btn-whatsapp" onclick="sendNoteAction('wa', ${studentId}, '${safeNote}', '${date}')" style="padding:10px 20px !important; font-size:14px;">
+                        <button class="btn-whatsapp" onclick="sendNoteAction('wa', ${studentId}, '${safeNote}', '${date}')" style="padding:10px 20px !important;">
                             <i class="fab fa-whatsapp"></i> WhatsApp
                         </button>
-                        <button class="btn-sms" onclick="sendNoteAction('sms', ${studentId}, '${safeNote}', '${date}')" style="padding:10px 20px !important; font-size:14px;">
+                        <button class="btn-sms" onclick="sendNoteAction('sms', ${studentId}, '${safeNote}', '${date}')" style="padding:10px 20px !important;">
                             <i class="fas fa-sms"></i> SMS
                         </button>
                     </div>
                 `,
                 icon: 'success',
-                showCloseButton: false, 
                 showConfirmButton: true,
                 confirmButtonText: 'Close',
-                confirmButtonColor: '#d33',
-                allowOutsideClick: false // এই লাইনটি বাইরে ক্লিক বন্ধ করবে
+                confirmButtonColor: '#d33'
             });
         } else {
             const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
@@ -3369,10 +3382,11 @@ async function addAttendanceNote(studentId) {
         }
     }
 }
-        async function unmarkFee(studentId, month) { 
+        // ২. এই ফাংশনটি দিয়ে আগের unmarkFee রিপ্লেস করুন
+async function unmarkFee(studentId, month) { 
     Swal.fire({ 
         title: 'Unmark Payment?', 
-        text: "Are you sure you want to delete this payment permanently?", 
+        text: "Are you sure you want to delete this payment?", 
         icon: 'warning', 
         showCancelButton: true, 
         confirmButtonText: 'Yes, Delete',
@@ -3383,43 +3397,27 @@ async function addAttendanceNote(studentId) {
     }).then(async (result) => { 
         if (result.isConfirmed) {
             
-            // ১. লোকাল মেমোরি থেকে ডিলিট করা (সাথে সাথে স্ক্রিনে দেখাবে)
+            // ১. লোকাল মেমোরি থেকে ডিলিট করা
             if (fees[month] && fees[month][studentId]) { 
                 delete fees[month][studentId]; 
             }
-            renderFees(); // স্ক্রিন রিফ্রেশ
+            
+            // ২. স্ক্রিন রিফ্রেশ (সাথে সাথে মুছে যাবে)
+            renderFees(); 
 
-            // ২. ডাটাবেস থেকে ডিলিট করা (আসল ফিক্স)
-            try {
-                // ইউজার আইডি নেওয়া
-                const user = firebase.auth().currentUser;
-                if (!user) {
-                    Swal.fire('Error', 'You are not logged in!', 'error');
-                    return;
-                }
-
-                // ডাটাবেসের নির্দিষ্ট ফিল্ড টার্গেট করা (যেমন: fees.2025-01.12345)
+            // ৩. ব্যাকগ্রাউন্ডে সার্ভার থেকে ডিলিট কমান্ড পাঠানো
+            const user = firebase.auth().currentUser;
+            if (user) {
                 const fieldPath = `fees.${month}.${studentId}`;
-
-                // ফায়ারবেসের ডিলিট কমান্ড পাঠানো
-                await db.collection(COLLECTION_NAME).doc(user.uid).update({
+                // এখানে await বাদ দেওয়া হয়েছে এবং catch এ error দেখানো বন্ধ করা হয়েছে
+                db.collection(COLLECTION_NAME).doc(user.uid).update({
                     [fieldPath]: firebase.firestore.FieldValue.delete()
-                });
-                
-                Swal.fire({
-                    title: 'Deleted!', 
-                    text: 'Payment removed permanently.', 
-                    icon: 'success',
-                    timer: 1500,
-                    showConfirmButton: false
-                }); 
-
-            } catch (error) {
-                console.error("Delete failed:", error);
-                Swal.fire('Error', 'Could not delete from server. Check internet connection.', 'error');
-                // এরর হলে পেজ রিলোড দিয়ে আগের ডাটা ফিরিয়ে আনা
-                loadAllData();
+                }).catch(err => console.log("Offline mode: Delete queued for sync."));
             }
+
+            // ৪. সাকসেস মেসেজ
+            const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+            Toast.fire({ icon: 'success', title: 'Payment removed' });
         } 
     }); 
 }
@@ -3436,26 +3434,36 @@ async function addAttendanceNote(studentId) {
             dateInput.valueAsDate = new Date(); modal.style.display = 'flex'; 
         }
         
-        function openEditStudentModal(id) { 
-    const student = students.find(s => s.id === id); 
+        // এই ফাংশনটি দিয়ে আগের openEditStudentModal রিপ্লেস করুন
+function openEditStudentModal(id) { 
+    // ID টি Number এ কনভার্ট করে খোঁজা হচ্ছে যাতে ভুল না হয়
+    const student = students.find(s => s.id === parseInt(id)); 
     if(!student) return; 
 
-    // --- এই লাইনটি যোগ করুন ---
-    isPhotoDeletedInEdit = false; // মডাল খোলার সময় রিসেট
-    // -------------------------
+    isPhotoDeletedInEdit = false; // রিসেট
 
+    // তথ্য দিয়ে ফর্ম পূরণ করা (Pre-fill Form)
     document.getElementById('editStudentId').value = student.id; 
-    document.getElementById('editStudentName').value = student.name; 
-    // ... বাকি কোড আগের মতোই থাকবে ...
+    document.getElementById('editStudentName').value = student.name || ''; 
+    document.getElementById('editStudentClass').value = student.class || ''; 
+    document.getElementById('editStudentDay').value = student.class_day || ''; 
+    document.getElementById('editStudentTime').value = student.class_time || ''; 
+    document.getElementById('editStudentFee').value = student.fee_amount || ''; 
+    document.getElementById('editPhone').value = student.phone || ''; 
+    document.getElementById('editGuardianName').value = student.guardian || ''; 
+    document.getElementById('editStudentEmail').value = student.email || ''; 
+    document.getElementById('editAddress').value = student.address || ''; 
     document.getElementById('editStudentDOB').value = student.dob || ""; 
     
+    // নতুন ছবি সিলেক্ট না করা পর্যন্ত আগেরটি রিসেট রাখা
     currentEditPhotoBase64 = null; 
     
-    // ছবি লোড করার লজিক
+    // ছবি প্রিভিউ সেট করা
+    const previewImg = document.getElementById('editPhotoPreview');
     if(student.photo) { 
-        document.getElementById('editPhotoPreview').src = student.photo; 
+        previewImg.src = student.photo; 
     } else { 
-        document.getElementById('editPhotoPreview').src = 'https://via.placeholder.com/100?text=No+Photo'; 
+        previewImg.src = 'https://via.placeholder.com/100?text=No+Photo'; 
     } 
     
     document.getElementById('editStudentModal').style.display = 'flex'; 
