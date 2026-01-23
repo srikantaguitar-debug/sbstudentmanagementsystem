@@ -1,11 +1,11 @@
 {
-  "name": "Music Classes Manager Pro",
-  "short_name": "MusicMgr",
-  "description": "Professional Student & Fee Management System",
-  "start_url": "index.html",
+  "name": "Music Classes Manager",
+  "short_name": "Music Manager",
+  "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#4f46e5",
+  "background_color": "#ffffff",
   "theme_color": "#4f46e5",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "icon-192.png",
@@ -16,7 +16,8 @@
     {
       "src": "icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
