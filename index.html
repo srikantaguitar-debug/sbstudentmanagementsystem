@@ -1875,17 +1875,62 @@ async function addStudent() {
 }
         function loadAllData() { renderDashboard(); loadStudentsList(); renderAttendance(); renderFees(); renderReminders(); }
         
-        async function exportData() { 
-            const logo = await dbGet('instituteLogo');
-            const sig = await dbGet('authorizedSignature');
-            
-            const data = { 
-                students, attendance, fees, reminders, studentSerialCounter,
-                instituteLogo: logo,
-                authorizedSignature: sig
-            }; 
-            const jsonStr = JSON.stringify(data); const defaultDate = new Date().toISOString().split('T')[0]; const defaultName = `music_class_backup_${defaultDate}.json`; try { if (window.showSaveFilePicker) { const handle = await window.showSaveFilePicker({ suggestedName: defaultName, types: [{ description: 'JSON Backup File', accept: { 'application/json': ['.json'] }, }], }); const writable = await handle.createWritable(); await writable.write(jsonStr); await writable.close(); } else { const { value: fileName } = await Swal.fire({ title: 'Backup File Name', input: 'text', inputValue: defaultName, text: 'Enter a name for your backup file:', showCancelButton: true }); if (!fileName) return; const blob = new Blob([jsonStr], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = fileName.endsWith('.json') ? fileName : fileName + '.json'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); } await dbSet('lastBackupDate', new Date().toISOString()); Swal.fire({ title: 'Backup Saved!', html: '<p>Backup file saved successfully. Ekhon file ti <b>Google Drive</b> e upload kore rakhun.</p>', icon: 'success', showCancelButton: true, confirmButtonText: 'Open Google Drive', cancelButtonText: 'Close' }).then((result) => { if (result.isConfirmed) { window.open('https://drive.google.com', '_blank'); } }); } catch (err) { if (err.name !== 'AbortError') { console.error(err); Swal.fire('Error', 'Failed to save backup.', 'error'); } } 
-        }
+        // ১. এই ফাংশনটি দিয়ে আগের exportData রিপ্লেস করুন
+async function exportData() { 
+    // মেমোরি থেকে পিন সংগ্রহ করা (যাতে ব্যাকআপে পিনও থাকে)
+    const currentPin = localStorage.getItem('app_pin') || await dbGet('app_pin') || '1234';
+
+    const data = { 
+        students: students || [], 
+        attendance: attendance || {}, 
+        fees: fees || {}, 
+        reminders: reminders || [], 
+        studentSerialCounter: studentSerialCounter || 1,
+        instituteLogo: instituteLogo || null, 
+        authorizedSignature: authorizedSignature || null,
+        app_pin: currentPin // 🔥 পিন ব্যাকআপে যুক্ত করা হলো
+    }; 
+    
+    const jsonStr = JSON.stringify(data); 
+    const defaultDate = new Date().toISOString().split('T')[0]; 
+    const defaultName = `MusicClass_FullBackup_${defaultDate}.json`; 
+    
+    try { 
+        if (window.showSaveFilePicker) { 
+            const handle = await window.showSaveFilePicker({ 
+                suggestedName: defaultName, 
+                types: [{ description: 'JSON Backup File', accept: { 'application/json': ['.json'] }, }], 
+            }); 
+            const writable = await handle.createWritable(); 
+            await writable.write(jsonStr); 
+            await writable.close(); 
+        } else { 
+            const blob = new Blob([jsonStr], { type: "application/json" }); 
+            const url = URL.createObjectURL(blob); 
+            const a = document.createElement('a'); 
+            a.href = url; 
+            a.download = defaultName; 
+            document.body.appendChild(a); 
+            a.click(); 
+            document.body.removeChild(a); 
+            URL.revokeObjectURL(url); 
+        } 
+        
+        // শেষ ব্যাকআপ ডেট সেভ করা (অপশনাল)
+        dbSet('lastBackupDate', new Date().toISOString()).catch(e => console.log('Offline backup done'));
+
+        Swal.fire({ 
+            title: 'Full Backup Successful!', 
+            text: 'All data (Students, Photos, Fees, Signature & PIN) saved offline.', 
+            icon: 'success' 
+        }); 
+    } catch (err) { 
+        if (err.name !== 'AbortError') { 
+            console.error(err); 
+            Swal.fire('Error', 'Failed to save backup.', 'error'); 
+        } 
+    } 
+}
 
         function openTab(tabName) { 
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active')); 
@@ -2003,7 +2048,7 @@ async function importData(event) {
                 return;
             }
 
-            // ১. অ্যাপের মেমোরিতে ডাটা লোড (Instant Load)
+            // ১. অ্যাপের মেমোরিতে ডাটা লোড
             students = importedData.students.map(migrateStudentData);
             attendance = importedData.attendance || {};
             fees = importedData.fees || {};
@@ -2014,11 +2059,25 @@ async function importData(event) {
             if(importedData.instituteLogo) instituteLogo = importedData.instituteLogo;
             if(importedData.authorizedSignature) authorizedSignature = importedData.authorizedSignature;
 
-            // ২. স্ক্রিন রিফ্রেশ (সাথে সাথে ডাটা দেখাবে)
+            // 🔥 পিন রিস্টোর করা (লোকাল মেমোরিতে)
+            if(importedData.app_pin) {
+                localStorage.setItem('app_pin', importedData.app_pin);
+            }
+
+            // ২. স্ক্রিন রিফ্রেশ
             loadAllData();
             
+            // সিগনেচার প্রিভিউ আপডেট (সেটিংস ট্যাবে)
+            if(authorizedSignature) {
+                const sigPreview = document.getElementById('authSigPreview');
+                if(sigPreview) {
+                    sigPreview.src = authorizedSignature;
+                    sigPreview.style.display = 'block';
+                    document.getElementById('removeAuthSigBtn').style.display = 'inline-block';
+                }
+            }
+
             // ৩. ব্যাকগ্রাউন্ড সিঙ্ক (ইন্টারনেট পেলে সার্ভারে যাবে)
-            // আমরা await ব্যবহার করছি না, তাই ইউজারকে অপেক্ষা করতে হবে না
             const user = firebase.auth().currentUser;
             if (user) {
                 // Settings Save
@@ -2026,24 +2085,27 @@ async function importData(event) {
                 dbSet('fees', fees).catch(console.error);
                 dbSet('reminders', reminders).catch(console.error);
                 dbSet('studentSerialCounter', studentSerialCounter).catch(console.error);
-                if(instituteLogo) dbSet('instituteLogo', instituteLogo).catch(console.error);
                 
-                // Students Batch Save (Background)
+                if(instituteLogo) dbSet('instituteLogo', instituteLogo).catch(console.error);
+                if(authorizedSignature) dbSet('authorizedSignature', authorizedSignature).catch(console.error);
+                if(importedData.app_pin) dbSet('app_pin', importedData.app_pin).catch(console.error);
+                
+                // Students Batch Save
                 const batchSize = 50; 
                 for (let i = 0; i < students.length; i += batchSize) {
                     const chunk = students.slice(i, i + batchSize);
                     chunk.forEach(s => {
                          db.collection(COLLECTION_NAME).doc(user.uid)
                            .collection('students').doc(String(s.id))
-                           .set(s).catch(err => console.log("Sync pending for student: " + s.name));
+                           .set(s).catch(err => console.log("Sync pending: " + s.name));
                     });
                 }
             }
 
             // ৪. সাকসেস মেসেজ
             Swal.fire({
-                title: 'Restored Locally!',
-                text: `Loaded ${students.length} students instantly. Data will sync to cloud automatically when internet is available.`,
+                title: 'Restored Successfully!',
+                text: `Loaded ${students.length} students. PIN, Signature & all data restored.`,
                 icon: 'success'
             });
 
