@@ -24,6 +24,93 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
+    /* --- Dashboard Reminder Stylish CSS --- */
+.dashboard-reminder-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.d-reminder-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-card);
+    padding: 15px;
+    border-radius: 15px;
+    border-left: 6px solid var(--warning);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: relative;
+    overflow: hidden;
+    animation: slideUpFade 0.4s ease-out;
+}
+
+@keyframes slideUpFade {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.d-reminder-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+.d-rem-content {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex: 1;
+}
+
+.d-rem-icon {
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--warning);
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.d-rem-text {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-main);
+    line-height: 1.4;
+}
+
+.d-rem-btn {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    flex-shrink: 0;
+    margin-left: 10px;
+}
+
+.d-rem-btn:hover {
+    transform: scale(1.1) rotate(10deg);
+    box-shadow: 0 6px 15px rgba(16, 185, 129, 0.4);
+}
+
+/* Dark Mode Adjustments */
+[data-theme="dark"] .d-rem-icon {
+    background: rgba(251, 191, 36, 0.2);
+}
         :root {
             /* Light Theme Variables (Default) */
             --primary: #4f46e5; --primary-dark: #4338ca; --secondary: #64748b;
@@ -1310,8 +1397,8 @@ async function initApp() {
         let currentlyViewingStudentId = null; 
         let currentStudentView = 'active'; 
         
-        let dismissedBirthdays = JSON.parse(sessionStorage.getItem('dismissedBirthdays')) || [];
-
+        // এই লাইনটি দিয়ে আগের লাইনটি রিপ্লেস করুন
+let dismissedBirthdays = JSON.parse(localStorage.getItem('dismissedBirthdays')) || [];
         async function saveInstituteLogo(input) { const file = input.files[0]; if (file) { const reader = new FileReader(); reader.onload = function(e) { const img = new Image(); img.onload = async function() { const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); const maxWidth = 200; const scaleSize = maxWidth / img.width; canvas.width = maxWidth; canvas.height = img.height * scaleSize; ctx.drawImage(img, 0, 0, canvas.width, canvas.height); const logoBase64 = canvas.toDataURL('image/jpeg', 0.8); await dbSet('instituteLogo', logoBase64); await loadInstituteLogo(); Swal.fire('Success', 'Logo saved!', 'success'); }; img.src = e.target.result; }; reader.readAsDataURL(file); } }
         async function loadInstituteLogo() { instituteLogo = await dbGet('instituteLogo'); const img = document.getElementById('logoPreview'); const headerLogo = document.getElementById('headerLogo'); const btn = document.getElementById('removeLogoBtn'); if (instituteLogo) { img.src = instituteLogo; img.style.display = 'block'; btn.style.display = 'inline-block'; headerLogo.src = instituteLogo; headerLogo.style.display = 'block'; } else { img.style.display = 'none'; btn.style.display = 'none'; headerLogo.style.display = 'none'; } }
         async function removeLogo() { await dbDelete('instituteLogo'); instituteLogo = null; await loadInstituteLogo(); }
@@ -1504,11 +1591,33 @@ async function initApp() {
         function sendGeneralMsg(type, studentId) { const student = students.find(s => s.id === studentId); if(!student) return; const msgBody = `Hello ${student.name}, Hope you are doing well. Just connecting regarding the music classes updates. From Srikanta Banerjee (Guitar, Bass Guitar, Piano, Keyboard, Mandolin Classes.)`; if(type === 'wa') { let cleanPhone = student.phone.replace(/[^0-9]/g, ''); if(cleanPhone.length === 10) cleanPhone = '91' + cleanPhone; window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msgBody)}`, '_blank'); } else if (type === 'sms') { window.open(`sms:${student.phone}?body=${encodeURIComponent(msgBody)}`, '_self'); } else if (type === 'mail') { window.open(`mailto:${student.email}?subject=${encodeURIComponent("Music Class Info")}&body=${encodeURIComponent(msgBody)}`, '_self'); } }
         
         function sendBirthdayWish(type, studentId) { const student = students.find(s => s.id === studentId); if(!student) return; const msgBody = `Happy Birthday ${student.name}! Wishing you a fantastic day filled with music and joy. Best wishes from Srikanta Banerjee (Guitar, Bass Guitar, Piano, Keyboard, Mandolin Classes).`; if(type === 'wa') { let cleanPhone = student.phone.replace(/[^0-9]/g, ''); if(cleanPhone.length === 10) cleanPhone = '91' + cleanPhone; window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msgBody)}`, '_blank'); } else if (type === 'sms') { window.open(`sms:${student.phone}?body=${encodeURIComponent(msgBody)}`, '_self'); } else if (type === 'mail') { window.open(`mailto:${student.email}?subject=${encodeURIComponent("Happy Birthday!")}&body=${encodeURIComponent(msgBody)}`, '_self'); } }
-        function dismissBirthday(studentId) {
-            dismissedBirthdays.push(studentId);
-            sessionStorage.setItem('dismissedBirthdays', JSON.stringify(dismissedBirthdays));
-            renderDashboard();
-        }
+        // এই ফাংশনটি দিয়ে আগের dismissBirthday রিপ্লেস করুন
+function dismissBirthday(studentId) {
+    // বর্তমান বছর বের করা (যাতে পরের বছর আবার রিমাইন্ডার আসে)
+    const currentYear = new Date().getFullYear();
+    const uniqueKey = `${studentId}_${currentYear}`; // আইডি এবং বছরের কম্বিনেশন
+
+    if (!dismissedBirthdays.includes(uniqueKey)) {
+        dismissedBirthdays.push(uniqueKey);
+        localStorage.setItem('dismissedBirthdays', JSON.stringify(dismissedBirthdays));
+        
+        // ড্যাশবোর্ড রিফ্রেশ করা
+        renderDashboard();
+        
+        // কনফার্মেশন মেসেজ
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 2000,
+            timerProgressBar: true
+        });
+        Toast.fire({
+            icon: 'success',
+            title: 'Birthday dismissed'
+        });
+    }
+}
 
         let pendingAction = null, pinInput = "";
         function secureAction(callback, isInit = false) { pendingAction = callback; pinInput = ""; updatePinDots(); document.querySelector('.close-pin').style.display = isInit ? 'none' : 'block'; document.getElementById('securityOverlay').style.display = 'flex'; }
@@ -2436,7 +2545,11 @@ async function importData(event) {
             const activeStudents = students.filter(s => s.status?.isActive); 
             document.getElementById('studentStatsSummary').innerHTML = `<div class="clickable-stat" onclick="showCategoryList('active')"><h4>Active</h4><p class="summary-collected">${activeStudents.length}</p></div><div class="clickable-stat" onclick="showCategoryList('inactive')"><h4>Inactive</h4><p class="summary-due">${students.length - activeStudents.length}</p></div><div><h4>Total</h4><p class="summary-total" style="color:var(--text-main);">${students.length}</p></div>`; 
             const birthdayBox = document.getElementById('birthdayAlertBox'); const birthdayList = document.getElementById('birthdayList'); 
-            const birthdayStudents = activeStudents.filter(s => checkBirthday(s.dob) && !dismissedBirthdays.includes(s.id)); 
+            const currentYearForCheck = new Date().getFullYear();
+const birthdayStudents = activeStudents.filter(s => 
+    checkBirthday(s.dob) && 
+    !dismissedBirthdays.includes(`${s.id}_${currentYearForCheck}`)
+); 
             if (birthdayStudents.length > 0) { birthdayList.innerHTML = ''; birthdayStudents.forEach(s => { birthdayList.innerHTML += `<div style="display:flex; align-items:center; justify-content:space-between; background:var(--bg-input); padding:10px; border-radius:8px; margin-bottom:5px; border:1px solid #ffe4e6; color:var(--text-main);"><div style="display:flex; align-items:center;"><img src="${s.photo || 'https://via.placeholder.com/40?text=S'}" style="width:40px; height:40px; border-radius:50%; margin-right:10px; object-fit:cover; border: 2px solid #000 !important;"><div><strong>${s.name}</strong><br><span style="font-size:11px; color:var(--text-muted);">${s.class || 'Student'}</span></div></div><div style="display:flex; gap:5px;"><button class="btn-whatsapp btn-like" onclick="sendBirthdayWish('wa', ${s.id})"><i class="fab fa-whatsapp"></i></button><button class="btn-sms btn-like" onclick="sendBirthdayWish('sms', ${s.id})"><i class="fas fa-sms"></i></button><button class="btn-success btn-like" onclick="dismissBirthday(${s.id})" title="Dismiss"><i class="fas fa-check"></i></button></div></div>`; }); birthdayBox.style.display = 'block'; } else { birthdayBox.style.display = 'none'; }
             const classCounts = activeStudents.reduce((acc, student) => { const className = student.class || 'Unassigned'; acc[className] = (acc[className] || 0) + 1; return acc; }, {}); const classListEl = document.getElementById('classStrengthList'); classListEl.innerHTML = ''; Object.entries(classCounts).sort().forEach(([className, count]) => { classListEl.innerHTML += `<li onclick="showClassStudents('${className}')" style="cursor:pointer; color:var(--text-main);"><strong>${className}:</strong> <span>${count} students</span></li>`; }); 
             let monthlyCollected = 0, monthlyDueAmount = 0, yearlyCollected = 0, yearlyDueAmount = 0; const currentYear = new Date().getFullYear(), currentMonthStr = `${currentYear}-${(new Date().getMonth() + 1).toString().padStart(2, '0')}`; 
@@ -2445,19 +2558,36 @@ async function importData(event) {
 const rBox = document.getElementById('dashboardRemindersBox'); 
 const rList = document.getElementById('dashboardReminderList'); 
 
+// renderDashboard ফাংশনের ভেতরে এই অংশটুকু আপডেট করুন
+
 if(todaysReminders.length > 0) { 
     rList.innerHTML = ''; 
+    // স্টাইলের জন্য ক্লাস যোগ করা হলো
+    rList.className = 'dashboard-reminder-list'; 
+    
     todaysReminders.forEach(r => { 
         rList.innerHTML += `
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; border-bottom:1px solid rgba(245, 158, 11, 0.3); font-size:13px; color:var(--text-main);">
-                <span style="flex:1;">• ${r.text}</span>
-                <button onclick="markReminderDone(${r.id})" style="background:var(--success); border:none; color:white; border-radius:50%; width:24px; height:24px; cursor:pointer; display:flex; align-items:center; justify-content:center; margin-left:10px;">
-                    <i class="fas fa-check" style="font-size:10px;"></i>
+            <div class="d-reminder-card">
+                <div class="d-rem-content">
+                    <div class="d-rem-icon">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <div class="d-rem-text">
+                        ${r.text}
+                    </div>
+                </div>
+                <button class="d-rem-btn" onclick="markReminderDone(${r.id})" title="Mark as Done">
+                    <i class="fas fa-check"></i>
                 </button>
             </div>
         `; 
     }); 
     rBox.style.display = 'block'; 
+    // মেইন বক্সের স্টাইল একটু সুন্দর করা
+    rBox.style.background = 'transparent'; 
+    rBox.style.boxShadow = 'none';
+    rBox.style.border = 'none';
+    rBox.style.padding = '0';
 } else { 
     rBox.style.display = 'none'; 
 }
