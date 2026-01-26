@@ -1633,37 +1633,45 @@ function dismissBirthday(studentId) {
         function pressPin(key) { if (key === 'C') pinInput = ""; else if (pinInput.length < 4) pinInput += key; updatePinDots(); }
         function updatePinDots() { document.querySelectorAll('.pin-dot').forEach((dot, index) => { index < pinInput.length ? dot.classList.add('filled') : dot.classList.remove('filled'); }); }
         // ১. এই ফাংশনটি দিয়ে আগের submitPin রিপ্লেস করুন
+// এই ফাংশনটি দিয়ে আগের submitPin রিপ্লেস করুন
 async function submitPin() {
-    // প্রথমে লোকাল মেমোরি থেকে পিন খোঁজা (অফলাইনের জন্য)
+    // ১. পিন খুঁজে বের করা (লোকাল বা ডাটাবেস)
     let currentPin = localStorage.getItem('app_pin');
-
-    // যদি লোকাল মেমোরিতে না থাকে, তখন ডাটাবেস চেক করবে
+    
     if (!currentPin) {
         currentPin = await dbGet('app_pin');
-        // ডাটাবেস থেকে পেলে সেটা লোকাল মেমোরিতে সেভ করে রাখা
         if (currentPin) localStorage.setItem('app_pin', currentPin);
     }
-
-    // যদি কোথাও পিন না থাকে, ডিফল্ট পিন '1234'
     if (!currentPin) currentPin = '1234';
 
+    // ২. পিন চেক করা
     if (pinInput === currentPin) {
         document.getElementById('securityOverlay').style.display = 'none';
         if (pendingAction) pendingAction();
         pendingAction = null;
         pinInput = "";
     } else {
-        // ভুল পিন দিলে ভাইব্রেশন বা এলার্ট
-        pinInput = "";
-        updatePinDots();
+        // ৩. ভুল পিন দিলে যা হবে (Incorrect PIN Logic)
+        pinInput = ""; // ইনপুট ক্লিয়ার
+        updatePinDots(); // ডট মুছে ফেলা
+
+        // মোবাইলে ভাইব্রেশন হবে (যদি সাপোর্ট করে)
+        if (navigator.vibrate) navigator.vibrate(200);
+
+        // সুন্দর পপ-আপ মেসেজ (স্ক্রিনের ওপরে আসবে)
         Swal.fire({
             icon: 'error',
             title: 'Incorrect PIN',
-            text: 'Try again (Default: 1234)',
-            timer: 1500,
+            text: 'Please try again!',
+            toast: true,            // ছোট নোটিফিকেশন আকারে আসবে
+            position: 'top',        // একদম ওপরে দেখাবে
             showConfirmButton: false,
-            toast: true,
-            position: 'top'
+            timer: 2000,            // ২ সেকেন্ড পর চলে যাবে
+            background: '#ffe4e6',  // হালকা লাল ব্যাকগ্রাউন্ড
+            color: '#dc2626',       // গাঢ় লাল লেখা
+            customClass: {
+                popup: 'high-z-index-popup' // সিওরিটি স্ক্রিনের ওপরে আসার জন্য
+            }
         });
     }
 }
