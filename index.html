@@ -3778,29 +3778,38 @@ function showStudentDetails(studentId) {
 
     document.getElementById('modalStudentName').textContent = student.name; 
     document.getElementById('modalSerialNo').textContent = student.serial_no; 
-    document.getElementById('modalClass').textContent = student.class || 'N/A'; 
+    // Class Name Stylish Display
+const className = student.class || 'Music Class';
+document.getElementById('modalClass').innerHTML = `<span style="display: inline-block; background: #000000; color: #ffffff; padding: 5px 15px; border-radius: 20px; font-size: 13px; font-weight: 500; margin-top: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">🎵 ${className}</span>`;
     document.getElementById('modalDayTime').textContent = (student.class_day || '') + " " + (student.class_time || ''); 
     document.getElementById('modalFeeAmount').textContent = `₹${student.fee_amount || DEFAULT_FEE}`; 
     document.getElementById('modalGuardianName').textContent = student.guardian || 'N/A'; 
     document.getElementById('modalPhone').innerHTML = student.phone ? `${student.phone}` : 'N/A'; 
     document.getElementById('modalEmail').innerHTML = student.email ? `${student.email}` : 'N/A'; 
     document.getElementById('modalAddress').textContent = student.address || 'N/A'; 
-    document.getElementById('modalDOB').textContent = student.dob ? new Date(student.dob).toLocaleDateString('en-IN') : 'N/A'; 
+    
+    // --- AGE CALCULATION (BLACK TEXT) ---
+    let dobDisplay = 'N/A';
+    if(student.dob) {
+        const dateStr = new Date(student.dob).toLocaleDateString('en-IN');
+        const ageStr = calculateAge(student.dob);
+        
+        // এখানে color: #000000 (কালো) করা হয়েছে
+        dobDisplay = `${dateStr} <br><span style="font-size:11px; color: #000000; font-weight:600; background: #e2e8f0; padding: 2px 6px; border-radius: 4px; margin-top: 4px; display: inline-block;">(Age: ${ageStr})</span>`;
+    }
+    document.getElementById('modalDOB').innerHTML = dobDisplay; 
+    // ------------------------------------
     document.getElementById('modalJoiningDate').textContent = new Date(student.joining_date).toLocaleDateString('en-IN'); 
     
     const modalImg = document.getElementById('modalStudentPhoto'); 
     if(student.photo) { modalImg.src = student.photo; modalImg.style.display = 'inline-block'; } 
     else { modalImg.src = 'https://via.placeholder.com/100?text=No+Photo'; } 
 
-    // --- NEW SIGNATURE BUTTON LOGIC START ---
-    // আগের কোডে ইমেজ অ্যাপেন্ড করার অংশটি বাদ দেওয়া হয়েছে
-    // এখন বাটন ক্লিকের লজিক সেট করা হচ্ছে
-    // ✅ NEW: বাটন ক্লিকের লজিক (পপ-আপ উপরে দেখানোর ফিক্স সহ)
+    // Digital Signature Logic
     const viewSigBtn = document.getElementById('btnViewSignature');
     if (viewSigBtn) {
         viewSigBtn.onclick = function() {
             if (student.student_signature) {
-                // সিগনেচার থাকলে
                 Swal.fire({
                     title: 'Digital Signature',
                     text: student.name,
@@ -3809,25 +3818,21 @@ function showStudentDetails(studentId) {
                     imageAlt: 'Signature',
                     confirmButtonText: 'Close',
                     background: '#fff',
-                    // 👇 পপ-আপ সবার উপরে দেখানোর জন্য এই দুটি লাইন
                     position: 'center',
                     target: 'body'
                 });
             } else {
-                // সিগনেচার না থাকলে
                 Swal.fire({
                     title: 'No Signature Found',
                     text: 'This student has not added a digital signature yet.',
                     icon: 'warning',
                     confirmButtonText: 'Okay',
-                    // 👇 পপ-আপ সবার উপরে দেখানোর জন্য এই দুটি লাইন
                     position: 'center',
                     target: 'body'
                 });
             }
         };
     }
-    // --- NEW SIGNATURE BUTTON LOGIC END ---
     
     const historyList = document.getElementById('modalStatusHistory'); historyList.innerHTML = ''; 
     if (student.status.history && student.status.history.length > 0) { 
@@ -4220,6 +4225,31 @@ async function markReminderDone(id) {
         icon: 'success',
         title: 'Reminder marked as done'
     });
+}
+// বয়স বের করার ফাংশন
+function calculateAge(dob) {
+    if(!dob) return "";
+    const birthDate = new Date(dob);
+    const today = new Date();
+
+    let years = today.getFullYear() - birthDate.getFullYear();
+    let months = today.getMonth() - birthDate.getMonth();
+    let days = today.getDate() - birthDate.getDate();
+
+    // দিন যদি নেগেটিভ হয়, আগের মাস থেকে দিন ধার নেওয়া
+    if (days < 0) {
+        months--;
+        const lastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+        days += lastMonth.getDate();
+    }
+    
+    // মাস যদি নেগেটিভ হয়, আগের বছর থেকে মাস ধার নেওয়া
+    if (months < 0) {
+        years--;
+        months += 12;
+    }
+
+    return `${years} Yrs, ${months} Mths, ${days} Days`;
 }
         
     </script>
