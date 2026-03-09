@@ -752,10 +752,13 @@
                 <button id="exportReportBtn" class="btn-secondary" style="display:none; width: 100%; margin-top:10px;" onclick="exportReportPDF()">Download PDF</button>
             </div>
             <div id="reportSummary" class="summary-box" style="display: none;"></div>
-            <table id="reportTable" style="display: none; margin-top: 20px;"><thead></thead><tbody></tbody></table>
-        </div>
 
-        <div id="analytics" class="tab-content">
+            <div class="search-bar" id="reportSearchBox" style="display: none; margin-top: 15px;">
+                <input type="search" id="searchReport" onkeyup="searchTable('searchReport', 'reportTable')" placeholder="Search student by Name...">
+            </div>
+
+            <table id="reportTable" style="display: none; margin-top: 10px;"><thead></thead><tbody></tbody></table>
+        </div> <div id="analytics" class="tab-content">
              <div class="dashboard-card">
                 <h3>Yearly Analysis & Comparison</h3>
                 <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
@@ -2906,11 +2909,106 @@ function exportStudentDetailsAsPDF(studentId) {
         function calculateMonthStats(monthStr) { let income = 0; let studentCount = 0; if(fees[monthStr]) { Object.values(fees[monthStr]).forEach(record => { if(record.status === 'paid') income += record.amount; }); } students.forEach(student => { if(wasStudentActiveDuringMonth(student, monthStr)) { studentCount++; } }); return { income, studentCount }; }
 
         function updateYearlyChart() { 
-            const year1 = document.getElementById('analyticsYear').value; const year2 = document.getElementById('compareYear').value; if(!year1) return; const labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]; const inc1 = []; const stu1 = []; let sumInc1 = 0; let sumStu1 = 0; for(let i=1; i<=12; i++) { const m = `${year1}-${i.toString().padStart(2, '0')}`; const s = calculateMonthStats(m); inc1.push(s.income); stu1.push(s.studentCount); sumInc1 += s.income; sumStu1 += s.studentCount; } const avgInc1 = sumInc1 / 12; const avgStu1 = sumStu1 / 12; const statsDiv = document.getElementById('yearlyAverages'); let statsHtml = `<div><h4>Avg Income (${year1})</h4><p class="summary-collected">₹${avgInc1.toFixed(0)}</p></div><div><h4>Avg Students (${year1})</h4><p class="summary-total" style="color:var(--text-main);">${Math.round(avgStu1)}</p></div>`; const datasets = [ { label: `Income ${year1}`, data: inc1, backgroundColor: 'rgba(16, 185, 129, 0.6)', borderColor: '#10b981', borderWidth: 1, type: 'bar', yAxisID: 'y' }, { label: `Students ${year1}`, data: stu1, borderColor: '#3b82f6', borderWidth: 2, type: 'line', tension: 0.3, yAxisID: 'y1' } ]; 
-            if (year2) { const inc2 = []; const stu2 = []; let sumInc2 = 0; let sumStu2 = 0; for(let i=1; i<=12; i++) { const m = `${year2}-${i.toString().padStart(2, '0')}`; const s = calculateMonthStats(m); inc2.push(s.income); stu2.push(s.studentCount); sumInc2 += s.income; sumStu2 += s.studentCount; } const avgInc2 = sumInc2 / 12; const avgStu2 = sumStu2 / 12; statsHtml += `<div><h4>Avg Income (${year2})</h4><p class="summary-collected">₹${avgInc2.toFixed(0)}</p></div><div><h4>Avg Students (${year2})</h4><p class="summary-total" style="color:var(--text-main);">${Math.round(avgStu2)}</p></div>`; datasets.push({ label: `Income ${year2}`, data: inc2, backgroundColor: 'rgba(239, 68, 68, 0.6)', borderColor: '#ef4444', borderWidth: 1, type: 'bar', yAxisID: 'y' }); datasets.push({ label: `Students ${year2}`, data: stu2, borderColor: '#f97316', borderWidth: 2, type: 'line', tension: 0.3, pointRadius: 3, yAxisID: 'y1' }); } 
-            statsDiv.innerHTML = statsHtml; statsDiv.style.display = 'flex'; 
-            const ctx = document.getElementById('yearlyChart').getContext('2d'); if(analyticsChartInstance) analyticsChartInstance.destroy(); analyticsChartInstance = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: datasets }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { position: 'bottom', labels: { color: getComputedStyle(document.body).getPropertyValue('--text-main') } }, title: { display: true, text: year2 ? `${year1} vs ${year2}` : `Overview ${year1}`, color: getComputedStyle(document.body).getPropertyValue('--text-main') } }, scales: { y: { beginAtZero: true, position: 'left', title: {display:true, text:'Income (₹)', color: getComputedStyle(document.body).getPropertyValue('--text-muted')}, ticks: { color: getComputedStyle(document.body).getPropertyValue('--text-muted') } }, y1: { beginAtZero: true, position: 'right', grid: {drawOnChartArea: false}, title: {display:true, text:'Students', color: getComputedStyle(document.body).getPropertyValue('--text-muted')}, ticks: { color: getComputedStyle(document.body).getPropertyValue('--text-muted') } }, x: { ticks: { color: getComputedStyle(document.body).getPropertyValue('--text-muted') } } } } }); 
+    const year1 = parseInt(document.getElementById('analyticsYear').value); 
+    const year2 = parseInt(document.getElementById('compareYear').value); 
+    if(!year1) return; 
+
+    // বর্তমান সাল ও মাস বের করা
+    const currentYear = new Date().getFullYear();
+    const currentMonthNum = new Date().getMonth() + 1; // উদাহরণ: মার্চ হলে 3
+
+    const labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]; 
+    const inc1 = []; const stu1 = []; 
+    let sumInc1 = 0; let sumStu1 = 0; let countMonths1 = 0;
+    
+    for(let i=1; i<=12; i++) { 
+        const m = `${year1}-${i.toString().padStart(2, '0')}`; 
+        const s = calculateMonthStats(m); 
+        
+        // চার্টে দেখানোর জন্য সব মাসের ডেটাই পুশ হবে
+        inc1.push(s.income); 
+        stu1.push(s.studentCount); 
+        
+        // এভারেজ ক্যালকুলেশন লজিক: 
+        // যদি অতীত বছর হয়, তবে ১২ মাসের ডেটাই যোগ হবে। 
+        // যদি বর্তমান বছর হয়, তবে শুধুমাত্র বর্তমান মাস পর্যন্ত ডেটা যোগ হবে।
+        if (year1 < currentYear || (year1 === currentYear && i <= currentMonthNum)) {
+            sumInc1 += s.income; 
+            sumStu1 += s.studentCount; 
+            countMonths1++;
         }
+    } 
+    
+    // শূন্য দিয়ে ভাগ হওয়ার এরর এড়াতে
+    countMonths1 = countMonths1 === 0 ? 1 : countMonths1;
+    
+    const avgInc1 = sumInc1 / countMonths1; 
+    const avgStu1 = sumStu1 / countMonths1; 
+    
+    const statsDiv = document.getElementById('yearlyAverages'); 
+    let statsHtml = `
+        <div><h4>Monthly Avg Income (${year1})</h4><p class="summary-collected">₹${avgInc1.toFixed(0)}</p></div>
+        <div><h4>Monthly Avg Students (${year1})</h4><p class="summary-total" style="color:var(--text-main);">${Math.round(avgStu1)}</p></div>
+    `; 
+    
+    const datasets = [ 
+        { label: `Income ${year1}`, data: inc1, backgroundColor: 'rgba(16, 185, 129, 0.6)', borderColor: '#10b981', borderWidth: 1, type: 'bar', yAxisID: 'y' }, 
+        { label: `Students ${year1}`, data: stu1, borderColor: '#3b82f6', borderWidth: 2, type: 'line', tension: 0.3, yAxisID: 'y1' } 
+    ]; 
+    
+    // দ্বিতীয় বছরের (Compare Year) জন্য একই লজিক
+    if (year2) { 
+        const inc2 = []; const stu2 = []; 
+        let sumInc2 = 0; let sumStu2 = 0; let countMonths2 = 0;
+        
+        for(let i=1; i<=12; i++) { 
+            const m = `${year2}-${i.toString().padStart(2, '0')}`; 
+            const s = calculateMonthStats(m); 
+            inc2.push(s.income); 
+            stu2.push(s.studentCount); 
+            
+            if (year2 < currentYear || (year2 === currentYear && i <= currentMonthNum)) {
+                sumInc2 += s.income; 
+                sumStu2 += s.studentCount; 
+                countMonths2++;
+            }
+        } 
+        
+        countMonths2 = countMonths2 === 0 ? 1 : countMonths2;
+        const avgInc2 = sumInc2 / countMonths2; 
+        const avgStu2 = sumStu2 / countMonths2; 
+        
+        statsHtml += `
+            <div><h4>Monthly Avg Income (${year2})</h4><p class="summary-collected">₹${avgInc2.toFixed(0)}</p></div>
+            <div><h4>Monthly Avg Students (${year2})</h4><p class="summary-total" style="color:var(--text-main);">${Math.round(avgStu2)}</p></div>
+        `; 
+        
+        datasets.push({ label: `Income ${year2}`, data: inc2, backgroundColor: 'rgba(239, 68, 68, 0.6)', borderColor: '#ef4444', borderWidth: 1, type: 'bar', yAxisID: 'y' }); 
+        datasets.push({ label: `Students ${year2}`, data: stu2, borderColor: '#f97316', borderWidth: 2, type: 'line', tension: 0.3, pointRadius: 3, yAxisID: 'y1' }); 
+    } 
+    
+    statsDiv.innerHTML = statsHtml; 
+    statsDiv.style.display = 'flex'; 
+    
+    const ctx = document.getElementById('yearlyChart').getContext('2d'); 
+    if(analyticsChartInstance) analyticsChartInstance.destroy(); 
+    analyticsChartInstance = new Chart(ctx, { 
+        type: 'bar', 
+        data: { labels: labels, datasets: datasets }, 
+        options: { 
+            responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, 
+            plugins: { 
+                legend: { position: 'bottom', labels: { color: getComputedStyle(document.body).getPropertyValue('--text-main') } }, 
+                title: { display: true, text: year2 ? `${year1} vs ${year2}` : `Overview ${year1}`, color: getComputedStyle(document.body).getPropertyValue('--text-main') } 
+            }, 
+            scales: { 
+                y: { beginAtZero: true, position: 'left', title: {display:true, text:'Income (₹)', color: getComputedStyle(document.body).getPropertyValue('--text-muted')}, ticks: { color: getComputedStyle(document.body).getPropertyValue('--text-muted') } }, 
+                y1: { beginAtZero: true, position: 'right', grid: {drawOnChartArea: false}, title: {display:true, text:'Students', color: getComputedStyle(document.body).getPropertyValue('--text-muted')}, ticks: { color: getComputedStyle(document.body).getPropertyValue('--text-muted') } }, 
+                x: { ticks: { color: getComputedStyle(document.body).getPropertyValue('--text-muted') } } 
+            } 
+        } 
+    }); 
+}
 
         function comparePeriods() { const m1 = document.getElementById('compMonth1').value; const m2 = document.getElementById('compMonth2').value; if(!m1 || !m2) { return; } const s1 = calculateMonthStats(m1); const s2 = calculateMonthStats(m2); document.getElementById('compIncome1').textContent = `₹${s1.income}`; document.getElementById('compIncome2').textContent = `₹${s2.income}`; document.getElementById('compStudent1').textContent = s1.studentCount; document.getElementById('compStudent2').textContent = s2.studentCount; const incDiff = s2.income - s1.income; const stuDiff = s2.studentCount - s1.studentCount; const incDiffEl = document.getElementById('compIncomeDiff'); incDiffEl.innerHTML = incDiff > 0 ? `<i class="fas fa-arrow-up"></i> ₹${incDiff}` : (incDiff < 0 ? `<i class="fas fa-arrow-down"></i> ₹${Math.abs(incDiff)}` : '-'); incDiffEl.className = 'comp-diff ' + (incDiff >= 0 ? 'diff-up' : 'diff-down'); const stuDiffEl = document.getElementById('compStudentDiff'); stuDiffEl.innerHTML = stuDiff > 0 ? `<i class="fas fa-arrow-up"></i> ${stuDiff}` : (stuDiff < 0 ? `<i class="fas fa-arrow-down"></i> ${Math.abs(stuDiff)}` : '-'); stuDiffEl.className = 'comp-diff ' + (stuDiff >= 0 ? 'diff-up' : 'diff-down'); document.getElementById('comparisonResults').style.display = 'block'; }
         
@@ -2952,122 +3050,131 @@ function exportStudentDetailsAsPDF(studentId) {
         }
 
         function generateReport() { 
-            const type = document.getElementById('reportType').value; 
-            const summaryEl = document.getElementById('reportSummary'); 
-            const tableEl = document.getElementById('reportTable'); 
-            const tableHead = tableEl.querySelector('thead'); 
-            const tableBody = tableEl.querySelector('tbody'); 
-            const exportBtn = document.getElementById('exportReportBtn'); 
+    const type = document.getElementById('reportType').value; 
+    const summaryEl = document.getElementById('reportSummary'); 
+    const tableEl = document.getElementById('reportTable'); 
+    const searchBoxEl = document.getElementById('reportSearchBox'); // New Search Box
+    const tableHead = tableEl.querySelector('thead'); 
+    const tableBody = tableEl.querySelector('tbody'); 
+    const exportBtn = document.getElementById('exportReportBtn'); 
+    
+    tableHead.innerHTML = ''; tableBody.innerHTML = ''; 
+    summaryEl.style.display = 'flex'; 
+    tableEl.style.display = 'table'; 
+    searchBoxEl.style.display = 'block'; // Show Search Box
+    exportBtn.style.display = 'inline-block'; 
+    
+    let totalCollected = 0, totalDue = 0; 
+    let collectedCount = 0, dueCount = 0; // NEW: Student count variables
+    
+    if (type === 'monthly') { 
+        const month = document.getElementById('reportMonth').value; 
+        if (!month) return; 
+        
+        tableHead.innerHTML = `<tr><th>Student Name</th><th>Status</th><th>Amount</th><th>Action</th></tr>`; 
+        const monthIsDue = isMonthDue(month); 
+        
+        students.forEach(student => { 
+            if (!wasStudentActiveDuringMonth(student, month)) return; 
             
-            tableHead.innerHTML = ''; tableBody.innerHTML = ''; 
-            summaryEl.style.display = 'flex'; tableEl.style.display = 'table'; 
-            exportBtn.style.display = 'inline-block'; 
+            const feeRecord = fees[month]?.[student.id]; 
+            let status = 'Pending', amount = `₹0`, rowClass = 'pending'; 
             
-            let totalCollected = 0, totalDue = 0; 
-            
-            if (type === 'monthly') { 
-                const month = document.getElementById('reportMonth').value; 
-                if (!month) return; 
-                
-                tableHead.innerHTML = `<tr><th>Student Name</th><th>Status</th><th>Amount</th><th>Action</th></tr>`; 
-                const monthIsDue = isMonthDue(month); 
-                
-                students.forEach(student => { 
-                    if (!wasStudentActiveDuringMonth(student, month)) return; 
-                    
-                    const feeRecord = fees[month]?.[student.id]; 
-                    let status = 'Pending', amount = `₹0`, rowClass = 'pending'; 
-                    
-                    if (feeRecord?.status === 'paid') { 
-                        status = `Paid on ${new Date(feeRecord.date).toLocaleDateString('en-IN')}`; 
-                        amount = `₹${feeRecord.amount}`; 
-                        rowClass = 'paid'; 
-                        totalCollected += feeRecord.amount; 
-                    } else if (monthIsDue) { 
-                        status = 'Due'; 
-                        const studentFee = student.fee_amount || DEFAULT_FEE; 
-                        amount = `₹${studentFee}`; 
-                        rowClass = 'unpaid'; 
-                        totalDue += studentFee; 
-                    } 
-                    
-                    tableBody.innerHTML += `<tr class="${rowClass}"><td>${getStudentHtml(student)}</td><td>${status}</td><td>${amount}</td><td class="action-buttons">${status === 'Due' ? getContactButtons(student.id, month) : ''}</td></tr>`; 
-                }); 
-                
-                summaryEl.innerHTML = `
-                    <div onclick="showFeeBreakdown('collected', '${month}')" style="cursor:pointer; border:1px solid var(--success);">
-                        <h4>Total Collected <i class="fas fa-list" style="font-size:10px; margin-left:3px;"></i></h4>
-                        <p class="summary-collected">₹${totalCollected}</p>
-                    </div>
-                    <div onclick="showFeeBreakdown('due', '${month}')" style="cursor:pointer; border:1px solid var(--danger);">
-                        <h4>Total Due <i class="fas fa-list" style="font-size:10px; margin-left:3px;"></i></h4>
-                        <p class="summary-due">₹${totalDue}</p>
-                    </div>
-                `; 
-                
-            } else if (type === 'yearly') { 
-                const year = document.getElementById('reportYear').value; 
-                if (!year) return; 
-                
-                tableHead.innerHTML = `<tr><th>Student</th><th>Monthly History</th><th>Summary</th></tr>`; 
-                
-                students.forEach(student => { 
-                    let studentTotalPaid = 0; 
-                    let studentTotalDue = 0;
-                    let historyHtml = '';
-                    let hasActivityInYear = false; 
-
-                    for(let i=1; i<=12; i++) { 
-                        const monthStr = `${year}-${i.toString().padStart(2, '0')}`; 
-                        const monthName = new Date(year, i-1).toLocaleString('default', { month: 'short' });
-
-                        if (wasStudentActiveDuringMonth(student, monthStr)) { 
-                            hasActivityInYear = true; 
-                            
-                            if (fees[monthStr]?.[student.id]?.status === 'paid') { 
-                                const amt = fees[monthStr][student.id].amount;
-                                studentTotalPaid += amt; 
-                                historyHtml += `<span style="font-size:11px; color:var(--success); margin-right:5px;">${monthName}: ₹${amt} <i class="fas fa-check"></i></span><br>`;
-                            } else if (isMonthDue(monthStr)) { 
-                                const amt = student.fee_amount || DEFAULT_FEE;
-                                studentTotalDue += amt;
-                                historyHtml += `<span style="font-size:11px; color:var(--danger); margin-right:5px;">${monthName}: ₹${amt} (Due)</span><br>`;
-                            } else {
-                                historyHtml += `<span style="font-size:11px; color:var(--text-muted); margin-right:5px;">${monthName}: -</span><br>`;
-                            }
-                        } 
-                    } 
-                    
-                    if(hasActivityInYear) { 
-                        totalCollected += studentTotalPaid; 
-                        totalDue += studentTotalDue; 
-                        
-                        tableBody.innerHTML += `
-                            <tr>
-                                <td>${getStudentHtml(student)}</td>
-                                <td style="line-height:1.4;">${historyHtml || '<span style="color:var(--text-muted);">No Activity</span>'}</td>
-                                <td>
-                                    <div style="font-size:12px;">
-                                        <div style="color:var(--success); font-weight:bold;">Paid: ₹${studentTotalPaid}</div>
-                                        <div style="color:var(--danger); font-weight:bold; margin-top:2px;">Due: ₹${studentTotalDue}</div>
-                                    </div>
-                                </td>
-                            </tr>`; 
-                    } 
-                }); 
-                
-                summaryEl.innerHTML = `
-                    <div onclick="showYearlyBreakdown('collected', '${year}')" style="cursor:pointer; border:1px solid var(--success);">
-                        <h4>Total Collected <i class="fas fa-list" style="font-size:10px; margin-left:3px;"></i></h4>
-                        <p class="summary-collected">₹${totalCollected}</p>
-                    </div>
-                    <div onclick="showYearlyBreakdown('due', '${year}')" style="cursor:pointer; border:1px solid var(--danger);">
-                        <h4>Total Due <i class="fas fa-list" style="font-size:10px; margin-left:3px;"></i></h4>
-                        <p class="summary-due">₹${totalDue}</p>
-                    </div>
-                `; 
+            if (feeRecord?.status === 'paid') { 
+                status = `Paid on ${new Date(feeRecord.date).toLocaleDateString('en-IN')}`; 
+                amount = `₹${feeRecord.amount}`; 
+                rowClass = 'paid'; 
+                totalCollected += feeRecord.amount; 
+                collectedCount++; // Increment collected count
+            } else if (monthIsDue) { 
+                status = 'Due'; 
+                const studentFee = student.fee_amount || DEFAULT_FEE; 
+                amount = `₹${studentFee}`; 
+                rowClass = 'unpaid'; 
+                totalDue += studentFee; 
+                dueCount++; // Increment due count
             } 
-        }
+            
+            tableBody.innerHTML += `<tr class="${rowClass}"><td>${getStudentHtml(student)}</td><td>${status}</td><td>${amount}</td><td class="action-buttons">${status === 'Due' ? getContactButtons(student.id, month) : ''}</td></tr>`; 
+        }); 
+        
+        summaryEl.innerHTML = `
+            <div onclick="showFeeBreakdown('collected', '${month}')" style="cursor:pointer; border:1px solid var(--success);">
+                <h4>Total Collected</h4>
+                <p class="summary-collected">₹${totalCollected} <span style="font-size:12px; color:var(--text-muted); display:block;">(${collectedCount} Students)</span></p>
+            </div>
+            <div onclick="showFeeBreakdown('due', '${month}')" style="cursor:pointer; border:1px solid var(--danger);">
+                <h4>Total Due</h4>
+                <p class="summary-due">₹${totalDue} <span style="font-size:12px; color:var(--text-muted); display:block;">(${dueCount} Students)</span></p>
+            </div>
+        `; 
+        
+    } else if (type === 'yearly') { 
+        const year = document.getElementById('reportYear').value; 
+        if (!year) return; 
+        
+        tableHead.innerHTML = `<tr><th>Student</th><th>Monthly History</th><th>Summary</th></tr>`; 
+        
+        students.forEach(student => { 
+            let studentTotalPaid = 0; 
+            let studentTotalDue = 0;
+            let historyHtml = '';
+            let hasActivityInYear = false; 
+
+            for(let i=1; i<=12; i++) { 
+                const monthStr = `${year}-${i.toString().padStart(2, '0')}`; 
+                const monthName = new Date(year, i-1).toLocaleString('default', { month: 'short' });
+
+                if (wasStudentActiveDuringMonth(student, monthStr)) { 
+                    hasActivityInYear = true; 
+                    
+                    if (fees[monthStr]?.[student.id]?.status === 'paid') { 
+                        const amt = fees[monthStr][student.id].amount;
+                        studentTotalPaid += amt; 
+                        historyHtml += `<span style="font-size:11px; color:var(--success); margin-right:5px;">${monthName}: ₹${amt} <i class="fas fa-check"></i></span><br>`;
+                    } else if (isMonthDue(monthStr)) { 
+                        const amt = student.fee_amount || DEFAULT_FEE;
+                        studentTotalDue += amt;
+                        historyHtml += `<span style="font-size:11px; color:var(--danger); margin-right:5px;">${monthName}: ₹${amt} (Due)</span><br>`;
+                    } else {
+                        historyHtml += `<span style="font-size:11px; color:var(--text-muted); margin-right:5px;">${monthName}: -</span><br>`;
+                    }
+                } 
+            } 
+            
+            if(hasActivityInYear) { 
+                totalCollected += studentTotalPaid; 
+                totalDue += studentTotalDue; 
+                
+                if (studentTotalPaid > 0) collectedCount++; // Count student if paid anything this year
+                if (studentTotalDue > 0) dueCount++; // Count student if due anything this year
+                
+                tableBody.innerHTML += `
+                    <tr>
+                        <td>${getStudentHtml(student)}</td>
+                        <td style="line-height:1.4;">${historyHtml || '<span style="color:var(--text-muted);">No Activity</span>'}</td>
+                        <td>
+                            <div style="font-size:12px;">
+                                <div style="color:var(--success); font-weight:bold;">Paid: ₹${studentTotalPaid}</div>
+                                <div style="color:var(--danger); font-weight:bold; margin-top:2px;">Due: ₹${studentTotalDue}</div>
+                            </div>
+                        </td>
+                    </tr>`; 
+            } 
+        }); 
+        
+        summaryEl.innerHTML = `
+            <div onclick="showYearlyBreakdown('collected', '${year}')" style="cursor:pointer; border:1px solid var(--success);">
+                <h4>Total Collected</h4>
+                <p class="summary-collected">₹${totalCollected} <span style="font-size:12px; color:var(--text-muted); display:block;">(${collectedCount} Students)</span></p>
+            </div>
+            <div onclick="showYearlyBreakdown('due', '${year}')" style="cursor:pointer; border:1px solid var(--danger);">
+                <h4>Total Due</h4>
+                <p class="summary-due">₹${totalDue} <span style="font-size:12px; color:var(--text-muted); display:block;">(${dueCount} Students)</span></p>
+            </div>
+        `; 
+    } 
+}
 
         function exportReportPDF() { 
             const type = document.getElementById('reportType').value; const { jsPDF } = window.jspdf; const doc = new jsPDF(); let y = 20; 
@@ -3679,17 +3786,78 @@ async function unmarkFee(studentId, month) {
     }); 
 }
         
-        function openFeeModal(studentId, month, isEdit = false) { 
-            const modal = document.getElementById('feeModal'), amountInput = document.getElementById('feeAmount'), dateInput = document.getElementById('feeDate'); 
-            document.getElementById('feeStudentId').value = studentId; document.getElementById('feeRecordMonth').value = month; 
-            const txnInput = document.getElementById('transactionId'); 
-            if (isEdit) { 
-                const record = fees[month][studentId]; document.getElementById('feeModalTitle').textContent = 'Edit Fee Payment'; amountInput.value = record.amount; txnInput.value = record.transactionId || ''; 
-            } else { 
-                const student = students.find(s => s.id === studentId); document.getElementById('feeModalTitle').textContent = 'Record Fee Payment'; amountInput.value = student.fee_amount || DEFAULT_FEE; txnInput.value = ''; 
-            } 
-            dateInput.valueAsDate = new Date(); modal.style.display = 'flex'; 
+        // ১. নতুন ফাংশন: সবচেয়ে পুরোনো বকেয়া মাস বের করার জন্য
+function getOldestUnpaidMonth(studentId, selectedMonthStr) {
+    const s = students.find(x => x.id === studentId);
+    if (!s) return selectedMonthStr;
+    
+    let iterDate = new Date(s.joining_date);
+    if(isNaN(iterDate.getTime())) return selectedMonthStr;
+    
+    iterDate.setDate(1); // মাসের ১ তারিখে সেট করা হলো
+    const targetDate = new Date(selectedMonthStr + '-01');
+
+    while (iterDate <= targetDate) {
+        const y = iterDate.getFullYear();
+        const m = iterDate.getMonth() + 1;
+        const monthStr = `${y}-${m.toString().padStart(2, '0')}`;
+        
+        // মাসটিতে স্টুডেন্ট অ্যাক্টিভ থাকলে চেক করবে
+        if (wasStudentActiveDuringMonth(s, monthStr)) {
+            // মাসটি যদি পেমেন্ট না করা থাকে (status 'paid' না হয়)
+            if (fees[monthStr]?.[studentId]?.status !== 'paid') {
+                return monthStr; // প্রথম বকেয়া মাস (সবচেয়ে পুরোনো) রিটার্ন করবে
+            }
         }
+        iterDate.setMonth(iterDate.getMonth() + 1);
+    }
+    return selectedMonthStr; // আগের সব ক্লিয়ার থাকলে সিলেক্ট করা মাসটাই রাখবে
+}
+
+// ২. পুরোনো openFeeModal আপডেট করা হলো
+function openFeeModal(studentId, month, isEdit = false) { 
+    const modal = document.getElementById('feeModal');
+    const amountInput = document.getElementById('feeAmount');
+    const dateInput = document.getElementById('feeDate'); 
+    const txnInput = document.getElementById('transactionId'); 
+    
+    let targetMonth = month;
+
+    // যদি নতুন পেমেন্ট হয় (Edit না হয়), তবে সিরিয়াল অনুযায়ী চেক করবে
+    if (!isEdit) {
+        const oldestUnpaid = getOldestUnpaidMonth(studentId, month);
+        if (oldestUnpaid !== month) {
+            targetMonth = oldestUnpaid;
+            // ইউজারকে জানিয়ে দেওয়া যে পুরোনো বকেয়া মাসের পেমেন্ট আগে নেওয়া হচ্ছে
+            Swal.fire({
+                toast: true, 
+                position: 'top', 
+                timer: 4000, 
+                showConfirmButton: false,
+                icon: 'info',
+                title: `Previous dues found!\nRecording payment for: ${formatMonthYear(targetMonth)}`
+            });
+        }
+    }
+
+    document.getElementById('feeStudentId').value = studentId; 
+    document.getElementById('feeRecordMonth').value = targetMonth; 
+    
+    if (isEdit) { 
+        const record = fees[targetMonth][studentId]; 
+        document.getElementById('feeModalTitle').textContent = `Edit Fee (${formatMonthYear(targetMonth)})`; 
+        amountInput.value = record.amount; 
+        txnInput.value = record.transactionId || ''; 
+    } else { 
+        const student = students.find(s => s.id === studentId); 
+        document.getElementById('feeModalTitle').textContent = `Record Fee (${formatMonthYear(targetMonth)})`; 
+        amountInput.value = student.fee_amount || DEFAULT_FEE; 
+        txnInput.value = ''; 
+    } 
+    
+    dateInput.valueAsDate = new Date(); 
+    modal.style.display = 'flex'; 
+}
         
         // এই ফাংশনটি দিয়ে আগের openEditStudentModal রিপ্লেস করুন
 function openEditStudentModal(id) { 
