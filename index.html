@@ -592,6 +592,7 @@
 
         <div id="attendance" class="tab-content active">
             <h3 style="border-left: 4px solid var(--primary); padding-left:10px;">Mark Attendance</h3>
+            
             <div class="form-group" style="display: flex; gap: 10px;">
                 <div style="flex: 1;">
                     <label>Date</label>
@@ -602,7 +603,24 @@
                     <input type="time" id="attendanceTime" placeholder="Default: Current">
                 </div>
             </div>
+
+            <div id="attendanceSummary" class="summary-box" style="margin-bottom: 15px;">
+                <div onclick="showAttendanceList('total')" class="clickable-stat">
+                    <h4>Total Active</h4>
+                    <p id="attTotalCount" style="color:var(--text-main); font-size:18px; font-weight:700; margin:0;">0</p>
+                </div>
+                <div onclick="showAttendanceList('present')" class="clickable-stat">
+                    <h4>Present</h4>
+                    <p id="attPresentCount" style="color:var(--success); font-size:18px; font-weight:700; margin:0;">0</p>
+                </div>
+                <div onclick="showAttendanceList('absent')" class="clickable-stat">
+                    <h4>Absent</h4>
+                    <p id="attAbsentCount" style="color:var(--danger); font-size:18px; font-weight:700; margin:0;">0</p>
+                </div>
+            </div>
+
             <div class="search-bar"><input type="search" id="searchAttendance" onkeyup="searchTable('searchAttendance', 'attendanceTable')" placeholder="Search Name, Address..."></div>
+            
             <table id="attendanceTable"><thead><tr><th>Student</th><th>Status</th><th>Action</th></tr></thead><tbody></tbody></table>
         </div>
 
@@ -3331,50 +3349,62 @@ async function saveFee() {
     }); 
 }
         function renderFees() { 
-            const selectedMonth = document.getElementById('feeMonth').value, tableBody = document.querySelector('#feeTable tbody'); 
-            tableBody.innerHTML = ''; 
-            if (!selectedMonth) return; 
-            
-            let totalCollected = 0, totalDueAmount = 0, dueCount = 0; 
-            const monthIsDue = isMonthDue(selectedMonth); 
-            
-            students.forEach(student => { 
-                const wasActive = wasStudentActiveDuringMonth(student, selectedMonth); 
-                if (!wasActive) return; 
-                
-                const feeRecord = fees[selectedMonth]?.[student.id];
-                const isPaid = feeRecord?.status === 'paid'; 
-                const hasGlobalDue = checkGlobalDues(student.id); 
-                
-                let rowClass = 'pending', statusText = 'Pending'; 
-                
-                if (isPaid) { 
-                    totalCollected += feeRecord.amount; 
-                    rowClass = 'paid'; 
-                    statusText = `Paid (₹${feeRecord.amount})`; 
-                } else if (monthIsDue) { 
-                    dueCount++; 
-                    totalDueAmount += student.fee_amount || DEFAULT_FEE; 
-                    rowClass = 'unpaid'; 
-                    statusText = 'Due'; 
-                } 
-                
-                if (hasGlobalDue) rowClass += ' has-dues-alert'; 
-                
-                const row = document.createElement('tr'); 
-                row.className = rowClass; 
-                
-                let actionButtons = isPaid ? 
-                    `<button class="btn-receipt" onclick="generatePaymentReceipt(${student.id}, '${selectedMonth}')">Receipt</button> <button class="btn-warning" onclick="openFeeModal(${student.id}, '${selectedMonth}', true)">Edit</button><button class="btn-danger" onclick="unmarkFee(${student.id}, '${selectedMonth}')">Unmark</button>` 
-                    : `<button class="btn-success" onclick="openFeeModal(${student.id}, '${selectedMonth}')">Record Payment</button>` + (monthIsDue ? getContactButtons(student.id, selectedMonth) : ''); 
-                
-                row.innerHTML = `<td>${getStudentHtml(student)}</td><td>${statusText}</td><td class="action-buttons">${actionButtons}</td>`; 
-                tableBody.appendChild(row); 
-            }); 
-            
-            document.getElementById('feeSummary').innerHTML = `<div onclick="showFeeBreakdown('collected')"><h4>Collected</h4><p class="summary-collected">₹${totalCollected}</p></div><div onclick="showFeeBreakdown('due')"><h4>Due (${dueCount} students)</h4><p class="summary-due">₹${totalDueAmount}</p></div>`; 
-            searchTable('searchFees', 'feeTable'); 
-        }
+    const selectedMonth = document.getElementById('feeMonth').value, tableBody = document.querySelector('#feeTable tbody'); 
+    tableBody.innerHTML = ''; 
+    if (!selectedMonth) return; 
+    
+    // নতুন collectedCount ভেরিয়েবল যোগ করা হয়েছে
+    let totalCollected = 0, totalDueAmount = 0, dueCount = 0, collectedCount = 0; 
+    const monthIsDue = isMonthDue(selectedMonth); 
+    
+    students.forEach(student => { 
+        const wasActive = wasStudentActiveDuringMonth(student, selectedMonth); 
+        if (!wasActive) return; 
+        
+        const feeRecord = fees[selectedMonth]?.[student.id];
+        const isPaid = feeRecord?.status === 'paid'; 
+        const hasGlobalDue = checkGlobalDues(student.id); 
+        
+        let rowClass = 'pending', statusText = 'Pending'; 
+        
+        if (isPaid) { 
+            totalCollected += feeRecord.amount; 
+            collectedCount++; // ফি দিলে কাউন্ট বাড়বে
+            rowClass = 'paid'; 
+            statusText = `Paid (₹${feeRecord.amount})`; 
+        } else if (monthIsDue) { 
+            dueCount++; 
+            totalDueAmount += student.fee_amount || DEFAULT_FEE; 
+            rowClass = 'unpaid'; 
+            statusText = 'Due'; 
+        } 
+        
+        if (hasGlobalDue) rowClass += ' has-dues-alert'; 
+        
+        const row = document.createElement('tr'); 
+        row.className = rowClass; 
+        
+        let actionButtons = isPaid ? 
+            `<button class="btn-receipt" onclick="generatePaymentReceipt(${student.id}, '${selectedMonth}')">Receipt</button> <button class="btn-warning" onclick="openFeeModal(${student.id}, '${selectedMonth}', true)">Edit</button><button class="btn-danger" onclick="unmarkFee(${student.id}, '${selectedMonth}')">Unmark</button>` 
+            : `<button class="btn-success" onclick="openFeeModal(${student.id}, '${selectedMonth}')">Record Payment</button>` + (monthIsDue ? getContactButtons(student.id, selectedMonth) : ''); 
+        
+        row.innerHTML = `<td>${getStudentHtml(student)}</td><td>${statusText}</td><td class="action-buttons">${actionButtons}</td>`; 
+        tableBody.appendChild(row); 
+    }); 
+    
+    // Collected এর পাশে (${collectedCount} students) যোগ করা হয়েছে
+    document.getElementById('feeSummary').innerHTML = `
+        <div onclick="showFeeBreakdown('collected')">
+            <h4>Collected (${collectedCount} students)</h4>
+            <p class="summary-collected">₹${totalCollected}</p>
+        </div>
+        <div onclick="showFeeBreakdown('due')">
+            <h4>Due (${dueCount} students)</h4>
+            <p class="summary-due">₹${totalDueAmount}</p>
+        </div>`; 
+        
+    searchTable('searchFees', 'feeTable'); 
+}
 
         async function generatePaymentReceipt(studentId, monthStr) { 
             const student = students.find(s => s.id === studentId); 
@@ -3526,14 +3556,12 @@ async function saveFee() {
                 if (navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], title: 'Student ID Card', text: `ID Card for ${student.name}` }); } catch (err) { doc.save(fileName); } } else { doc.save(fileName); } 
             } else { doc.save(fileName); } 
         }
-// এই ফাংশনটি দিয়ে আগের renderAttendance ফাংশনটি বদলে দিন
 function renderAttendance() { 
     const date = document.getElementById('attendanceDate').value;
     const tableBody = document.querySelector('#attendanceTable tbody'); 
     tableBody.innerHTML = ''; 
     if (!date) return; 
 
-    // টাইম সেট করা (যদি না থাকে)
     const timeInput = document.getElementById('attendanceTime');
     if(!timeInput.value) {
        const now = new Date(); 
@@ -3542,27 +3570,27 @@ function renderAttendance() {
        timeInput.value = `${hours}:${mins}`;
     }
 
+    // নতুন কাউন্টার
+    let totalActive = 0, presentCount = 0, absentCount = 0;
+
     students.filter(s => s.status?.isActive).forEach(student => { 
+        totalActive++; 
+
         const entry = attendance[date]?.[student.id];
-        
-        // স্ট্যাটাস এবং নোট বের করা
         const status = (typeof entry === 'object' && entry !== null) ? entry.status : entry; 
         const note = (typeof entry === 'object' && entry?.note) ? entry.note : '';
         
+        // কাউন্ট বাড়ানো
+        if (status === 'present') presentCount++;
+        else if (status === 'absent') absentCount++;
+
         const statusText = status === 'present' ? 'Present' : (status === 'absent' ? 'Absent' : 'Not Marked');
         const statusClass = status === 'present' ? 'status-present' : (status === 'absent' ? 'status-absent' : ''); 
         
         const noteBtnColor = note ? 'btn-warning' : 'btn-secondary';
-        const noteIcon = 'fas fa-pencil-alt';
-
         const row = document.createElement('tr');
         
-        // --- এই অংশটুকু নতুন যোগ করা হলো ---
-        // যদি ফি ডিউ থাকে তবে লাল দেখাবে (Fees Tab এর মতো)
-        if (checkGlobalDues(student.id)) {
-            row.classList.add('has-dues-alert'); 
-        }
-        // ----------------------------------
+        if (checkGlobalDues(student.id)) row.classList.add('has-dues-alert'); 
         
         row.innerHTML = `
             <td>
@@ -3574,17 +3602,18 @@ function renderAttendance() {
             <td class="${statusClass}">${statusText}</td>
             <td class="action-buttons">
                 <button class="btn-success" onclick="markAttendance(${student.id}, 'present')">P</button>
-                
                 <button class="btn-danger" onclick="markAttendance(${student.id}, 'absent')">A</button>
-                
-                <button class="${noteBtnColor}" onclick="addAttendanceNote(${student.id})" title="Edit Note">
-                    <i class="${noteIcon}"></i>
-                </button>
-
+                <button class="${noteBtnColor}" onclick="addAttendanceNote(${student.id})" title="Edit Note"><i class="fas fa-pencil-alt"></i></button>
                 <button class="btn-secondary" onclick="markAttendance(${student.id}, 'clear')">X</button>
             </td>`;
         tableBody.appendChild(row);
     }); 
+
+    // বক্সে নাম্বারগুলো দেখানো
+    if(document.getElementById('attTotalCount')) document.getElementById('attTotalCount').textContent = totalActive;
+    if(document.getElementById('attPresentCount')) document.getElementById('attPresentCount').textContent = presentCount;
+    if(document.getElementById('attAbsentCount')) document.getElementById('attAbsentCount').textContent = absentCount;
+
     searchTable('searchAttendance', 'attendanceTable'); 
 }
 
@@ -4419,7 +4448,50 @@ function calculateAge(dob) {
 
     return `${years} Yrs, ${months} Mths, ${days} Days`;
 }
-        
+        function showAttendanceList(type) {
+    const date = document.getElementById('attendanceDate').value;
+    if (!date) return;
+
+    let list = [];
+    let title = '';
+    const activeStudents = students.filter(s => s.status?.isActive);
+
+    if (type === 'total') {
+        list = activeStudents;
+        title = `Total Active Students`;
+    } else if (type === 'present') {
+        list = activeStudents.filter(s => {
+            const entry = attendance[date]?.[s.id];
+            const status = (typeof entry === 'object' && entry !== null) ? entry.status : entry;
+            return status === 'present';
+        });
+        title = `Present Students (${new Date(date).toLocaleDateString('en-IN')})`;
+    } else if (type === 'absent') {
+        list = activeStudents.filter(s => {
+            const entry = attendance[date]?.[s.id];
+            const status = (typeof entry === 'object' && entry !== null) ? entry.status : entry;
+            return status === 'absent';
+        });
+        title = `Absent Students (${new Date(date).toLocaleDateString('en-IN')})`;
+    }
+
+    document.getElementById('classStudentsTitle').textContent = title;
+    const tableBody = document.querySelector('#classStudentsTable tbody');
+    const tableHead = document.querySelector('#classStudentsTable thead tr');
+
+    tableHead.innerHTML = '<th>ID</th><th>Student</th><th>Contact</th>';
+    tableBody.innerHTML = '';
+
+    if(list.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px;">No students found.</td></tr>';
+    } else {
+        list.forEach(s => {
+            tableBody.innerHTML += `<tr><td>${s.serial_no}</td><td>${getStudentHtml(s)}</td><td>${getAllContactButtons(s)}</td></tr>`;
+        });
+    }
+    
+    document.getElementById('classStudentsModal').style.display = 'flex';
+}
     </script>
 </body>
 </html>
