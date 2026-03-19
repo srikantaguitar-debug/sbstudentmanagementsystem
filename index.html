@@ -237,9 +237,15 @@
         table { width: 100%; border-collapse: separate; border-spacing: 0; }
         @media (max-width: 768px) {
             thead { display: none; } 
-            tr { display: block; background: var(--bg-card); border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: var(--shadow); border: 1px solid var(--border-color); }
-            td { display: block; padding: 5px 0; border: none; text-align: left; color: var(--text-main); }
-            td.action-buttons { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 5px; }
+            /* সব টেবিলের কার্ডগুলো একটু ছোট করা হলো */
+            tr { display: block; background: var(--bg-card); border-radius: 10px; padding: 12px; margin-bottom: 10px; box-shadow: var(--shadow); border: 1px solid var(--border-color); }
+            td { display: block; padding: 3px 0; border: none; text-align: left; color: var(--text-main); }
+            td.action-buttons { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 5px; }
+            
+            /* শুধু Attendance ট্যাবের জন্য স্পেশাল ডিজাইন (যাতে স্ক্রিনে ২ জন ধরে) */
+            #attendanceTable tr { padding: 10px; margin-bottom: 8px; }
+            #attendanceTable td.action-buttons { margin-top: 4px; flex-wrap: nowrap; gap: 6px; }
+            #attendanceTable td.action-buttons button { padding: 6px 0; font-size: 14px; font-weight: bold; flex: 1; border-radius: 6px; }
         }
         @media (min-width: 769px) { th { background: var(--bg-input); padding: 12px; text-align: left; color: var(--text-muted); font-size: 12px; border-bottom: 1px solid var(--border-color); } td { padding: 12px; border-bottom: 1px solid var(--border-color); color: var(--text-main); } }
 
@@ -2627,11 +2633,11 @@ function renderDashboard() {
     
     document.getElementById('financeOverviewNumbers').innerHTML = `
         <div onclick="showFeeBreakdown('collected')">
-            <h4>Collected (${monthlyPaidCount} Students)</h4>
+            <h4 style="line-height: 1.4; margin-bottom: 8px;">Collected <br><span style="font-size: 10px; text-transform: none; font-weight: 500; color: var(--secondary);">(${monthlyPaidCount} Students)</span></h4>
             <p class="summary-collected">₹${monthlyCollected}</p>
         </div>
         <div onclick="showFeeBreakdown('due')">
-            <h4>Due (${monthlyDueCount} Students)</h4>
+            <h4 style="line-height: 1.4; margin-bottom: 8px;">Due <br><span style="font-size: 10px; text-transform: none; font-weight: 500; color: var(--secondary);">(${monthlyDueCount} Students)</span></h4>
             <p class="summary-due">₹${monthlyDueAmount}</p>
         </div>`;
 
