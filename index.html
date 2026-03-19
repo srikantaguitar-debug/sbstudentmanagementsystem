@@ -3606,19 +3606,24 @@ function renderAttendance() {
 
     let totalActive = 0, presentCount = 0, absentCount = 0;
 
-    // ২. শুধুমাত্র অ্যাক্টিভ স্টুডেন্টদের নেওয়া এবং সর্ট করা
+    // ২. শুধুমাত্র অ্যাক্টিভ স্টুডেন্টদের নেওয়া
     const activeStudents = students.filter(s => s.status?.isActive);
 
+    // ৩. নতুন স্মার্ট সর্টিং লজিক (Present > Absent > Today's Class > Others)
     activeStudents.sort((a, b) => {
-        const aIsToday = a.class_day === currentDayName;
-        const bIsToday = b.class_day === currentDayName;
-        
-        if (aIsToday && !bIsToday) return -1; // 'a' উপরে যাবে
-        if (!aIsToday && bIsToday) return 1;  // 'b' উপরে যাবে
-        return 0; // নাহলে যেমন আছে থাকবে
+        const getScore = (student) => {
+            const entry = attendance[dateInput]?.[student.id];
+            const status = (typeof entry === 'object' && entry !== null) ? entry.status : entry;
+            
+            if (status === 'present') return 4; // প্রেজেন্ট হলে সবার ওপরে
+            if (status === 'absent') return 3;  // অ্যাবসেন্ট হলে তার নিচে
+            if (student.class_day === currentDayName) return 2; // আজকের ক্লাস হলে তার নিচে
+            return 1; // বাকিরা সবার শেষে
+        };
+        return getScore(b) - getScore(a); // বেশি স্কোর পাওয়া কার্ড ওপরে থাকবে
     });
 
-    // ৩. সর্ট করা লিস্ট রেন্ডার করা
+    // ৪. সর্ট করা লিস্ট রেন্ডার করা
     activeStudents.forEach(student => { 
         totalActive++; 
 
@@ -3632,7 +3637,7 @@ function renderAttendance() {
         const statusText = status === 'present' ? 'Present' : (status === 'absent' ? 'Absent' : 'Not Marked');
         const statusClass = status === 'present' ? 'status-present' : (status === 'absent' ? 'status-absent' : ''); 
         
-        // আজকের দিনের স্টুডেন্ট হলে কার্ডে একটা হালকা বর্ডার বা হাইলাইট দেওয়া যেতে পারে
+        // আজকের দিনের স্টুডেন্ট হলে কার্ডে একটা হালকা বর্ডার বা হাইলাইট দেওয়া
         const isToday = student.class_day === currentDayName;
         const highlightStyle = isToday ? 'border: 1px solid var(--primary); background: rgba(79, 70, 229, 0.05);' : '';
 
