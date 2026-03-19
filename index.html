@@ -243,37 +243,37 @@
             td { display: block; padding: 5px 0; border: none; text-align: left; color: var(--text-main); }
             td.action-buttons { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
             
-            /* শুধু Attendance ট্যাবের জন্য স্পেশাল ডিজাইন যাতে স্ক্রিনে পারফেক্ট ২ জন ধরে */
+            /* শুধু Attendance ট্যাবের জন্য স্পেশাল ডিজাইন (কম্প্যাক্ট ভিউ) */
             #attendanceTable tr { 
-                padding: 18px 15px; /* উপর-নিচে প্যাডিং বাড়িয়ে কার্ড বড় করা হলো */
-                margin-bottom: 15px; 
-                min-height: 140px; /* একটি নির্দিষ্ট উচ্চতা দেওয়া হলো */
+                padding: 12px 12px; /* প্যাডিং কমানো হলো */
+                margin-bottom: 10px; /* দুটি কার্ডের মাঝের গ্যাপ কমানো হলো */
+                min-height: auto; /* নির্দিষ্ট উচ্চতা বাদ দেওয়া হলো যাতে অতিরিক্ত জায়গা না নেয় */
                 display: flex;
                 flex-direction: column;
                 justify-content: space-between;
             }
-            
-            #attendanceTable td.action-buttons { 
-                margin-top: 12px; 
-                flex-wrap: nowrap; /* বাটনগুলো এক লাইনেই থাকবে */
-                gap: 8px; 
+            #attendanceTable td {
+                padding: 2px 0; /* লাইনের মাঝের গ্যাপ একদম কমিয়ে দেওয়া হলো */
             }
-            
+            #attendanceTable td.action-buttons { 
+                margin-top: 8px; /* বাটনের ওপরের স্পেস কমানো হলো */
+                flex-wrap: nowrap; 
+                gap: 6px; 
+            }
             #attendanceTable td.action-buttons button { 
-                padding: 10px 0; /* বাটনগুলো একটু বড় ও ক্লিকেবল করা হলো */
-                font-size: 15px; 
+                padding: 8px 0; /* বাটনের উচ্চতা কমানো হলো */
+                font-size: 14px; 
                 font-weight: 600; 
                 flex: 1; 
-                border-radius: 8px; 
+                border-radius: 6px; 
             }
-
-            /* নাম এবং ছবির সেকশন একটু বড় করা */
+            /* নাম এবং ছবির সাইজ অ্যাডজাস্ট করা হলো */
             #attendanceTable .student-thumb {
-                width: 50px;
-                height: 50px;
+                width: 42px;
+                height: 42px;
             }
             #attendanceTable .student-name-link {
-                font-size: 16px;
+                font-size: 15px;
             }
         }
         @media (min-width: 769px) { th { background: var(--bg-input); padding: 12px; text-align: left; color: var(--text-muted); font-size: 12px; border-bottom: 1px solid var(--border-color); } td { padding: 12px; border-bottom: 1px solid var(--border-color); color: var(--text-main); } }
@@ -2504,7 +2504,10 @@ function showClassStudents(className) {
     const tableHead = document.querySelector('#classStudentsTable thead tr');
     tableHead.innerHTML = '<th>ID</th><th>Student</th><th>Contact</th>'; 
     tableBody.innerHTML = ''; 
-    const classStudents = students.filter(s => s.status?.isActive && (s.class || 'Unassigned') === className); 
+    
+    // এখানে s.class.trim() যোগ করা হয়েছে যাতে স্পেস থাকলেও সব স্টুডেন্টকে খুঁজে পায়
+    const classStudents = students.filter(s => s.status?.isActive && (s.class ? s.class.trim() : 'Unassigned') === className); 
+    
     classStudents.forEach(s => { tableBody.innerHTML += `<tr><td>${s.serial_no}</td><td>${getStudentHtml(s)}</td><td>${getContactButtons(s.id)}</td></tr>`; }); 
     document.getElementById('classStudentsModal').style.display = 'flex'; 
 }
@@ -2601,7 +2604,7 @@ function renderDashboard() {
     ); 
     if (birthdayStudents.length > 0) { birthdayList.innerHTML = ''; birthdayStudents.forEach(s => { birthdayList.innerHTML += `<div style="display:flex; align-items:center; justify-content:space-between; background:var(--bg-input); padding:10px; border-radius:8px; margin-bottom:5px; border:1px solid #ffe4e6; color:var(--text-main);"><div style="display:flex; align-items:center;"><img src="${s.photo || 'https://via.placeholder.com/40?text=S'}" style="width:40px; height:40px; border-radius:50%; margin-right:10px; object-fit:cover; border: 2px solid #000 !important;"><div><strong>${s.name}</strong><br><span style="font-size:11px; color:var(--text-muted);">${s.class || 'Student'}</span></div></div><div style="display:flex; gap:5px;"><button class="btn-whatsapp btn-like" onclick="sendBirthdayWish('wa', ${s.id})"><i class="fab fa-whatsapp"></i></button><button class="btn-sms btn-like" onclick="sendBirthdayWish('sms', ${s.id})"><i class="fas fa-sms"></i></button><button class="btn-success btn-like" onclick="dismissBirthday(${s.id})" title="Dismiss"><i class="fas fa-check"></i></button></div></div>`; }); birthdayBox.style.display = 'block'; } else { birthdayBox.style.display = 'none'; }
     
-    const classCounts = activeStudents.reduce((acc, student) => { const className = student.class || 'Unassigned'; acc[className] = (acc[className] || 0) + 1; return acc; }, {}); const classListEl = document.getElementById('classStrengthList'); classListEl.innerHTML = ''; Object.entries(classCounts).sort().forEach(([className, count]) => { classListEl.innerHTML += `<li onclick="showClassStudents('${className}')" style="cursor:pointer; color:var(--text-main);"><strong>${className}:</strong> <span>${count} students</span></li>`; }); 
+    const classCounts = activeStudents.reduce((acc, student) => { const className = student.class ? student.class.trim() : 'Unassigned'; acc[className] = (acc[className] || 0) + 1; return acc; }, {}); const classListEl = document.getElementById('classStrengthList'); classListEl.innerHTML = ''; Object.entries(classCounts).sort().forEach(([className, count]) => { classListEl.innerHTML += `<li onclick="showClassStudents('${className}')" style="cursor:pointer; color:var(--text-main);"><strong>${className}:</strong> <span>${count} students</span></li>`; }); 
     
     let monthlyCollected = 0, monthlyDueAmount = 0, yearlyCollected = 0, yearlyDueAmount = 0; 
     let monthlyPaidCount = 0, monthlyDueCount = 0; 
