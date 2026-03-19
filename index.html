@@ -237,15 +237,44 @@
         table { width: 100%; border-collapse: separate; border-spacing: 0; }
         @media (max-width: 768px) {
             thead { display: none; } 
-            /* সব টেবিলের কার্ডগুলো একটু ছোট করা হলো */
-            tr { display: block; background: var(--bg-card); border-radius: 10px; padding: 12px; margin-bottom: 10px; box-shadow: var(--shadow); border: 1px solid var(--border-color); }
-            td { display: block; padding: 3px 0; border: none; text-align: left; color: var(--text-main); }
-            td.action-buttons { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 5px; }
             
-            /* শুধু Attendance ট্যাবের জন্য স্পেশাল ডিজাইন (যাতে স্ক্রিনে ২ জন ধরে) */
-            #attendanceTable tr { padding: 10px; margin-bottom: 8px; }
-            #attendanceTable td.action-buttons { margin-top: 4px; flex-wrap: nowrap; gap: 6px; }
-            #attendanceTable td.action-buttons button { padding: 6px 0; font-size: 14px; font-weight: bold; flex: 1; border-radius: 6px; }
+            /* সব টেবিলের সাধারণ কার্ড ডিজাইন */
+            tr { display: block; background: var(--bg-card); border-radius: 12px; padding: 15px; margin-bottom: 12px; box-shadow: var(--shadow); border: 1px solid var(--border-color); }
+            td { display: block; padding: 5px 0; border: none; text-align: left; color: var(--text-main); }
+            td.action-buttons { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+            
+            /* শুধু Attendance ট্যাবের জন্য স্পেশাল ডিজাইন যাতে স্ক্রিনে পারফেক্ট ২ জন ধরে */
+            #attendanceTable tr { 
+                padding: 18px 15px; /* উপর-নিচে প্যাডিং বাড়িয়ে কার্ড বড় করা হলো */
+                margin-bottom: 15px; 
+                min-height: 140px; /* একটি নির্দিষ্ট উচ্চতা দেওয়া হলো */
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+            }
+            
+            #attendanceTable td.action-buttons { 
+                margin-top: 12px; 
+                flex-wrap: nowrap; /* বাটনগুলো এক লাইনেই থাকবে */
+                gap: 8px; 
+            }
+            
+            #attendanceTable td.action-buttons button { 
+                padding: 10px 0; /* বাটনগুলো একটু বড় ও ক্লিকেবল করা হলো */
+                font-size: 15px; 
+                font-weight: 600; 
+                flex: 1; 
+                border-radius: 8px; 
+            }
+
+            /* নাম এবং ছবির সেকশন একটু বড় করা */
+            #attendanceTable .student-thumb {
+                width: 50px;
+                height: 50px;
+            }
+            #attendanceTable .student-name-link {
+                font-size: 16px;
+            }
         }
         @media (min-width: 769px) { th { background: var(--bg-input); padding: 12px; text-align: left; color: var(--text-muted); font-size: 12px; border-bottom: 1px solid var(--border-color); } td { padding: 12px; border-bottom: 1px solid var(--border-color); color: var(--text-main); } }
 
@@ -2674,7 +2703,7 @@ function renderDashboard() {
     const ctx = document.getElementById('financeChart').getContext('2d'); if (financeChartInstance) financeChartInstance.destroy(); financeChartInstance = new Chart(ctx, { type: 'doughnut', data: { labels: ['Collected', 'Due'], datasets: [{ data: [monthlyCollected, monthlyDueAmount], backgroundColor: ['#28a745', '#dc3545'], hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: getComputedStyle(document.body).getPropertyValue('--text-main') } }, title: { display: true, text: `Summary for ${formatMonthYear(currentMonthStr)}`, color: getComputedStyle(document.body).getPropertyValue('--text-main') } } } });
 }
 
-function getMonthStrFromFormat(formattedMonth) { const parts = formattedMonth.split(' '); if (parts.length !== 2) return null; const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]; const monthIndex = monthNames.findIndex(name => name === parts[0]); if (monthIndex === -1) return null; const month = (monthIndex + 1).toString().padStart(2, '0'); const year = parts[1]; `${year}-${month}`; }
+function getMonthStrFromFormat(formattedMonth) { const parts = formattedMonth.split(' '); if (parts.length !== 2) return null; const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]; const monthIndex = monthNames.findIndex(name => name === parts[0]); if (monthIndex === -1) return null; const month = (monthIndex + 1).toString().padStart(2, '0'); const year = parts[1]; return `${year}-${month}`; }
 
 function addPageFooter(doc, dateStr) {
     const pageCount = doc.getNumberOfPages();
