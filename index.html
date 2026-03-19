@@ -3585,25 +3585,41 @@ async function generateIDCard() {
 }
 
 function renderAttendance() { 
-    const date = document.getElementById('attendanceDate').value;
+    const dateInput = document.getElementById('attendanceDate').value;
     const tableBody = document.querySelector('#attendanceTable tbody'); 
     tableBody.innerHTML = ''; 
-    if (!date) return; 
+    if (!dateInput) return; 
+
+    // ১. আজকের দিন বের করা (যেমন: Monday, Tuesday...)
+    const selectedDate = new Date(dateInput);
+    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const currentDayName = days[selectedDate.getDay()];
 
     const timeInput = document.getElementById('attendanceTime');
     if(!timeInput.value) {
        const now = new Date(); 
-       const hours = now.getHours().toString().padStart(2, '0'); 
-       const mins = now.getMinutes().toString().padStart(2, '0'); 
-       timeInput.value = `${hours}:${mins}`;
+       timeInput.value = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
     }
 
     let totalActive = 0, presentCount = 0, absentCount = 0;
 
-    students.filter(s => s.status?.isActive).forEach(student => { 
+    // ২. শুধুমাত্র অ্যাক্টিভ স্টুডেন্টদের নেওয়া এবং সর্ট করা
+    const activeStudents = students.filter(s => s.status?.isActive);
+
+    activeStudents.sort((a, b) => {
+        const aIsToday = a.class_day === currentDayName;
+        const bIsToday = b.class_day === currentDayName;
+        
+        if (aIsToday && !bIsToday) return -1; // 'a' উপরে যাবে
+        if (!aIsToday && bIsToday) return 1;  // 'b' উপরে যাবে
+        return 0; // নাহলে যেমন আছে থাকবে
+    });
+
+    // ৩. সর্ট করা লিস্ট রেন্ডার করা
+    activeStudents.forEach(student => { 
         totalActive++; 
 
-        const entry = attendance[date]?.[student.id];
+        const entry = attendance[dateInput]?.[student.id];
         const status = (typeof entry === 'object' && entry !== null) ? entry.status : entry; 
         const note = (typeof entry === 'object' && entry?.note) ? entry.note : '';
         
@@ -3613,8 +3629,13 @@ function renderAttendance() {
         const statusText = status === 'present' ? 'Present' : (status === 'absent' ? 'Absent' : 'Not Marked');
         const statusClass = status === 'present' ? 'status-present' : (status === 'absent' ? 'status-absent' : ''); 
         
+        // আজকের দিনের স্টুডেন্ট হলে কার্ডে একটা হালকা বর্ডার বা হাইলাইট দেওয়া যেতে পারে
+        const isToday = student.class_day === currentDayName;
+        const highlightStyle = isToday ? 'border: 1px solid var(--primary); background: rgba(79, 70, 229, 0.05);' : '';
+
         const noteBtnColor = note ? 'btn-warning' : 'btn-secondary';
         const row = document.createElement('tr');
+        if (highlightStyle) row.style.cssText = highlightStyle;
         
         if (checkGlobalDues(student.id)) row.classList.add('has-dues-alert'); 
         
