@@ -4697,27 +4697,57 @@ function shareQRCode(studentId) {
     });
 }
 
-function onScanSuccess(decodedText, decodedResult) {
-    if(decodedText.includes("[APP_ID:")) {
-        const match = decodedText.match(/\[APP_ID:(\d+)\]/);
-        if(match && match[1]) {
-            const studentId = parseInt(match[1]);
-            const student = students.find(s => s.id === studentId);
-            if(student) {
-                closeQRScanner();
-                markAttendance(studentId, 'present');
-                Swal.fire({
-                    toast: true, position: 'top-end',
-                    icon: 'success', title: `${student.name} Marked Present!`,
-                    showConfirmButton: false, timer: 2500
-                });
-            } else {
-                Swal.fire({
-                    toast: true, position: 'top',
-                    icon: 'error', title: 'Student not found.',
-                    showConfirmButton: false, timer: 2000
-                });
+function startQRScanner() {
+    document.getElementById('qrScannerModal').style.display = 'flex';
+    
+    // পপআপ ওপেন হওয়ার জন্য একটু সময় দেওয়া হলো, যাতে ক্যামেরা ক্র্যাশ না করে
+    setTimeout(() => {
+        try {
+            if(!html5QrcodeScanner) {
+                html5QrcodeScanner = new Html5QrcodeScanner(
+                    "qr-reader-box", 
+                    { fps: 10, qrbox: { width: 250, height: 250 } }, 
+                    false
+                );
+                html5QrcodeScanner.render(onScanSuccess, onScanError);
             }
+        } catch (err) {
+            console.error("Scanner Error:", err);
+            Swal.fire('Error', 'Camera cannot be started. Please check permissions.', 'error');
+        }
+    }, 150);
+}
+
+function closeQRScanner() {
+    document.getElementById('qrScannerModal').style.display = 'none';
+    if(html5QrcodeScanner) {
+        html5QrcodeScanner.clear().then(() => {
+            html5QrcodeScanner = null;
+        }).catch(error => {
+            console.error("Failed to clear scanner", error);
+        });
+    }
+}
+
+function onScanSuccess(decodedText, decodedResult) {
+    const match = decodedText.match(/\[APP_ID:\s*(\d+)\s*\]/i);
+    if(match && match[1]) {
+        const studentId = parseInt(match[1]);
+        const student = students.find(s => s.id === studentId);
+        if(student) {
+            closeQRScanner();
+            markAttendance(studentId, 'present');
+            Swal.fire({
+                toast: true, position: 'top-end',
+                icon: 'success', title: `${student.name} Marked Present!`,
+                showConfirmButton: false, timer: 2500
+            });
+        } else {
+            Swal.fire({
+                toast: true, position: 'top',
+                icon: 'error', title: 'Student not found.',
+                showConfirmButton: false, timer: 2000
+            });
         }
     } else {
          Swal.fire({
