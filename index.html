@@ -1117,10 +1117,6 @@
         <i class="fas fa-trash"></i> Remove Photo
     </button>
 </div>
-<div class="form-group" style="background: rgba(239, 68, 68, 0.1); padding: 10px; border-radius: 8px; border: 1px solid #ef4444; display: flex; justify-content: space-between; align-items: center;">
-    <label style="margin:0; color: #dc2626; font-weight:bold; font-size:12px;">Allow QR Profile View?</label>
-    <input type="checkbox" id="editAllowProfile" style="width: 20px; height: 20px; cursor: pointer;">
-</div>
             <div class="form-grid">
                 <div class="form-group"><label>Name</label><input type="text" id="editStudentName"></div>
                 <div class="form-group"><label>Class</label><input type="text" id="editStudentClass"></div>
@@ -1288,170 +1284,8 @@
 
         const auth = firebase.auth();
 
-document.addEventListener('DOMContentLoaded', async () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             loadTheme();
-
-            const urlParams = new URLSearchParams(window.location.search);
-            const studentViewId = urlParams.get('student');
-            const managerUid = urlParams.get('manager');
-
-            if (studentViewId && managerUid) {
-                document.getElementById('loginOverlay').style.display = 'none';
-                
-                const verifyOverlay = document.createElement('div');
-                verifyOverlay.id = 'studentVerifyOverlay';
-                verifyOverlay.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); z-index: 10000; display: flex; align-items: center; justify-content: center; font-family: 'Poppins', sans-serif;";
-                verifyOverlay.innerHTML = `
-                    <div style="background: #fff; padding: 30px; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); width: 88%; max-width: 380px; text-align: center;">
-                        <div style="background: #eff6ff; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto;">
-                            <i class="fas fa-user-graduate" style="color: #1e40af; font-size: 24px;"></i>
-                        </div>
-                        <h2 style="color: #1e293b; margin-bottom: 5px; font-size: 22px;">Student Portal</h2>
-                        <p style="font-size: 13px; color: #64748b; margin-bottom: 25px;">Please verify your identity</p>
-                        
-                        <div style="text-align: left; margin-bottom: 15px;">
-                            <label style="font-size: 12px; font-weight: 600; color: #475569; margin-left: 5px;">Phone Number</label>
-                            <input type="tel" id="studentPhoneVerify" placeholder="Registered Number" style="width: 100%; padding: 12px; margin-top: 5px; border-radius: 12px; border: 2px solid #e2e8f0; background: #f8fafc; font-size:16px; color:#000; font-weight:bold; box-sizing: border-box; outline: none;">
-                        </div>
-
-                        <div style="text-align: left; margin-bottom: 25px;">
-                            <label style="font-size: 12px; font-weight: 600; color: #475569; margin-left: 5px;">Date of Birth (Password)</label>
-                            <input type="date" id="studentDOBVerify" style="width: 100%; padding: 12px; margin-top: 5px; border-radius: 12px; border: 2px solid #e2e8f0; background: #f8fafc; font-size:16px; color:#000; font-weight:bold; box-sizing: border-box; outline: none;">
-                        </div>
-
-                        <button id="verifyBtn" style="width: 100%; padding: 14px; background: #1e40af; color: white; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; font-size: 16px; transition: 0.3s; box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);">
-                            Access Dashboard <i class="fas fa-arrow-right" style="margin-left: 8px;"></i>
-                        </button>
-                        <p id="studentLoginError" style="color: #ef4444; font-size: 12px; margin-top: 15px; display: none; background: #fef2f2; padding: 8px; border-radius: 8px;"></p>
-                    </div>`;
-                document.body.appendChild(verifyOverlay);
-                
-                document.getElementById('verifyBtn').onclick = async function() {
-                    const phoneInput = document.getElementById('studentPhoneVerify').value.trim();
-                    const dobInput = document.getElementById('studentDOBVerify').value;
-                    const errorMsg = document.getElementById('studentLoginError');
-                    const btn = document.getElementById('verifyBtn');
-                    
-                    if(!phoneInput || !dobInput) { errorMsg.textContent = "Please fill in both fields."; errorMsg.style.display = 'block'; return; }
-                    
-                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Authenticating...';
-                    btn.disabled = true;
-                    errorMsg.style.display = 'none';
-                    
-                    try {
-                        const doc = await db.collection('music_classes').doc(managerUid).collection('students').doc(studentViewId).get();
-                        if(doc.exists) {
-                            const s = doc.data();
-                            
-                            // 🟢 Phone Number + DOB ভেরিফিকেশন
-                            if(s.phone === phoneInput && s.dob === dobInput) {
-                                verifyOverlay.style.display = 'none';
-                                
-                                if (s.status && s.status.isActive && s.allow_profile_view !== false) {
-                                    // Attendance build...
-                                    let attHtml = '';
-                                    let attRecords = s.portal_data?.attendance || [];
-                                    attRecords.sort((a,b) => new Date(b.date) - new Date(a.date));
-                                    
-                                    if(attRecords.length > 0) {
-                                        attRecords.slice(0, 15).forEach(rec => {
-                                            let isPresent = rec.data.status === 'present';
-                                            let stColor = isPresent ? '#10b981' : '#ef4444';
-                                            let noteHtml = rec.data.note ? `<div style="font-size:12px; color:#64748b; margin-top:5px; background:#f1f5f9; padding:8px; border-radius:8px;">${rec.data.note}</div>` : '';
-                                            
-                                            attHtml += `<div style="margin-bottom:15px; padding:15px; background:#fff; border-radius:12px; border:1px solid #e2e8f0;">
-                                                <div style="display:flex; justify-content:space-between; align-items:center;">
-                                                    <div>
-                                                        <div style="font-size:13px; font-weight:700; color:#1e293b;">${new Date(rec.date).toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'})}</div>
-                                                        <div style="font-size:11px; color:#94a3b8;">${rec.data.time ? formatTime12H(rec.data.time) : ''}</div>
-                                                    </div>
-                                                    <span style="background:${stColor}; color:white; padding:4px 10px; border-radius:20px; font-size:10px; font-weight:bold; text-transform:uppercase;">${rec.data.status}</span>
-                                                </div>
-                                                ${noteHtml}
-                                            </div>`;
-                                        });
-                                    } else { attHtml = '<div style="text-align:center; padding:20px; color:#94a3b8; font-size:13px;">No attendance records found yet.</div>'; }
-
-                                    // Fees build...
-                                    let feeHtml = '';
-                                    let feeRecords = s.portal_data?.fees || [];
-                                    feeRecords.sort((a,b) => new Date(b.month+'-01') - new Date(a.month+'-01')).reverse();
-                                    
-                                    if(feeRecords.length > 0) {
-                                        feeRecords.forEach(rec => {
-                                            let monthName = new Date(rec.month + '-01').toLocaleString('default', { month: 'short', year: 'numeric' });
-                                            feeHtml += `<div style="margin-bottom:10px; padding:12px; background:#f0fdf4; border-radius:12px; border:1px solid #bbf7d0; display:flex; justify-content:space-between; align-items:center;">
-                                                <span style="font-weight:700; color:#166534;">${monthName}</span>
-                                                <div style="text-align:right;">
-                                                    <span style="display:block; font-size:14px; font-weight:bold; color:#15803d;">Paid ₹${rec.data.amount}</span>
-                                                    <span style="font-size:10px; color:#166534; opacity:0.8;">${rec.data.mode || 'Cash'} • ${new Date(rec.data.date).toLocaleDateString('en-IN')}</span>
-                                                </div>
-                                            </div>`;
-                                        });
-                                    } else { feeHtml = '<div style="text-align:center; padding:20px; color:#94a3b8; font-size:13px;">No fee records found.</div>'; }
-
-                                    let upcomingClassText = (s.class_day) ? `${s.class_day} at ${s.class_time ? formatTime12H(s.class_time) : ''}` : 'Not Set';
-
-                                    document.body.innerHTML = `
-                                        <div style="background: #f8fafc; min-height: 100vh; font-family: 'Poppins', sans-serif; padding-bottom: 30px;">
-                                            <div style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); padding: 40px 20px 80px 20px; text-align: center; color: white;">
-                                                <h3 style="margin:0; font-size:14px; opacity:0.8; letter-spacing:2px; text-transform:uppercase;">Student Portal</h3>
-                                                <h2 style="margin:5px 0 0 0; font-size:24px;">Welcome, ${s.name.split(' ')[0]}!</h2>
-                                            </div>
-
-                                            <div style="margin-top: -50px; padding: 0 15px;">
-                                                <div style="background: #fff; border-radius: 20px; padding: 25px 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; margin-bottom: 20px;">
-                                                    <img src="${s.photo || 'https://via.placeholder.com/150?text=No+Photo'}" style="width: 90px; height: 90px; border-radius: 50%; border: 4px solid #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.1); object-fit: cover; margin-top: -70px; background:#fff;">
-                                                    <h2 style="margin:15px 0 5px 0; color:#1e293b;">${s.name}</h2>
-                                                    <div style="display:inline-block; background:#dcfce7; color:#15803d; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:bold;">Active Student</div>
-                                                    
-                                                    <div style="margin-top:20px; display:grid; grid-template-columns: 1fr 1fr; gap:10px; text-align:left;">
-                                                        <div style="background:#f1f5f9; padding:10px; border-radius:12px;">
-                                                            <div style="font-size:10px; color:#64748b; text-transform:uppercase;">Student ID</div>
-                                                            <div style="font-weight:bold; color:#1e293b;">#${s.serial_no}</div>
-                                                        </div>
-                                                        <div style="background:#f1f5f9; padding:10px; border-radius:12px;">
-                                                            <div style="font-size:10px; color:#64748b; text-transform:uppercase;">Batch</div>
-                                                            <div style="font-weight:bold; color:#1e293b; font-size:11px;">${upcomingClassText}</div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <h4 style="margin: 25px 0 12px 5px; color:#475569; font-size:15px;"><i class="fas fa-calendar-check" style="margin-right:8px; color:#ef4444;"></i> Recent Attendance</h4>
-                                                ${attHtml}
-
-                                                <h4 style="margin: 25px 0 12px 5px; color:#475569; font-size:15px;"><i class="fas fa-file-invoice-dollar" style="margin-right:8px; color:#10b981;"></i> Payment History</h4>
-                                                ${feeHtml}
-
-                                                <div style="margin-top:30px; display: flex; gap: 10px;">
-                                                    <a href="tel:${phoneInput}" style="flex:1; text-align:center; background:#1e293b; color:white; padding:15px; border-radius:15px; text-decoration:none; font-size:14px; font-weight:600;"><i class="fas fa-phone-alt"></i> Help</a>
-                                                    <button onclick="window.location.reload()" style="flex:1; background:#fff; color:#ef4444; border:2px solid #ef4444; padding:15px; border-radius:15px; font-size:14px; font-weight:600; cursor:pointer;">Log Out</button>
-                                                </div>
-                                            </div>
-                                        </div>`;
-                                } else {
-                                    errorMsg.textContent = "Your profile is inactive. Contact teacher.";
-                                    errorMsg.style.display = 'block';
-                                    btn.innerHTML = 'Access Dashboard'; btn.disabled = false;
-                                }
-                            } else {
-                                errorMsg.textContent = "Invalid Phone or DOB. Please try again.";
-                                errorMsg.style.display = 'block';
-                                btn.innerHTML = 'Access Dashboard'; btn.disabled = false;
-                            }
-                        } else {
-                            errorMsg.textContent = "Student not found.";
-                            errorMsg.style.display = 'block';
-                            btn.innerHTML = 'Access Dashboard'; btn.disabled = false;
-                        }
-                    } catch(e) {
-                        errorMsg.textContent = "Connection error.";
-                        errorMsg.style.display = 'block';
-                        btn.innerHTML = 'Access Dashboard'; btn.disabled = false;
-                    }
-                };
-                return; 
-            }
 
             auth.onAuthStateChanged(async (user) => {
                 const loginOverlay = document.getElementById('loginOverlay');
@@ -1480,7 +1314,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             });
         });
-
 
         function handleLogin() {
             const email = document.getElementById('loginEmail').value;
@@ -3794,14 +3627,16 @@ async function generateIDCard() {
         doc.text("No Photo", 15, 16, {align: 'center'}); 
     } 
 
-// --- QR Code ছবির ঠিক নিচে ---
+    // --- QR Code ছবির ঠিক নিচে ---
     try {
-        const baseUrl = window.location.origin + window.location.pathname;
-        const qrText = `${baseUrl}?student=${student.id}&manager=${DOC_ID}`;
+        // QR Code-এর ভেতরের টেক্সট যা ফোন দিয়ে স্ক্যান করলে দেখা যাবে
+        const qrText = `Name: ${student.name}\nID No: ${student.serial_no}\nPhone: ${student.phone || 'N/A'}\nAddr: ${student.address || 'N/A'}\nIssued: ${issueDateStr}\nValid: ${endDateStr || 'N/A'}\n\n[APP_ID:${student.id}]`;
         const qr = new QRious({ value: qrText, size: 250, level: 'M' });
+        // QR Code-এর পজিশন (X=6, Y=27) ছবির ঠিক নিচে
         doc.addImage(qr.toDataURL('image/jpeg'), 'JPEG', 6, 28, 18, 18);
     } catch(e) { console.error("QR Code generation failed for ID Card", e); }
     // ------------------------------
+
     // ডান দিকের জলছাপ লোগো
     if (instituteLogo) { 
         doc.saveGraphicsState(); doc.setGState(new doc.GState({ opacity: 0.1 })); 
@@ -3834,6 +3669,9 @@ async function generateIDCard() {
     doc.text(addrLines, valX, yText); 
     yText += (addrLines.length * 3) + 1; 
     
+    doc.setFont("helvetica", "bold"); doc.text("DOB:", labelX, yText); doc.setFont("helvetica", "normal"); 
+    doc.text(dobStr, valX, yText); 
+    yText += 4.5; 
     
     // Issue and Valid Date
     doc.setFontSize(6.5); doc.setFont("helvetica", "bold"); 
@@ -4240,14 +4078,14 @@ function openEditStudentModal(id) {
     document.getElementById('editAddress').value = student.address || ''; 
     document.getElementById('editStudentDOB').value = student.dob || ""; 
     
-    // 🟢 NEW: Set Toggle Value
-    document.getElementById('editAllowProfile').checked = student.allow_profile_view !== false;
-    
     currentEditPhotoBase64 = null; 
     
     const previewImg = document.getElementById('editPhotoPreview');
-    if(student.photo) { previewImg.src = student.photo; } 
-    else { previewImg.src = 'https://via.placeholder.com/100?text=No+Photo'; } 
+    if(student.photo) { 
+        previewImg.src = student.photo; 
+    } else { 
+        previewImg.src = 'https://via.placeholder.com/100?text=No+Photo'; 
+    } 
     
     document.getElementById('editStudentModal').style.display = 'flex'; 
 }
@@ -4273,20 +4111,15 @@ async function saveStudentChanges() {
     student.address = document.getElementById('editAddress').value;
     student.dob = document.getElementById('editStudentDOB').value;
     
-    // 🟢 NEW: Get Toggle Value
-    student.allow_profile_view = document.getElementById('editAllowProfile').checked;
+    if(currentEditPhotoBase64) { 
+        student.photo = currentEditPhotoBase64; 
+    } else if (isPhotoDeletedInEdit) {
+        student.photo = null;
+    }
     
-    // 🟢 NEW: Sync Portal Data (Attendance & Fees) for the Student View
-    let studentAtt = [];
-    Object.keys(attendance).forEach(date => { if (attendance[date]?.[id]) studentAtt.push({ date, data: attendance[date][id] }); });
-    let studentFees = [];
-    Object.keys(fees).forEach(month => { if (fees[month]?.[id]) studentFees.push({ month, data: fees[month][id] }); });
-    student.portal_data = { attendance: studentAtt, fees: studentFees };
-    
-    if(currentEditPhotoBase64) { student.photo = currentEditPhotoBase64; } 
-    else if (isPhotoDeletedInEdit) { student.photo = null; }
-    
-    if(currentStudentSignature) { student.student_signature = currentStudentSignature; }
+    if(currentStudentSignature) {
+        student.student_signature = currentStudentSignature;
+    }
 
     students[studentIndex] = student;
 
@@ -4794,74 +4627,28 @@ function shareQRCode(studentId) {
     const student = students.find(s => s.id === studentId);
     if(!student) return;
     
-    // Generate Web Link
-    const baseUrl = window.location.origin + window.location.pathname;
-    const qrText = `${baseUrl}?student=${student.id}&manager=${DOC_ID}`;
-    
-    // Generate QR Image
+    const qrText = `[APP_ID:${student.id}]`;
     const qr = new QRious({ value: qrText, size: 250, level: 'H' });
     const qrImg = qr.toDataURL();
     
-    // WhatsApp Logic
-    let cleanPhone = student.phone ? student.phone.replace(/[^0-9]/g, '') : '';
-    if (cleanPhone && cleanPhone.length === 10) cleanPhone = '91' + cleanPhone;
-    
-    // 🟢 🔗 ইমোজি সরিয়ে লিংকটি একদম পরিষ্কার লাইনে দেওয়া হয়েছে
-    const waMsg = `Hello ${student.name},\n\nHere is your Digital ID Card link for Music Classes. Click the link below to view your profile, attendance, and fees:\n\n${qrText}\n\nRegards,\nSrikanta Banerjee`;
-    const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(waMsg)}`;
-
-    // Global helper functions for buttons
-    window.tempDownloadQR = function() {
-        const link = document.createElement('a');
-        link.download = `QR_${student.name}.png`;
-        link.href = qrImg;
-        link.click();
-    };
-
-    window.tempShareQRImage = async function() {
-        try {
-            const blob = await (await fetch(qrImg)).blob();
-            const file = new File([blob], `QR_${student.name}.png`, { type: blob.type });
-            if (navigator.canShare && navigator.share && navigator.canShare({ files: [file] })) {
-                await navigator.share({
-                    title: 'Student QR Code',
-                    text: `Digital ID QR Code for ${student.name}`,
-                    files: [file]
-                });
-            } else {
-                Swal.fire('Oops', 'Direct image sharing is not supported on this browser. Please use the Download button instead.', 'info');
-            }
-        } catch(e) { console.log(e); }
-    };
-
     Swal.fire({
-        title: `${student.name}'s ID`,
+        title: `${student.name}'s QR Code`,
         imageUrl: qrImg,
-        imageWidth: 180,
-        imageHeight: 180,
+        imageWidth: 200,
+        imageHeight: 200,
         imageAlt: 'QR Code',
-        html: `
-            <p style="font-size:13px; color:gray; margin-bottom: 15px;">Share this profile link or QR code with the student.</p>
-            
-            <div style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
-                ${cleanPhone ? `<a href="${waUrl}" target="_blank" style="background:#25D366; color:white; padding:12px 15px; border-radius:8px; text-decoration:none; font-size:14px; width: 85%; font-weight:bold; box-shadow: 0 4px 6px rgba(37, 211, 102, 0.3);">
-                    <i class="fab fa-whatsapp" style="font-size:16px;"></i> Send Link to WhatsApp
-                </a>` : `<p style="color:red; font-size:12px; margin:0; font-weight:bold;">Student phone number is missing!</p>`}
-                
-                <div style="display:flex; gap:10px; width: 85%; justify-content: center;">
-                    <button onclick="tempShareQRImage()" style="flex:1; background:#3b82f6; color:white; border:none; padding:10px; border-radius:8px; cursor:pointer; font-weight:bold;">
-                        <i class="fas fa-share-alt"></i> Share QR Image
-                    </button>
-                    <button onclick="tempDownloadQR()" style="flex:1; background:#10b981; color:white; border:none; padding:10px; border-radius:8px; cursor:pointer; font-weight:bold;">
-                        <i class="fas fa-download"></i> Download
-                    </button>
-                </div>
-            </div>
-        `,
-        showConfirmButton: false,
+        html: `<p style="font-size:13px; color:gray;">Scan this code to mark attendance quickly.</p>`,
         showCancelButton: true,
-        cancelButtonText: 'Close Window',
-        cancelButtonColor: '#6b7280'
+        confirmButtonText: '<i class="fas fa-download"></i> Download',
+        cancelButtonText: 'Close',
+        confirmButtonColor: '#10b981'
+    }).then((result) => {
+        if(result.isConfirmed) {
+            const link = document.createElement('a');
+            link.download = `QR_${student.name}.png`;
+            link.href = qrImg;
+            link.click();
+        }
     });
 }
 
@@ -4885,37 +4672,26 @@ function closeQRScanner() {
 }
 
 function onScanSuccess(decodedText, decodedResult) {
-    let studentId = null;
-    
-    // Check if it's a new Web URL QR Code
-    if(decodedText.includes("student=")) {
-        try {
-            const url = new URL(decodedText);
-            studentId = parseInt(url.searchParams.get("student"));
-        } catch(e) {}
-    } 
-    // Check if it's an old Text QR Code
-    else if(decodedText.includes("[APP_ID:")) {
+    if(decodedText.includes("[APP_ID:")) {
         const match = decodedText.match(/\[APP_ID:(\d+)\]/);
-        if(match && match[1]) studentId = parseInt(match[1]);
-    }
-
-    if(studentId) {
-        const student = students.find(s => s.id === studentId);
-        if(student) {
-            closeQRScanner();
-            markAttendance(studentId, 'present');
-            Swal.fire({
-                toast: true, position: 'top-end',
-                icon: 'success', title: `${student.name} Marked Present!`,
-                showConfirmButton: false, timer: 2500
-            });
-        } else {
-            Swal.fire({
-                toast: true, position: 'top',
-                icon: 'error', title: 'Student not found.',
-                showConfirmButton: false, timer: 2000
-            });
+        if(match && match[1]) {
+            const studentId = parseInt(match[1]);
+            const student = students.find(s => s.id === studentId);
+            if(student) {
+                closeQRScanner();
+                markAttendance(studentId, 'present');
+                Swal.fire({
+                    toast: true, position: 'top-end',
+                    icon: 'success', title: `${student.name} Marked Present!`,
+                    showConfirmButton: false, timer: 2500
+                });
+            } else {
+                Swal.fire({
+                    toast: true, position: 'top',
+                    icon: 'error', title: 'Student not found.',
+                    showConfirmButton: false, timer: 2000
+                });
+            }
         }
     } else {
          Swal.fire({
