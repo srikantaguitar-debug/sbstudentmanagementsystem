@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Music Classes Manager (Pro)</title>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4f46e5">
@@ -22,6 +22,9 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     
     <style>
     /* --- Dashboard Reminder Stylish CSS --- */
@@ -247,13 +250,13 @@
             #attendanceTable tr { 
                 padding: 12px 12px; /* প্যাডিং কমানো হলো */
                 margin-bottom: 10px; /* দুটি কার্ডের মাঝের গ্যাপ কমানো হলো */
-                min-height: auto; /* নির্দিষ্ট উচ্চতা বাদ দেওয়া হলো যাতে অতিরিক্ত জায়গা না নেয় */
+                min-height: auto; /* নির্দিষ্ট উচ্চতা বাদ দেওয়া হলো যাতে অতিরিক্ত জায়গা নেয় না */
                 display: flex;
                 flex-direction: column;
                 justify-content: space-between;
             }
             #attendanceTable td {
-                padding: 2px 0; /* লাইনের মাঝের গ্যাপ একদম কমিয়ে দেওয়া হলো */
+                padding: 2px 0; /* লাইনের মাঝের গ্যাপ একদম কমিয়ে দেওয়া হলো */
             }
             #attendanceTable td.action-buttons { 
                 margin-top: 8px; /* বাটনের ওপরের স্পেস কমানো হলো */
@@ -482,6 +485,26 @@
         div:where(.swal2-popup) {
             margin: auto !important; 
         }
+        /* QR Scanner Theme Fix */
+#qr-reader-box {
+    color: var(--text-main) !important;
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+}
+#qr-reader-box span, #qr-reader-box a {
+    color: var(--text-main) !important;
+}
+#qr-reader-box button {
+    background-color: var(--primary) !important;
+    color: white !important;
+    border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; margin: 5px;
+}
+#qr-reader-box select {
+    background: var(--bg-input) !important;
+    color: var(--text-main) !important;
+    border: 1px solid var(--border-color) !important;
+    padding: 5px; border-radius: 5px;
+}
     </style>
 </head>
 <body>
@@ -542,7 +565,7 @@
 
     <div style="font-size: 18px; color: #444; margin-top: 30px; font-style: italic;">
         <p><span style="color:#d32f2f;">*</span> Conditions Apply.</p>
-        <p>আমি উপরের নিয়মগুলো পড়লাম এবং মেনে চলতে সম্মত হলাম。</p>
+        <p>আমি উপরের নিয়মগুলো পড়লাম এবং মেনে চলতে সম্মত হলাম।</p>
     </div>
 
     <div class="wn-footer">
@@ -626,15 +649,18 @@
 
         <div id="attendance" class="tab-content active">
             
-            <div class="form-group" style="display: flex; gap: 8px; margin-bottom: 10px;">
-                <div style="flex: 1;">
-                    <label style="font-size: 11px; margin-bottom: 2px;">Date</label>
-                    <input type="date" id="attendanceDate" onchange="renderAttendance()" style="padding: 6px 10px; font-size: 13px; border-radius: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <div class="form-group" style="display: flex; gap: 8px; margin-bottom: 0; flex: 1;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 11px; margin-bottom: 2px;">Date</label>
+                        <input type="date" id="attendanceDate" onchange="renderAttendance()" style="padding: 6px 10px; font-size: 13px; border-radius: 6px;">
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size: 11px; margin-bottom: 2px;">Time</label>
+                        <input type="time" id="attendanceTime" placeholder="Default: Current" style="padding: 6px 10px; font-size: 13px; border-radius: 6px;">
+                    </div>
                 </div>
-                <div style="flex: 1;">
-                    <label style="font-size: 11px; margin-bottom: 2px;">Time</label>
-                    <input type="time" id="attendanceTime" placeholder="Default: Current" style="padding: 6px 10px; font-size: 13px; border-radius: 6px;">
-                </div>
+                <button class="btn-primary" onclick="startQRScanner()" style="margin-left: 10px; height: 38px; align-self: flex-end;"><i class="fas fa-qrcode"></i> Scan QR</button>
             </div>
 
             <div id="attendanceSummary" class="summary-box" style="margin-bottom: 10px; margin-top: 0; padding: 6px 4px; gap: 4px; min-height: unset;">
@@ -690,6 +716,11 @@
         </div>
 
         <div id="studentMgmt" class="tab-content">
+            
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+                <button class="btn-info" onclick="openBulkMessageModal()"><i class="fas fa-bullhorn"></i> Send Notice</button>
+            </div>
+
             <div class="dashboard-card" style="border-color: var(--info);">
                 <h3><i class="fas fa-user-plus"></i> Add Student</h3>
                 <div style="text-align: center;">
@@ -947,6 +978,11 @@
                 <h2 id="modalStudentName" style="margin:10px 0 5px 0;"></h2>
                 <span id="modalClass" style="color:var(--primary); font-weight:600;"></span>
             </div>
+            
+            <button class="btn-info" onclick="shareQRCode(currentlyViewingStudentId)" style="width: 100%; margin-bottom: 15px; background-color: #059669; border: none; padding: 10px; border-radius: 8px;">
+                <i class="fas fa-qrcode"></i> Show/Share QR Code
+            </button>
+
             <div style="background: var(--bg-input); padding: 15px; border-radius: 12px; font-size: 14px; margin-bottom: 20px;">
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
                     <div><strong>ID:</strong> <span id="modalSerialNo"></span></div>
@@ -1014,6 +1050,42 @@
                     <i class="fas fa-file-pdf"></i> Welcome Note (Bangla)
                 </button>
             </div>
+        </div>
+    </div>
+
+    <div id="bulkMsgModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal('bulkMsgModal')">&times;</span>
+            <h2>Send Notice</h2>
+            <div class="form-group">
+                <label>Select Target</label>
+                <select id="bulkMsgFilter">
+                    <option value="All">All Active Students</option>
+                    <option value="Sunday">Sunday Batch</option>
+                    <option value="Monday">Monday Batch</option>
+                    <option value="Tuesday">Tuesday Batch</option>
+                    <option value="Wednesday">Wednesday Batch</option>
+                    <option value="Thursday">Thursday Batch</option>
+                    <option value="Friday">Friday Batch</option>
+                    <option value="Saturday">Saturday Batch</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Message</label>
+                <textarea id="bulkMsgText" rows="4" placeholder="Write your notice here..."></textarea>
+            </div>
+            <button class="btn-primary" style="width:100%; margin-bottom:10px;" onclick="sendBulkMsg('sms')"><i class="fas fa-sms"></i> Send via SMS (Bulk)</button>
+            <button class="btn-whatsapp" style="width:100%;" onclick="sendBulkMsg('wa')"><i class="fab fa-whatsapp"></i> WhatsApp List (Individual)</button>
+            <div id="waBulkList" style="margin-top:10px; display:none; max-height:200px; overflow-y:auto; background:var(--bg-input); padding:10px; border-radius:8px;"></div>
+        </div>
+    </div>
+
+    <div id="qrScannerModal" class="modal" style="z-index: 2500;">
+        <div class="modal-content" style="text-align: center;">
+            <span class="close-button" onclick="closeQRScanner()">&times;</span>
+            <h3>Scan QR Code</h3>
+            <p style="font-size:12px; color:var(--text-muted);">Place student's QR code in frame to mark attendance</p>
+            <div id="qr-reader-box" style="width:100%; max-width:400px; margin: 0 auto; border-radius: 12px; overflow:hidden;"></div>
         </div>
     </div>
 
@@ -1267,6 +1339,34 @@
                     loginBtn.innerHTML = originalText;
                 });
         }
+        function handleSignUp() {
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    const errorMsg = document.getElementById('loginError');
+
+    if (!email || !password) {
+        errorMsg.textContent = "Email and password required to create an account!";
+        errorMsg.style.display = 'block';
+        return;
+    }
+
+    // বাটনের টেক্সট পরিবর্তন করে লোডিং দেখানো
+    const signUpBtn = document.querySelectorAll('#loginOverlay button')[1]; 
+    const originalText = signUpBtn.innerHTML;
+    signUpBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+
+    auth.createUserWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+            // অ্যাকাউন্ট সফলভাবে তৈরি হলে Firebase অটোমেটিক লগইন করিয়ে দেবে।
+            // আপনার onAuthStateChanged ফাংশন বাকি কাজ সামলে নেবে।
+        })
+        .catch((error) => {
+            console.error(error);
+            errorMsg.textContent = "Error: " + error.message;
+            errorMsg.style.display = 'block';
+            signUpBtn.innerHTML = originalText;
+        });
+}
 
         function handleLogout() {
             Swal.fire({
@@ -1283,38 +1383,6 @@
                     });
                 }
             });
-        }
-
-        function handleSignUp() {
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            const errorMsg = document.getElementById('loginError');
-
-            if (!email || !password) {
-                errorMsg.textContent = "Email and password required for Sign Up!";
-                errorMsg.style.display = 'block';
-                return;
-            }
-            if (password.length < 6) {
-                errorMsg.textContent = "Password must be at least 6 characters.";
-                errorMsg.style.display = 'block';
-                return;
-            }
-
-            const loginBtn = document.querySelector('#loginOverlay button:last-of-type');
-            const originalText = loginBtn.innerHTML;
-            loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
-
-            auth.createUserWithEmailAndPassword(email, password)
-                .then((userCredential) => {
-                    Swal.fire('Success', 'Account Created! Logging in...', 'success');
-                })
-                .catch((error) => {
-                    console.error(error);
-                    errorMsg.textContent = "Error: " + error.message;
-                    errorMsg.style.display = 'block';
-                    loginBtn.innerHTML = originalText;
-                });
         }
 
         function toggleTheme() {
@@ -1335,8 +1403,6 @@
             const btn = document.getElementById('themeToggleBtn');
             if(btn) btn.innerHTML = theme === 'dark' ? '<i class="fas fa-sun"></i> Switch to Light Mode' : '<i class="fas fa-moon"></i> Switch to Dark Mode';
         }
-
-        async function checkBackupStatus() {} 
 
         let isPhotoDeletedInEdit = false;
 
@@ -1430,6 +1496,7 @@
         let analyticsChartInstance = null; 
         let currentlyViewingStudentId = null; 
         let currentStudentView = 'active'; 
+        let html5QrcodeScanner = null;
         
         let dismissedBirthdays = JSON.parse(localStorage.getItem('dismissedBirthdays')) || [];
         
@@ -2505,7 +2572,7 @@ function showClassStudents(className) {
     tableHead.innerHTML = '<th>ID</th><th>Student</th><th>Contact</th>'; 
     tableBody.innerHTML = ''; 
     
-    // এখানে s.class.trim() যোগ করা হয়েছে যাতে স্পেস থাকলেও সব স্টুডেন্টকে খুঁজে পায়
+    // এখানে s.class.trim() যোগ করা হয়েছে যাতে স্পেস থাকলেও সব স্টুডেন্টকে খুঁজে পায়
     const classStudents = students.filter(s => s.status?.isActive && (s.class ? s.class.trim() : 'Unassigned') === className); 
     
     classStudents.forEach(s => { tableBody.innerHTML += `<tr><td>${s.serial_no}</td><td>${getStudentHtml(s)}</td><td>${getContactButtons(s.id)}</td></tr>`; }); 
@@ -2893,9 +2960,10 @@ function exportStudentDetailsAsPDF(studentId) {
     doc.setFillColor(230);
     doc.rect(leftMargin, y, pageWidth - (leftMargin*2), 8, 'F');
     doc.setFontSize(10);
-    doc.text("Date", leftMargin + 5, y + 5);
-    doc.text("Status", leftMargin + 45, y + 5);
-    doc.text("Topic / Note", leftMargin + 85, y + 5);
+    // Modified Date column text to Date & Time
+    doc.text("Date & Time", leftMargin + 5, y + 5);
+    doc.text("Status", leftMargin + 50, y + 5);
+    doc.text("Topic / Note", leftMargin + 80, y + 5);
     y += 12;
 
     doc.setFont("helvetica", "normal");
@@ -2909,25 +2977,28 @@ function exportStudentDetailsAsPDF(studentId) {
             hasAttendance = true;
             const d = new Date(date);
             const dateStr = d.toLocaleDateString('en-IN');
+            const dayName = d.toLocaleDateString('en-IN', { weekday: 'short' });
             
             const status = (typeof entry === 'object') ? entry.status : entry;
             const note = (typeof entry === 'object' && entry.note) ? entry.note : '';
+            let timeStr = (typeof entry === 'object' && entry.time) ? formatTime12H(entry.time) : '';
             
             doc.setTextColor(0);
-            doc.text(dateStr, leftMargin + 5, y);
+            const fullDateText = `${dateStr} ${dayName} ${timeStr}`;
+            doc.text(fullDateText, leftMargin + 5, y);
 
             if(status === 'present') {
                 doc.setTextColor(0, 128, 0); 
-                doc.text("Present", leftMargin + 45, y);
+                doc.text("Present", leftMargin + 50, y);
             } else if(status === 'absent') {
                 doc.setTextColor(200, 0, 0); 
-                doc.text("Absent", leftMargin + 45, y);
+                doc.text("Absent", leftMargin + 50, y);
             }
 
             doc.setTextColor(80); 
             const noteText = note ? note : '-';
             const noteLines = doc.splitTextToSize(noteText, 95); 
-            doc.text(noteLines, leftMargin + 85, y);
+            doc.text(noteLines, leftMargin + 80, y);
 
             const rowHeight = Math.max(7, noteLines.length * 5);
             y += rowHeight;
@@ -3538,48 +3609,85 @@ async function generateIDCard() {
     const { jsPDF } = window.jspdf; 
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [86, 54] }); 
     
-    doc.setFillColor(24, 90, 157); doc.rect(0, 0, 30, 54, 'F'); 
+    // বাঁ দিকের নীল অংশ
+    doc.setFillColor(24, 75, 115); // আপনার ছবির মত গাড় নীল কালার
+    doc.rect(0, 0, 30, 54, 'F'); 
     
+    // স্টুডেন্টের ছবি (বাঁ দিকে, নীল অংশের ওপর)
     if (student.photo) { 
-        doc.addImage(student.photo, 'JPEG', 5, 12, 20, 20); 
+        doc.addImage(student.photo, 'JPEG', 5, 5, 20, 20); 
         doc.setDrawColor(0, 0, 0); 
-        doc.setLineWidth(0.5);
-        doc.rect(5, 12, 20, 20);
+        doc.setLineWidth(0.6);
+        doc.rect(5, 5, 20, 20);
     } else { 
-        doc.setFillColor(200, 200, 200); doc.circle(15, 22, 10, 'F'); 
-        doc.setFontSize(8); doc.text("No Photo", 15, 22, {align: 'center'}); 
+        doc.setFillColor(200, 200, 200); 
+        doc.rect(5, 5, 20, 20, 'F');
+        doc.setFontSize(8); 
+        doc.setTextColor(0);
+        doc.text("No Photo", 15, 16, {align: 'center'}); 
     } 
 
+    // --- QR Code ছবির ঠিক নিচে ---
+    try {
+        // QR Code-এর ভেতরের টেক্সট যা ফোন দিয়ে স্ক্যান করলে দেখা যাবে
+        const qrText = `Name: ${student.name}\nID No: ${student.serial_no}\nPhone: ${student.phone || 'N/A'}\nAddr: ${student.address || 'N/A'}\nIssued: ${issueDateStr}\nValid: ${endDateStr || 'N/A'}\n\n[APP_ID:${student.id}]`;
+        const qr = new QRious({ value: qrText, size: 250, level: 'M' });
+        // QR Code-এর পজিশন (X=6, Y=27) ছবির ঠিক নিচে
+        doc.addImage(qr.toDataURL('image/jpeg'), 'JPEG', 6, 28, 18, 18);
+    } catch(e) { console.error("QR Code generation failed for ID Card", e); }
+    // ------------------------------
+
+    // ডান দিকের জলছাপ লোগো
     if (instituteLogo) { 
         doc.saveGraphicsState(); doc.setGState(new doc.GState({ opacity: 0.1 })); 
         doc.addImage(instituteLogo, 'JPEG', 40, 9, 36, 36); doc.restoreGraphicsState(); 
     } 
     
-    doc.setTextColor(0, 0, 0); doc.setFontSize(7); doc.setFont("helvetica", "bold"); 
-    const headerLines = doc.splitTextToSize(INSTITUTE_NAME, 50); 
-    doc.text(headerLines, 58, 5, {align: "center"}); 
-    doc.setDrawColor(24, 90, 157); doc.line(35, 12, 80, 12); 
+    // হেডারের লেখা
+    doc.setTextColor(0, 0, 0); doc.setFontSize(7.5); doc.setFont("helvetica", "bold"); 
+    const headerLines = doc.splitTextToSize(INSTITUTE_NAME, 52); 
+    doc.text(headerLines, 58, 6, {align: "center"}); 
+    doc.setDrawColor(24, 75, 115); doc.setLineWidth(0.5); doc.line(33, 12, 83, 12); 
     
-    let yText = 16; const labelX = 35; const valX = 48; 
-    const addField = (label, val) => { doc.setFont("helvetica", "bold"); doc.text(label, labelX, yText); doc.setFont("helvetica", "normal"); doc.text(val, valX, yText); yText += 3.5; };
-    addField("Name:", student.name); addField("ID No:", student.serial_no.toString()); addField("Class:", student.class || '-'); addField("Phone:", student.phone || '-');
+    // ডান দিকের টেক্সট ডিটেইলস (X শুরু 33 থেকে)
+    let yText = 16; const labelX = 33; const valX = 46; 
+    const addField = (label, val) => { 
+        doc.setFont("helvetica", "bold"); doc.text(label, labelX, yText); 
+        doc.setFont("helvetica", "normal"); 
+        const valLines = doc.splitTextToSize(val, 38);
+        doc.text(valLines, valX, yText); 
+        yText += (valLines.length * 3.5); 
+    };
+    
+    addField("Name:", student.name); 
+    addField("ID No:", student.serial_no.toString()); 
+    addField("Class:", student.class || '-'); 
+    addField("Phone:", student.phone || '-');
     
     doc.setFont("helvetica", "bold"); doc.text("Addr:", labelX, yText); doc.setFont("helvetica", "normal"); 
-    const addrLines = doc.splitTextToSize(student.address || '-', 35); doc.text(addrLines, valX, yText); yText += (addrLines.length * 3) + 1; 
+    const addrLines = doc.splitTextToSize(student.address || '-', 38); 
+    doc.text(addrLines, valX, yText); 
+    yText += (addrLines.length * 3) + 1; 
     
-    doc.setFont("helvetica", "bold"); doc.text("DOB:", labelX, yText); doc.setFont("helvetica", "normal"); doc.text(dobStr, valX, yText); yText += 3.5; 
+    doc.setFont("helvetica", "bold"); doc.text("DOB:", labelX, yText); doc.setFont("helvetica", "normal"); 
+    doc.text(dobStr, valX, yText); 
+    yText += 4.5; 
     
-    doc.setFontSize(6); doc.setFont("helvetica", "bold"); 
-    let validText = `Issued: ${issueDateStr}`; if (endDateStr) validText += ` | Valid: ${endDateStr}`; doc.text(validText, 35, yText); 
+    // Issue and Valid Date
+    doc.setFontSize(6.5); doc.setFont("helvetica", "bold"); 
+    let validText = `Issued: ${issueDateStr}`; if (endDateStr) validText += ` | Valid: ${endDateStr}`; 
+    doc.text(validText, 33, yText); 
 
+    // সিগনেচার
     if (authorizedSignature) { doc.addImage(authorizedSignature, 'PNG', 65, 36, 18, 6); } 
-    
     doc.setFontSize(6); doc.setFont("helvetica", "bold"); doc.text("Auth. Signature:", 83, 43, {align: "right"}); 
     doc.setFont("helvetica", "italic"); doc.text("Srikanta Banerjee", 83, 46, {align: "right"}); 
     
-    doc.setFillColor(67, 206, 162); doc.rect(30, 49, 56, 5, 'F'); 
-    doc.setTextColor(255, 255, 255); doc.setFontSize(6); doc.setFont("helvetica", "bold"); doc.text("AUTHORIZED STUDENT CARD", 58, 52.5, {align: "center"}); 
+    // নিচের দিকের সবুজ স্ট্রিপ
+    doc.setFillColor(67, 160, 130); doc.rect(30, 49, 56, 5, 'F'); 
+    doc.setTextColor(255, 255, 255); doc.setFontSize(6.5); doc.setFont("helvetica", "bold"); doc.text("AUTHORIZED STUDENT CARD", 58, 52.5, {align: "center"}); 
 
+    // PDF সেভ করা বা শেয়ার করা
     const fileName = `ID_Card_${student.name}.pdf`; 
     if (navigator.canShare && navigator.share) { 
         const pdfBlob = doc.output('blob'); const file = new File([pdfBlob], fileName, { type: 'application/pdf' }); 
@@ -3593,7 +3701,6 @@ function renderAttendance() {
     tableBody.innerHTML = ''; 
     if (!dateInput) return; 
 
-    // ১. আজকের দিন বের করা (যেমন: Monday, Tuesday...)
     const selectedDate = new Date(dateInput);
     const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     const currentDayName = days[selectedDate.getDay()];
@@ -3606,24 +3713,21 @@ function renderAttendance() {
 
     let totalActive = 0, presentCount = 0, absentCount = 0;
 
-    // ২. শুধুমাত্র অ্যাক্টিভ স্টুডেন্টদের নেওয়া
     const activeStudents = students.filter(s => s.status?.isActive);
 
-    // ৩. নতুন স্মার্ট সর্টিং লজিক (Present > Absent > Today's Class > Others)
     activeStudents.sort((a, b) => {
         const getScore = (student) => {
             const entry = attendance[dateInput]?.[student.id];
             const status = (typeof entry === 'object' && entry !== null) ? entry.status : entry;
             
-            if (status === 'present') return 4; // প্রেজেন্ট হলে সবার ওপরে
-            if (status === 'absent') return 3;  // অ্যাবসেন্ট হলে তার নিচে
-            if (student.class_day === currentDayName) return 2; // আজকের ক্লাস হলে তার নিচে
-            return 1; // বাকিরা সবার শেষে
+            if (status === 'present') return 4; 
+            if (status === 'absent') return 3;  
+            if (student.class_day === currentDayName) return 2; 
+            return 1; 
         };
-        return getScore(b) - getScore(a); // বেশি স্কোর পাওয়া কার্ড ওপরে থাকবে
+        return getScore(b) - getScore(a); 
     });
 
-    // ৪. সর্ট করা লিস্ট রেন্ডার করা
     activeStudents.forEach(student => { 
         totalActive++; 
 
@@ -3637,7 +3741,6 @@ function renderAttendance() {
         const statusText = status === 'present' ? 'Present' : (status === 'absent' ? 'Absent' : 'Not Marked');
         const statusClass = status === 'present' ? 'status-present' : (status === 'absent' ? 'status-absent' : ''); 
         
-        // আজকের দিনের স্টুডেন্ট হলে কার্ডে একটা হালকা বর্ডার বা হাইলাইট দেওয়া
         const isToday = student.class_day === currentDayName;
         const highlightStyle = isToday ? 'border: 1px solid var(--primary); background: rgba(79, 70, 229, 0.05);' : '';
 
@@ -3957,7 +4060,6 @@ function openFeeModal(studentId, month, isEdit = false) {
     dateInput.valueAsDate = new Date(); 
     modal.style.display = 'flex'; 
 }
-
 function openEditStudentModal(id) { 
     const student = students.find(s => s.id === parseInt(id)); 
     if(!student) return; 
@@ -4038,7 +4140,7 @@ function showStudentDetails(studentId) {
     
     const className = student.class || 'Music Class';
     document.getElementById('modalClass').innerHTML = `<span style="display: inline-block; background: #000000; color: #ffffff; padding: 5px 15px; border-radius: 20px; font-size: 13px; font-weight: 500; margin-top: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">🎵 ${className}</span>`;
-    document.getElementById('modalDayTime').textContent = (student.class_day || '') + " " + (student.class_time || ''); 
+    document.getElementById('modalDayTime').textContent = (student.class_day || '') + " " + (student.class_time ? formatTime12H(student.class_time) : ''); 
     document.getElementById('modalFeeAmount').textContent = `₹${student.fee_amount || DEFAULT_FEE}`; 
     document.getElementById('modalGuardianName').textContent = student.guardian || 'N/A'; 
     document.getElementById('modalPhone').innerHTML = student.phone ? `${student.phone}` : 'N/A'; 
@@ -4119,11 +4221,11 @@ function renderStudentDetailsHistory() {
         if(d.getFullYear() === selectedYear && (d.getMonth() + 1) === selectedMonth) {
             const entry = attendance[date]?.[student.id];
             if(entry) {
-                const dayName = d.toLocaleDateString('en-IN', { weekday: 'long' });
+                const dayName = d.toLocaleDateString('en-IN', { weekday: 'short' });
                 let timeStr = ''; let status = entry;
                 if(typeof entry === 'object' && entry !== null) {
                     status = entry.status;
-                    if(entry.time) { const [h, m] = entry.time.split(':'); const ampm = h >= 12 ? 'PM' : 'AM'; const h12 = h % 12 || 12; timeStr = ` (${h12}:${m} ${ampm})`; }
+                    if(entry.time) { timeStr = ` (${formatTime12H(entry.time)})`; }
                 }
                 const formattedDate = `${d.toLocaleDateString('en-IN')} (${dayName})${timeStr}`;
                 if (status === 'present') { presentList.innerHTML += `<li style="padding:2px 0; border-bottom:1px solid #f9f9f9;">${formattedDate}</li>`; } 
@@ -4402,58 +4504,6 @@ function sendNoteAction(type, studentId, note, rawDate) {
     }
 }
 
-function handleSignUp() {
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
-    const errorMsg = document.getElementById('loginError');
-
-    if (!email || !password) {
-        errorMsg.textContent = "Email and password required for Sign Up!";
-        errorMsg.style.display = 'block';
-        return;
-    }
-    if (password.length < 6) {
-        errorMsg.textContent = "Password must be at least 6 characters.";
-        errorMsg.style.display = 'block';
-        return;
-    }
-
-    const loginBtn = document.querySelector('#loginOverlay button:last-of-type');
-    const originalText = loginBtn.innerHTML;
-    loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
-
-    auth.createUserWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-            Swal.fire('Success', 'Account Created! Logging in...', 'success');
-        })
-        .catch((error) => {
-            console.error(error);
-            errorMsg.textContent = "Error: " + error.message;
-            errorMsg.style.display = 'block';
-            loginBtn.innerHTML = originalText;
-        });
-}
-
-async function markReminderDone(id) {
-    reminders = reminders.filter(r => r.id !== id);
-    
-    await saveData();
-    
-    renderDashboard();
-    
-    const Toast = Swal.mixin({
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 2000,
-        timerProgressBar: true
-    });
-    Toast.fire({
-        icon: 'success',
-        title: 'Reminder marked as done'
-    });
-}
-
 function calculateAge(dob) {
     if(!dob) return "";
     const birthDate = new Date(dob);
@@ -4521,6 +4571,141 @@ function showAttendanceList(type) {
     
     document.getElementById('classStudentsModal').style.display = 'flex';
 }
-    </script>
+
+// ==========================================
+// NEW FEATURES FOR INDEX 17 (BULK MSG & QR)
+// ==========================================
+
+function openBulkMessageModal() {
+    document.getElementById('bulkMsgFilter').value = 'All';
+    document.getElementById('bulkMsgText').value = '';
+    document.getElementById('waBulkList').style.display = 'none';
+    document.getElementById('bulkMsgModal').style.display = 'flex';
+}
+
+function sendBulkMsg(type) {
+    const filter = document.getElementById('bulkMsgFilter').value;
+    const text = document.getElementById('bulkMsgText').value.trim();
+    if(!text) {
+        Swal.fire('Error', 'Message cannot be empty', 'error');
+        return;
+    }
+
+    let targetStudents = students.filter(s => s.status?.isActive);
+    if(filter !== 'All') {
+        targetStudents = targetStudents.filter(s => s.class_day === filter);
+    }
+
+    if(targetStudents.length === 0) {
+        Swal.fire('Info', 'No active students found for this batch.', 'info');
+        return;
+    }
+
+    if(type === 'sms') {
+        let phones = targetStudents.map(s => s.phone).filter(p => p).join(',');
+        if(phones) {
+            window.open(`sms:${phones}?body=${encodeURIComponent(text)}`, '_self');
+        } else {
+            Swal.fire('Error', 'No valid phone numbers found.', 'error');
+        }
+    } else if(type === 'wa') {
+        const waList = document.getElementById('waBulkList');
+        waList.innerHTML = '<h4 style="margin-top:0; font-size:14px; color:var(--text-muted);">Click below to send WhatsApp messages:</h4>';
+        targetStudents.forEach(s => {
+            if(s.phone) {
+                let cleanPhone = s.phone.replace(/[^0-9]/g, '');
+                if (cleanPhone.length === 10) cleanPhone = '91' + cleanPhone;
+                const link = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
+                waList.innerHTML += `<div style="margin-bottom:8px;"><a href="${link}" target="_blank" class="btn-whatsapp" style="text-decoration:none; display:inline-block; padding:10px; width:100%; text-align:center; border-radius:8px; font-size:14px;"><i class="fab fa-whatsapp"></i> Send to ${s.name}</a></div>`;
+            }
+        });
+        waList.style.display = 'block';
+    }
+}
+
+function shareQRCode(studentId) {
+    const student = students.find(s => s.id === studentId);
+    if(!student) return;
+    
+    const qrText = `[APP_ID:${student.id}]`;
+    const qr = new QRious({ value: qrText, size: 250, level: 'H' });
+    const qrImg = qr.toDataURL();
+    
+    Swal.fire({
+        title: `${student.name}'s QR Code`,
+        imageUrl: qrImg,
+        imageWidth: 200,
+        imageHeight: 200,
+        imageAlt: 'QR Code',
+        html: `<p style="font-size:13px; color:gray;">Scan this code to mark attendance quickly.</p>`,
+        showCancelButton: true,
+        confirmButtonText: '<i class="fas fa-download"></i> Download',
+        cancelButtonText: 'Close',
+        confirmButtonColor: '#10b981'
+    }).then((result) => {
+        if(result.isConfirmed) {
+            const link = document.createElement('a');
+            link.download = `QR_${student.name}.png`;
+            link.href = qrImg;
+            link.click();
+        }
+    });
+}
+
+function startQRScanner() {
+    document.getElementById('qrScannerModal').style.display = 'flex';
+    if(!html5QrcodeScanner) {
+        html5QrcodeScanner = new Html5QrcodeScanner("qr-reader-box", { fps: 10, qrbox: 250 });
+        html5QrcodeScanner.render(onScanSuccess, onScanError);
+    }
+}
+
+function closeQRScanner() {
+    document.getElementById('qrScannerModal').style.display = 'none';
+    if(html5QrcodeScanner) {
+        html5QrcodeScanner.clear().then(() => {
+            html5QrcodeScanner = null;
+        }).catch(error => {
+            console.error("Failed to clear scanner", error);
+        });
+    }
+}
+
+function onScanSuccess(decodedText, decodedResult) {
+    if(decodedText.includes("[APP_ID:")) {
+        const match = decodedText.match(/\[APP_ID:(\d+)\]/);
+        if(match && match[1]) {
+            const studentId = parseInt(match[1]);
+            const student = students.find(s => s.id === studentId);
+            if(student) {
+                closeQRScanner();
+                markAttendance(studentId, 'present');
+                Swal.fire({
+                    toast: true, position: 'top-end',
+                    icon: 'success', title: `${student.name} Marked Present!`,
+                    showConfirmButton: false, timer: 2500
+                });
+            } else {
+                Swal.fire({
+                    toast: true, position: 'top',
+                    icon: 'error', title: 'Student not found.',
+                    showConfirmButton: false, timer: 2000
+                });
+            }
+        }
+    } else {
+         Swal.fire({
+             toast: true, position: 'bottom',
+             icon: 'warning', title: 'Invalid QR Code.',
+             showConfirmButton: false, timer: 1500
+         });
+    }
+}
+
+function onScanError(errorMessage) {
+    // Ignore minor scan errors
+}
+
+</script>
 </body>
 </html>
