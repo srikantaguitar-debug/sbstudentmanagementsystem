@@ -3627,16 +3627,23 @@ async function generateIDCard() {
         doc.text("No Photo", 15, 16, {align: 'center'}); 
     } 
 
-    // --- QR Code ছবির ঠিক নিচে ---
+// --- QR Code ছবির ঠিক নিচে ---
     try {
-        // QR Code-এর ভেতরের টেক্সট যা ফোন দিয়ে স্ক্যান করলে দেখা যাবে
-        const qrText = `Name: ${student.name}\nID No: ${student.serial_no}\nPhone: ${student.phone || 'N/A'}\nAddr: ${student.address || 'N/A'}\nIssued: ${issueDateStr}\nValid: ${endDateStr || 'N/A'}\n\n[APP_ID:${student.id}]`;
-        const qr = new QRious({ value: qrText, size: 250, level: 'M' });
-        // QR Code-এর পজিশন (X=6, Y=27) ছবির ঠিক নিচে
+        const qrText = `Name: ${student.name}\n` +
+                       `ID: ${student.serial_no}\n` +
+                       `Class: ${student.class || 'N/A'}\n` +
+                       `Phone: ${student.phone || 'N/A'}\n` +
+                       `Addr: ${student.address || 'N/A'}\n` +
+                       `DOB: ${dobStr}\n` +
+                       `Issue: ${issueDateStr}\n` +
+                       `Valid: ${endDateStr || 'N/A'}\n` +
+                       `[APP_ID:${student.id}]`;
+
+        // Size 400 এবং Level L
+        const qr = new QRious({ value: qrText, size: 400, level: 'L' });
         doc.addImage(qr.toDataURL('image/jpeg'), 'JPEG', 6, 28, 18, 18);
     } catch(e) { console.error("QR Code generation failed for ID Card", e); }
     // ------------------------------
-
     // ডান দিকের জলছাপ লোগো
     if (instituteLogo) { 
         doc.saveGraphicsState(); doc.setGState(new doc.GState({ opacity: 0.1 })); 
@@ -4627,9 +4634,26 @@ function shareQRCode(studentId) {
     const student = students.find(s => s.id === studentId);
     if(!student) return;
     
-    const qrText = `[APP_ID:${student.id}]`;
-    const qr = new QRious({ value: qrText, size: 250, level: 'H' });
-    const qrImg = qr.toDataURL();
+    const issueDateInput = document.getElementById('idCardIssueDate').value;
+    const endDateInput = document.getElementById('idCardEndDate').value;
+    const issueDateStr = issueDateInput ? new Date(issueDateInput).toLocaleDateString('en-IN') : new Date(student.joining_date).toLocaleDateString('en-IN');
+    const endDateStr = endDateInput ? new Date(endDateInput).toLocaleDateString('en-IN') : 'N/A';
+    const dobStr = student.dob ? new Date(student.dob).toLocaleDateString('en-IN') : 'N/A';
+
+    // টেক্সট সিম্পল ও ছোট করা হয়েছে
+    const qrText = `Name: ${student.name}\n` +
+                   `ID: ${student.serial_no}\n` +
+                   `Class: ${student.class || 'N/A'}\n` +
+                   `Phone: ${student.phone || 'N/A'}\n` +
+                   `Addr: ${student.address || 'N/A'}\n` +
+                   `DOB: ${dobStr}\n` +
+                   `Issue: ${issueDateStr}\n` +
+                   `Valid: ${endDateStr}\n` +
+                   `[APP_ID:${student.id}]`;
+
+    // Size 400 এবং Level L করা হয়েছে যাতে স্ক্যান করতে সুবিধা হয়
+    const qr = new QRious({ value: qrText, size: 400, level: 'L' });
+    const qrImg = qr.toDataURL('image/png');
     
     Swal.fire({
         title: `${student.name}'s QR Code`,
@@ -4639,36 +4663,38 @@ function shareQRCode(studentId) {
         imageAlt: 'QR Code',
         html: `<p style="font-size:13px; color:gray;">Scan this code to mark attendance quickly.</p>`,
         showCancelButton: true,
+        showDenyButton: true,
         confirmButtonText: '<i class="fas fa-download"></i> Download',
+        denyButtonText: '<i class="fab fa-whatsapp"></i> Share',
         cancelButtonText: 'Close',
-        confirmButtonColor: '#10b981'
-    }).then((result) => {
+        confirmButtonColor: '#10b981',
+        denyButtonColor: '#25D366'
+    }).then(async (result) => {
         if(result.isConfirmed) {
             const link = document.createElement('a');
-            link.download = `QR_${student.name}.png`;
+            link.download = `QR_${student.name.replace(/\s+/g, '_')}.png`;
             link.href = qrImg;
             link.click();
+        } else if (result.isDenied) {
+            try {
+                const res = await fetch(qrImg);
+                const blob = await res.blob();
+                const file = new File([blob], `QR_${student.name.replace(/\s+/g, '_')}.png`, { type: 'image/png' });
+
+                if (navigator.canShare && navigator.share && navigator.canShare({ files: [file] })) {
+                    await navigator.share({
+                        files: [file],
+                        title: `${student.name}'s QR Code`,
+                        text: `Here is the Music Class QR Code for ${student.name}.`
+                    });
+                } else {
+                    Swal.fire('Not Supported', 'Sharing images directly is not supported on this browser/device. Please download and send manually.', 'info');
+                }
+            } catch (err) {
+                console.error("Share failed", err);
+            }
         }
     });
-}
-
-function startQRScanner() {
-    document.getElementById('qrScannerModal').style.display = 'flex';
-    if(!html5QrcodeScanner) {
-        html5QrcodeScanner = new Html5QrcodeScanner("qr-reader-box", { fps: 10, qrbox: 250 });
-        html5QrcodeScanner.render(onScanSuccess, onScanError);
-    }
-}
-
-function closeQRScanner() {
-    document.getElementById('qrScannerModal').style.display = 'none';
-    if(html5QrcodeScanner) {
-        html5QrcodeScanner.clear().then(() => {
-            html5QrcodeScanner = null;
-        }).catch(error => {
-            console.error("Failed to clear scanner", error);
-        });
-    }
 }
 
 function onScanSuccess(decodedText, decodedResult) {
