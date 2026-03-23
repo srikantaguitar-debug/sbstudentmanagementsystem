@@ -1117,6 +1117,10 @@
         <i class="fas fa-trash"></i> Remove Photo
     </button>
 </div>
+<div class="form-group" style="background: rgba(239, 68, 68, 0.1); padding: 10px; border-radius: 8px; border: 1px solid #ef4444; display: flex; justify-content: space-between; align-items: center;">
+    <label style="margin:0; color: #dc2626; font-weight:bold; font-size:12px;">Allow QR Profile View?</label>
+    <input type="checkbox" id="editAllowProfile" style="width: 20px; height: 20px; cursor: pointer;">
+</div>
             <div class="form-grid">
                 <div class="form-group"><label>Name</label><input type="text" id="editStudentName"></div>
                 <div class="form-group"><label>Class</label><input type="text" id="editStudentClass"></div>
@@ -1284,9 +1288,276 @@
 
         const auth = firebase.auth();
 
-        document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', async () => {
             loadTheme();
 
+            const urlParams = new URLSearchParams(window.location.search);
+            const studentViewId = urlParams.get('student');
+            const managerUid = urlParams.get('manager');
+
+            if (studentViewId && managerUid) {
+                document.getElementById('loginOverlay').style.display = 'none';
+                
+                const verifyOverlay = document.createElement('div');
+                verifyOverlay.id = 'studentVerifyOverlay';
+                verifyOverlay.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); z-index: 10000; display: flex; align-items: center; justify-content: center; font-family: 'Poppins', sans-serif;";
+                verifyOverlay.innerHTML = `
+                    <div style="background: #fff; padding: 30px; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); width: 88%; max-width: 380px; text-align: center;">
+                        <div style="background: #eff6ff; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto;">
+                            <i class="fas fa-user-graduate" style="color: #1e40af; font-size: 24px;"></i>
+                        </div>
+                        <h2 style="color: #1e293b; margin-bottom: 5px; font-size: 22px;">Student Portal</h2>
+                        <p style="font-size: 13px; color: #64748b; margin-bottom: 25px;">Please verify your identity</p>
+                        
+                        <div style="text-align: left; margin-bottom: 15px;">
+                            <label style="font-size: 12px; font-weight: 600; color: #475569; margin-left: 5px;">Phone Number</label>
+                            <input type="tel" id="studentPhoneVerify" placeholder="Registered Number" style="width: 100%; padding: 12px; margin-top: 5px; border-radius: 12px; border: 2px solid #e2e8f0; background: #f8fafc; font-size:16px; color:#000; font-weight:bold; box-sizing: border-box; outline: none;">
+                        </div>
+
+                        <div style="text-align: left; margin-bottom: 25px;">
+                            <label style="font-size: 12px; font-weight: 600; color: #475569; margin-left: 5px;">Date of Birth (Password)</label>
+                            <input type="date" id="studentDOBVerify" style="width: 100%; padding: 12px; margin-top: 5px; border-radius: 12px; border: 2px solid #e2e8f0; background: #f8fafc; font-size:16px; color:#000; font-weight:bold; box-sizing: border-box; outline: none;">
+                        </div>
+
+                        <button id="verifyBtn" style="width: 100%; padding: 14px; background: #1e40af; color: white; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; font-size: 16px; transition: 0.3s; box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);">
+                            Access Dashboard <i class="fas fa-arrow-right" style="margin-left: 8px;"></i>
+                        </button>
+                        <p id="studentLoginError" style="color: #ef4444; font-size: 12px; margin-top: 15px; display: none; background: #fef2f2; padding: 8px; border-radius: 8px;"></p>
+                    </div>`;
+                document.body.appendChild(verifyOverlay);
+                
+                document.getElementById('verifyBtn').onclick = async function() {
+                    const phoneInput = document.getElementById('studentPhoneVerify').value.trim();
+                    const dobInput = document.getElementById('studentDOBVerify').value;
+                    const errorMsg = document.getElementById('studentLoginError');
+                    const btn = document.getElementById('verifyBtn');
+                    
+                    if(!phoneInput || !dobInput) { errorMsg.textContent = "Please fill in both fields."; errorMsg.style.display = 'block'; return; }
+                    
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Authenticating...';
+                    btn.disabled = true;
+                    errorMsg.style.display = 'none';
+                    
+                    try {
+                        // 🟢 মেইন ডাটাবেস থেকে ১ম দিনের সব ডেটা সরাসরি ফেচ করা হচ্ছে
+                        const docRef = db.collection('music_classes').doc(managerUid);
+                        const [studentDoc, mainDoc] = await Promise.all([
+                            docRef.collection('students').doc(studentViewId).get(),
+                            docRef.get()
+                        ]);
+
+                        if(studentDoc.exists && mainDoc.exists) {
+                            const s = studentDoc.data();
+                            const globalData = mainDoc.data();
+                            const globalAtt = globalData.attendance || {};
+                            const globalFees = globalData.fees || {};
+                            
+                            if(s.phone === phoneInput && s.dob === dobInput) {
+                                verifyOverlay.style.display = 'none';
+                                
+                                if (s.status && s.status.isActive && s.allow_profile_view !== false) {
+                                    
+                                    // 🟢 1. Date by Date Attendance Build (From Day 1)
+                                    let attRecords = [];
+                                    Object.keys(globalAtt).forEach(date => {
+                                        if(globalAtt[date][studentViewId]) {
+                                            attRecords.push({ date: date, data: globalAtt[date][studentViewId] });
+                                        }
+                                    });
+                                    attRecords.sort((a,b) => new Date(b.date) - new Date(a.date));
+                                    
+                                    let attHtml = '';
+                                    if(attRecords.length > 0) {
+                                        attRecords.forEach(rec => {
+                                            let isPresent = rec.data.status === 'present';
+                                            let stColor = isPresent ? '#10b981' : '#ef4444';
+                                            let statusText = isPresent ? 'PRESENT' : 'ABSENT';
+                                            
+                                            let d = new Date(rec.date);
+                                            let dateStr = d.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'});
+                                            let dayStr = d.toLocaleDateString('en-IN', {weekday: 'long'});
+                                            let timeStr = rec.data.time ? formatTime12H(rec.data.time) : 'N/A';
+                                            
+                                            let noteHtml = rec.data.note ? `<div style="font-size:12px; color:#475569; margin-top:8px; background:#f1f5f9; padding:8px; border-radius:6px; border-left: 3px solid #3b82f6;"><strong>📚 Class Topic:</strong> ${rec.data.note}</div>` : '';
+                                            
+                                            attHtml += `<div style="margin-bottom:12px; padding:15px; background:#fff; border-radius:12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); border:1px solid #e2e8f0;">
+                                                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                                                    <div>
+                                                        <div style="font-size:14px; font-weight:700; color:#1e293b;">📅 ${dateStr}</div>
+                                                        <div style="font-size:12px; color:#64748b; margin-top:2px;">🕒 ${dayStr} • ${timeStr}</div>
+                                                    </div>
+                                                    <span style="background:${stColor}; color:white; padding:4px 12px; border-radius:20px; font-size:11px; font-weight:bold; letter-spacing:0.5px;">${statusText}</span>
+                                                </div>
+                                                ${noteHtml}
+                                            </div>`;
+                                        });
+                                    } else { attHtml = '<div style="text-align:center; padding:20px; color:#94a3b8; font-size:13px;">No class records found yet.</div>'; }
+
+                                    // 🟢 2. Paid Fees Build (From Day 1)
+                                    let feeRecords = [];
+                                    Object.keys(globalFees).forEach(month => {
+                                        if(globalFees[month][studentViewId]) {
+                                            feeRecords.push({ month: month, data: globalFees[month][studentViewId] });
+                                        }
+                                    });
+                                    feeRecords.sort((a,b) => new Date(b.month+'-01') - new Date(a.month+'-01')).reverse();
+                                    
+                                    let paidHtml = '';
+                                    if(feeRecords.length > 0) {
+                                        feeRecords.forEach(rec => {
+                                            if(rec.data.status === 'paid') {
+                                                let d = new Date(rec.month + '-01');
+                                                let monthName = d.toLocaleString('default', { month: 'short', year: 'numeric' });
+                                                paidHtml += `<div style="margin-bottom:10px; padding:12px; background:#f0fdf4; border-radius:12px; border:1px solid #bbf7d0; display:flex; justify-content:space-between; align-items:center;">
+                                                    <div>
+                                                        <span style="font-weight:700; color:#166534; display:block;">${monthName}</span>
+                                                        <span style="font-size:10px; color:#166534; opacity:0.8;">Paid on ${new Date(rec.data.date).toLocaleDateString('en-IN')}</span>
+                                                    </div>
+                                                    <div style="text-align:right;">
+                                                        <span style="display:block; font-size:14px; font-weight:bold; color:#15803d;">₹${rec.data.amount}</span>
+                                                        <span style="font-size:10px; color:#166534; font-weight:bold; background:#dcfce7; padding:2px 6px; border-radius:4px;">${rec.data.mode || 'Cash'}</span>
+                                                    </div>
+                                                </div>`;
+                                            }
+                                        });
+                                    } 
+                                    if(paidHtml === '') { paidHtml = '<div style="text-align:center; padding:10px; color:#94a3b8; font-size:13px;">No payment records found.</div>'; }
+
+                                    // 🟢 3. Due Fees Calculation (Live Sync)
+                                    let dueHtml = '';
+                                    let now = new Date();
+                                    let joinDate = new Date(s.joining_date);
+                                    let defaultFee = s.fee_amount || 500;
+                                    
+                                    if(!isNaN(joinDate.getTime())) {
+                                        joinDate.setDate(1);
+                                        let iterDate = new Date(joinDate);
+                                        let dueCount = 0;
+                                        let totalDue = 0;
+                                        
+                                        while(iterDate <= now) {
+                                            let y = iterDate.getFullYear();
+                                            let m = iterDate.getMonth() + 1;
+                                            let monthStr = `${y}-${m.toString().padStart(2, '0')}`;
+                                            
+                                            let isPaid = feeRecords.some(f => f.month === monthStr && f.data.status === 'paid');
+                                            
+                                            let firstDay = new Date(y, m - 1, 1);
+                                            let isDue = false;
+                                            if(firstDay <= now) {
+                                                if(y < now.getFullYear()) isDue = true;
+                                                else if(y === now.getFullYear() && (m - 1) < now.getMonth()) isDue = true;
+                                                else if(y === now.getFullYear() && (m - 1) === now.getMonth() && now.getDate() > 10) isDue = true;
+                                            }
+
+                                            let wasActive = true;
+                                            if (s.status && s.status.history) {
+                                                let history = [...s.status.history].sort((a,b) => new Date(a.date) - new Date(b.date));
+                                                let statusAtStart = 'Active';
+                                                for(let h of history) { if(new Date(h.date) < firstDay) statusAtStart = h.status; }
+                                                let monthEnd = new Date(y, m, 0, 23, 59, 59);
+                                                let changesInMonth = history.filter(h => { let d = new Date(h.date); return d >= firstDay && d <= monthEnd; });
+                                                if(changesInMonth.length === 0) { wasActive = (statusAtStart === 'Active'); }
+                                                else {
+                                                    let lastChange = changesInMonth[changesInMonth.length - 1];
+                                                    if(lastChange.status === 'Inactive') wasActive = new Date(lastChange.date).getDate() > 10;
+                                                    else wasActive = true;
+                                                }
+                                            }
+
+                                            if(!isPaid && isDue && wasActive) {
+                                                let d = new Date(y, m - 1);
+                                                let monthName = d.toLocaleString('default', { month: 'short', year: 'numeric' });
+                                                dueHtml += `<div style="margin-bottom:10px; padding:12px; background:#fef2f2; border-radius:12px; border:1px solid #fecaca; display:flex; justify-content:space-between; align-items:center;">
+                                                    <span style="font-weight:700; color:#b91c1c;">${monthName}</span>
+                                                    <span style="color:#ef4444; font-weight:bold;">Due: ₹${defaultFee}</span>
+                                                </div>`;
+                                                dueCount++;
+                                                totalDue += defaultFee;
+                                            }
+                                            iterDate.setMonth(iterDate.getMonth() + 1);
+                                        }
+                                        
+                                        if(dueCount === 0) {
+                                            dueHtml = `<div style="text-align:center; background:#f0fdf4; color:#15803d; font-size:13px; font-weight:bold; padding:12px; border-radius:12px; border:1px solid #bbf7d0;">No Pending Dues! 🎉</div>`;
+                                        } else {
+                                            dueHtml = `<div style="margin-bottom:15px; padding:12px; background:#fee2e2; color:#b91c1c; font-weight:bold; text-align:center; border-radius:12px;">Total Due Amount: ₹${totalDue}</div>` + dueHtml;
+                                        }
+                                    }
+
+                                    let upcomingClassText = (s.class_day) ? `${s.class_day} at ${s.class_time ? formatTime12H(s.class_time) : ''}` : 'Not Set';
+                                    let dobFormat = s.dob ? new Date(s.dob).toLocaleDateString('en-IN') : 'N/A';
+
+                                    document.body.innerHTML = `
+                                        <div style="background: #f8fafc; min-height: 100vh; font-family: 'Poppins', sans-serif; padding-bottom: 30px; -webkit-user-select: none; -webkit-touch-callout: none; user-select: none;" oncontextmenu="return false;">
+                                            <div style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); padding: 40px 20px 80px 20px; text-align: center; color: white;">
+                                                <h3 style="margin:0; font-size:14px; opacity:0.8; letter-spacing:2px; text-transform:uppercase;">Student Profile</h3>
+                                                <h2 style="margin:5px 0 0 0; font-size:24px;">Welcome, ${s.name.split(' ')[0]}!</h2>
+                                            </div>
+
+                                            <div style="margin-top: -50px; padding: 0 15px;">
+                                                <div style="background: #fff; border-radius: 20px; padding: 25px 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; margin-bottom: 20px;">
+                                                    <img src="${s.photo || 'https://via.placeholder.com/150?text=No+Photo'}" style="width: 90px; height: 90px; border-radius: 50%; border: 4px solid #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.1); object-fit: cover; margin-top: -70px; background:#fff; pointer-events: none;">
+                                                    <h2 style="margin:15px 0 5px 0; color:#1e293b;">${s.name}</h2>
+                                                    <div style="display:inline-block; background:#dcfce7; color:#15803d; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:bold;">Active Student</div>
+                                                </div>
+
+                                                <h4 style="margin: 25px 0 12px 5px; color:#475569; font-size:15px;"><i class="fas fa-info-circle" style="margin-right:8px; color:#3b82f6;"></i> Complete Profile Details</h4>
+                                                <div style="background: #fff; border-radius: 16px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); font-size: 13.5px; color: #334155; line-height: 2;">
+                                                    <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;"><strong>ID No:</strong> <span style="font-weight:600; color:#1e40af;">#${s.serial_no}</span></div>
+                                                    <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;"><strong>Class:</strong> <span>${s.class || 'N/A'}</span></div>
+                                                    <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;"><strong>Schedule:</strong> <span style="color:#ea580c; font-weight:bold;">${upcomingClassText}</span></div>
+                                                    <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;"><strong>Monthly Fee:</strong> <span style="font-weight:bold; color:#10b981;">₹${s.fee_amount || DEFAULT_FEE}</span></div>
+                                                    <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;"><strong>Phone:</strong> <span>${s.phone || 'N/A'}</span></div>
+                                                    <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;"><strong>DOB:</strong> <span>${dobFormat}</span></div>
+                                                    <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;"><strong>Guardian:</strong> <span>${s.guardian || 'N/A'}</span></div>
+                                                    <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;"><strong>Joined On:</strong> <span>${new Date(s.joining_date).toLocaleDateString('en-IN')}</span></div>
+                                                    <div style="display:flex; justify-content:space-between; padding: 6px 0;"><strong>Address:</strong> <span style="text-align: right; max-width: 65%;">${s.address || 'N/A'}</span></div>
+                                                </div>
+
+                                                <h4 style="margin: 25px 0 12px 5px; color:#475569; font-size:15px;"><i class="fas fa-exclamation-circle" style="margin-right:8px; color:#ef4444;"></i> Pending Dues</h4>
+                                                ${dueHtml}
+
+                                                <h4 style="margin: 25px 0 12px 5px; color:#475569; font-size:15px;"><i class="fas fa-calendar-check" style="margin-right:8px; color:#3b82f6;"></i> Date-by-Date Attendance</h4>
+                                                <div style="max-height: 400px; overflow-y: auto; padding-right: 5px;">
+                                                    ${attHtml}
+                                                </div>
+
+                                                <h4 style="margin: 25px 0 12px 5px; color:#475569; font-size:15px;"><i class="fas fa-file-invoice-dollar" style="margin-right:8px; color:#10b981;"></i> Payment History</h4>
+                                                <div style="max-height: 300px; overflow-y: auto; padding-right: 5px;">
+                                                    ${paidHtml}
+                                                </div>
+
+                                                <div style="margin-top:30px; display: flex; gap: 10px;">
+                                                    <a href="tel:7001471235" style="flex:1; text-align:center; background:#1e293b; color:white; padding:15px; border-radius:15px; text-decoration:none; font-size:14px; font-weight:600;"><i class="fas fa-phone-alt"></i> Help</a>
+                                                    <button onclick="window.location.reload()" style="flex:1; background:#fff; color:#ef4444; border:2px solid #ef4444; padding:15px; border-radius:15px; font-size:14px; font-weight:600; cursor:pointer;">Log Out</button>
+                                                </div>
+                                            </div>
+                                        </div>`;
+                                } else {
+                                    errorMsg.textContent = "Your profile is inactive. Contact teacher.";
+                                    errorMsg.style.display = 'block';
+                                    btn.innerHTML = 'Access Dashboard'; btn.disabled = false;
+                                }
+                            } else {
+                                errorMsg.textContent = "Invalid Phone or DOB. Please try again.";
+                                errorMsg.style.display = 'block';
+                                btn.innerHTML = 'Access Dashboard'; btn.disabled = false;
+                            }
+                        } else {
+                            errorMsg.textContent = "Student not found.";
+                            errorMsg.style.display = 'block';
+                            btn.innerHTML = 'Access Dashboard'; btn.disabled = false;
+                        }
+                    } catch(e) {
+                        console.error(e);
+                        errorMsg.textContent = "Connection error.";
+                        errorMsg.style.display = 'block';
+                        btn.innerHTML = 'Access Dashboard'; btn.disabled = false;
+                    }
+                };
+                return; 
+            }
             auth.onAuthStateChanged(async (user) => {
                 const loginOverlay = document.getElementById('loginOverlay');
                 const userDisplay = document.getElementById('currentUserDisplay');
@@ -1314,6 +1585,7 @@
                 }
             });
         });
+
 
         function handleLogin() {
             const email = document.getElementById('loginEmail').value;
@@ -3629,18 +3901,9 @@ async function generateIDCard() {
 
 // --- QR Code ছবির ঠিক নিচে ---
     try {
-        const qrText = `Name: ${student.name}\n` +
-                       `ID: ${student.serial_no}\n` +
-                       `Class: ${student.class || 'N/A'}\n` +
-                       `Phone: ${student.phone || 'N/A'}\n` +
-                       `Addr: ${student.address || 'N/A'}\n` +
-                       `DOB: ${dobStr}\n` +
-                       `Issue: ${issueDateStr}\n` +
-                       `Valid: ${endDateStr || 'N/A'}\n` +
-                       `[APP_ID:${student.id}]`;
-
-        // Size 400 এবং Level L
-        const qr = new QRious({ value: qrText, size: 400, level: 'L' });
+        const baseUrl = window.location.origin + window.location.pathname;
+        const qrText = `${baseUrl}?student=${student.id}&manager=${DOC_ID}`;
+        const qr = new QRious({ value: qrText, size: 250, level: 'M' });
         doc.addImage(qr.toDataURL('image/jpeg'), 'JPEG', 6, 28, 18, 18);
     } catch(e) { console.error("QR Code generation failed for ID Card", e); }
     // ------------------------------
@@ -3676,9 +3939,6 @@ async function generateIDCard() {
     doc.text(addrLines, valX, yText); 
     yText += (addrLines.length * 3) + 1; 
     
-    doc.setFont("helvetica", "bold"); doc.text("DOB:", labelX, yText); doc.setFont("helvetica", "normal"); 
-    doc.text(dobStr, valX, yText); 
-    yText += 4.5; 
     
     // Issue and Valid Date
     doc.setFontSize(6.5); doc.setFont("helvetica", "bold"); 
@@ -4085,14 +4345,14 @@ function openEditStudentModal(id) {
     document.getElementById('editAddress').value = student.address || ''; 
     document.getElementById('editStudentDOB').value = student.dob || ""; 
     
+    // 🟢 NEW: Set Toggle Value
+    document.getElementById('editAllowProfile').checked = student.allow_profile_view !== false;
+    
     currentEditPhotoBase64 = null; 
     
     const previewImg = document.getElementById('editPhotoPreview');
-    if(student.photo) { 
-        previewImg.src = student.photo; 
-    } else { 
-        previewImg.src = 'https://via.placeholder.com/100?text=No+Photo'; 
-    } 
+    if(student.photo) { previewImg.src = student.photo; } 
+    else { previewImg.src = 'https://via.placeholder.com/100?text=No+Photo'; } 
     
     document.getElementById('editStudentModal').style.display = 'flex'; 
 }
@@ -4118,15 +4378,20 @@ async function saveStudentChanges() {
     student.address = document.getElementById('editAddress').value;
     student.dob = document.getElementById('editStudentDOB').value;
     
-    if(currentEditPhotoBase64) { 
-        student.photo = currentEditPhotoBase64; 
-    } else if (isPhotoDeletedInEdit) {
-        student.photo = null;
-    }
+    // 🟢 NEW: Get Toggle Value
+    student.allow_profile_view = document.getElementById('editAllowProfile').checked;
     
-    if(currentStudentSignature) {
-        student.student_signature = currentStudentSignature;
-    }
+    // 🟢 NEW: Sync Portal Data (Attendance & Fees) for the Student View
+    let studentAtt = [];
+    Object.keys(attendance).forEach(date => { if (attendance[date]?.[id]) studentAtt.push({ date, data: attendance[date][id] }); });
+    let studentFees = [];
+    Object.keys(fees).forEach(month => { if (fees[month]?.[id]) studentFees.push({ month, data: fees[month][id] }); });
+    student.portal_data = { attendance: studentAtt, fees: studentFees };
+    
+    if(currentEditPhotoBase64) { student.photo = currentEditPhotoBase64; } 
+    else if (isPhotoDeletedInEdit) { student.photo = null; }
+    
+    if(currentStudentSignature) { student.student_signature = currentStudentSignature; }
 
     students[studentIndex] = student;
 
@@ -4634,88 +4899,83 @@ function shareQRCode(studentId) {
     const student = students.find(s => s.id === studentId);
     if(!student) return;
     
-    const issueDateInput = document.getElementById('idCardIssueDate').value;
-    const endDateInput = document.getElementById('idCardEndDate').value;
-    const issueDateStr = issueDateInput ? new Date(issueDateInput).toLocaleDateString('en-IN') : new Date(student.joining_date).toLocaleDateString('en-IN');
-    const endDateStr = endDateInput ? new Date(endDateInput).toLocaleDateString('en-IN') : 'N/A';
-    const dobStr = student.dob ? new Date(student.dob).toLocaleDateString('en-IN') : 'N/A';
-
-    // টেক্সট সিম্পল ও ছোট করা হয়েছে
-    const qrText = `Name: ${student.name}\n` +
-                   `ID: ${student.serial_no}\n` +
-                   `Class: ${student.class || 'N/A'}\n` +
-                   `Phone: ${student.phone || 'N/A'}\n` +
-                   `Addr: ${student.address || 'N/A'}\n` +
-                   `DOB: ${dobStr}\n` +
-                   `Issue: ${issueDateStr}\n` +
-                   `Valid: ${endDateStr}\n` +
-                   `[APP_ID:${student.id}]`;
-
-    // Size 400 এবং Level L করা হয়েছে যাতে স্ক্যান করতে সুবিধা হয়
-    const qr = new QRious({ value: qrText, size: 400, level: 'L' });
-    const qrImg = qr.toDataURL('image/png');
+    // Generate Web Link
+    const baseUrl = window.location.origin + window.location.pathname;
+    const qrText = `${baseUrl}?student=${student.id}&manager=${DOC_ID}`;
     
-    Swal.fire({
-        title: `${student.name}'s QR Code`,
-        imageUrl: qrImg,
-        imageWidth: 200,
-        imageHeight: 200,
-        imageAlt: 'QR Code',
-        html: `<p style="font-size:13px; color:gray;">Scan this code to mark attendance quickly.</p>`,
-        showCancelButton: true,
-        showDenyButton: true,
-        confirmButtonText: '<i class="fas fa-download"></i> Download',
-        denyButtonText: '<i class="fab fa-whatsapp"></i> Share',
-        cancelButtonText: 'Close',
-        confirmButtonColor: '#10b981',
-        denyButtonColor: '#25D366'
-    }).then(async (result) => {
-        if(result.isConfirmed) {
-            const link = document.createElement('a');
-            link.download = `QR_${student.name.replace(/\s+/g, '_')}.png`;
-            link.href = qrImg;
-            link.click();
-        } else if (result.isDenied) {
-            try {
-                const res = await fetch(qrImg);
-                const blob = await res.blob();
-                const file = new File([blob], `QR_${student.name.replace(/\s+/g, '_')}.png`, { type: 'image/png' });
+    // Generate QR Image
+    const qr = new QRious({ value: qrText, size: 250, level: 'H' });
+    const qrImg = qr.toDataURL();
+    
+    // WhatsApp Logic
+    let cleanPhone = student.phone ? student.phone.replace(/[^0-9]/g, '') : '';
+    if (cleanPhone && cleanPhone.length === 10) cleanPhone = '91' + cleanPhone;
+    
+    // 🟢 🔗 ইমোজি সরিয়ে লিংকটি একদম পরিষ্কার লাইনে দেওয়া হয়েছে
+    const waMsg = `Hello ${student.name},\n\nHere is your Digital ID Card link for Music Classes. Click the link below to view your profile, attendance, and fees:\n\n${qrText}\n\nRegards,\nSrikanta Banerjee`;
+    const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(waMsg)}`;
 
-                if (navigator.canShare && navigator.share && navigator.canShare({ files: [file] })) {
-                    await navigator.share({
-                        files: [file],
-                        title: `${student.name}'s QR Code`,
-                        text: `Here is the Music Class QR Code for ${student.name}.`
-                    });
-                } else {
-                    Swal.fire('Not Supported', 'Sharing images directly is not supported on this browser/device. Please download and send manually.', 'info');
-                }
-            } catch (err) {
-                console.error("Share failed", err);
+    // Global helper functions for buttons
+    window.tempDownloadQR = function() {
+        const link = document.createElement('a');
+        link.download = `QR_${student.name}.png`;
+        link.href = qrImg;
+        link.click();
+    };
+
+    window.tempShareQRImage = async function() {
+        try {
+            const blob = await (await fetch(qrImg)).blob();
+            const file = new File([blob], `QR_${student.name}.png`, { type: blob.type });
+            if (navigator.canShare && navigator.share && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    title: 'Student QR Code',
+                    text: `Digital ID QR Code for ${student.name}`,
+                    files: [file]
+                });
+            } else {
+                Swal.fire('Oops', 'Direct image sharing is not supported on this browser. Please use the Download button instead.', 'info');
             }
-        }
+        } catch(e) { console.log(e); }
+    };
+
+    Swal.fire({
+        title: `${student.name}'s ID`,
+        imageUrl: qrImg,
+        imageWidth: 180,
+        imageHeight: 180,
+        imageAlt: 'QR Code',
+        html: `
+            <p style="font-size:13px; color:gray; margin-bottom: 15px;">Share this profile link or QR code with the student.</p>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
+                ${cleanPhone ? `<a href="${waUrl}" target="_blank" style="background:#25D366; color:white; padding:12px 15px; border-radius:8px; text-decoration:none; font-size:14px; width: 85%; font-weight:bold; box-shadow: 0 4px 6px rgba(37, 211, 102, 0.3);">
+                    <i class="fab fa-whatsapp" style="font-size:16px;"></i> Send Link to WhatsApp
+                </a>` : `<p style="color:red; font-size:12px; margin:0; font-weight:bold;">Student phone number is missing!</p>`}
+                
+                <div style="display:flex; gap:10px; width: 85%; justify-content: center;">
+                    <button onclick="tempShareQRImage()" style="flex:1; background:#3b82f6; color:white; border:none; padding:10px; border-radius:8px; cursor:pointer; font-weight:bold;">
+                        <i class="fas fa-share-alt"></i> Share QR Image
+                    </button>
+                    <button onclick="tempDownloadQR()" style="flex:1; background:#10b981; color:white; border:none; padding:10px; border-radius:8px; cursor:pointer; font-weight:bold;">
+                        <i class="fas fa-download"></i> Download
+                    </button>
+                </div>
+            </div>
+        `,
+        showConfirmButton: false,
+        showCancelButton: true,
+        cancelButtonText: 'Close Window',
+        cancelButtonColor: '#6b7280'
     });
 }
 
 function startQRScanner() {
     document.getElementById('qrScannerModal').style.display = 'flex';
-    
-    // পপআপ ওপেন হওয়ার জন্য একটু সময় দেওয়া হলো, যাতে ক্যামেরা ক্র্যাশ না করে
-    setTimeout(() => {
-        try {
-            if(!html5QrcodeScanner) {
-                html5QrcodeScanner = new Html5QrcodeScanner(
-                    "qr-reader-box", 
-                    { fps: 10, qrbox: { width: 250, height: 250 } }, 
-                    false
-                );
-                html5QrcodeScanner.render(onScanSuccess, onScanError);
-            }
-        } catch (err) {
-            console.error("Scanner Error:", err);
-            Swal.fire('Error', 'Camera cannot be started. Please check permissions.', 'error');
-        }
-    }, 150);
+    if(!html5QrcodeScanner) {
+        html5QrcodeScanner = new Html5QrcodeScanner("qr-reader-box", { fps: 10, qrbox: 250 });
+        html5QrcodeScanner.render(onScanSuccess, onScanError);
+    }
 }
 
 function closeQRScanner() {
@@ -4730,9 +4990,22 @@ function closeQRScanner() {
 }
 
 function onScanSuccess(decodedText, decodedResult) {
-    const match = decodedText.match(/\[APP_ID:\s*(\d+)\s*\]/i);
-    if(match && match[1]) {
-        const studentId = parseInt(match[1]);
+    let studentId = null;
+    
+    // Check if it's a new Web URL QR Code
+    if(decodedText.includes("student=")) {
+        try {
+            const url = new URL(decodedText);
+            studentId = parseInt(url.searchParams.get("student"));
+        } catch(e) {}
+    } 
+    // Check if it's an old Text QR Code
+    else if(decodedText.includes("[APP_ID:")) {
+        const match = decodedText.match(/\[APP_ID:(\d+)\]/);
+        if(match && match[1]) studentId = parseInt(match[1]);
+    }
+
+    if(studentId) {
         const student = students.find(s => s.id === studentId);
         if(student) {
             closeQRScanner();
