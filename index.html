@@ -1182,10 +1182,14 @@
         const db = firebase.firestore();
 
         // --- 3. ENABLE OFFLINE PERSISTENCE (Fast & Offline) ---
-        // WhatsApp বা In-app ব্রাউজারের সমস্যার জন্য স্টুডেন্ট পোর্টালে অফলাইন ক্যাশে বন্ধ রাখা হলো
-        if (!window.location.search.includes('student=')) {
-            db.enablePersistence({ synchronizeTabs: true }).catch((err) => console.log(err));
-        }
+        db.enablePersistence({ synchronizeTabs: true })
+            .catch((err) => {
+                if (err.code == 'failed-precondition') {
+                    console.log('Multiple tabs open');
+                } else if (err.code == 'unimplemented') {
+                    console.log('Browser not supported');
+                }
+            });
 
         const COLLECTION_NAME = 'music_classes';
         let DOC_ID = 'main_data';
@@ -1564,8 +1568,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                             btn.innerHTML = 'Access Dashboard'; btn.disabled = false;
                         }
                     } catch(e) {
-                        console.error("Fetch Error: ", e);
-                        errorMsg.innerHTML = "Connection error.<br><span style='font-size:11px; font-weight:normal; color:#475569;'>If you are using WhatsApp browser, please tap the 3 dots (⋮) at the top right and select <b>'Open in Chrome'</b>.</span>";
+                        console.error(e);
+                        errorMsg.textContent = "Connection error.";
                         errorMsg.style.display = 'block';
                         btn.innerHTML = 'Access Dashboard'; btn.disabled = false;
                     }
