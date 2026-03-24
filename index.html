@@ -1357,7 +1357,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 
                                 if (s.status && s.status.isActive && s.allow_profile_view !== false) {
                                     
-                                    // 🟢 1. Date by Date Attendance Build (From Day 1)
+                                    // 🟢 // 🟢 1. Date by Date Attendance Build (From Day 1)
                                     let attRecords = [];
                                     Object.keys(globalAtt).forEach(date => {
                                         if(globalAtt[date][studentViewId]) {
@@ -1370,28 +1370,41 @@ document.addEventListener('DOMContentLoaded', async () => {
                                     if(attRecords.length > 0) {
                                         attRecords.forEach(rec => {
                                             let isPresent = rec.data.status === 'present';
-                                            let stColor = isPresent ? '#10b981' : '#ef4444';
-                                            let statusText = isPresent ? 'PRESENT' : 'ABSENT';
+                                            let isAbsent = rec.data.status === 'absent';
+                                            
+                                            // স্ট্যাটাস ব্যাজ (শুধু Present বা Absent হলেই দেখাবে)
+                                            let badgeHtml = '';
+                                            if (isPresent) {
+                                                badgeHtml = `<span style="background:#10b981; color:white; padding:4px 12px; border-radius:20px; font-size:11px; font-weight:bold; letter-spacing:0.5px;">PRESENT</span>`;
+                                            } else if (isAbsent) {
+                                                badgeHtml = `<span style="background:#ef4444; color:white; padding:4px 12px; border-radius:20px; font-size:11px; font-weight:bold; letter-spacing:0.5px;">ABSENT</span>`;
+                                            }
                                             
                                             let d = new Date(rec.date);
                                             let dateStr = d.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'});
                                             let dayStr = d.toLocaleDateString('en-IN', {weekday: 'long'});
-                                            let timeStr = rec.data.time ? formatTime12H(rec.data.time) : 'N/A';
+                                            let timeStr = rec.data.time ? formatTime12H(rec.data.time) : '';
+                                            let timeDisplay = timeStr ? ` • ${timeStr}` : '';
                                             
-                                            let noteHtml = rec.data.note ? `<div style="font-size:12px; color:#475569; margin-top:8px; background:#f1f5f9; padding:8px; border-radius:6px; border-left: 3px solid #3b82f6;"><strong>📚 Class Topic:</strong> ${rec.data.note}</div>` : '';
+                                            // নোট থাকলে তবেই নোটের বক্স দেখাবে
+                                            let noteHtml = rec.data.note ? `<div style="font-size:12px; color:#475569; margin-top:8px; background:#f1f5f9; padding:8px; border-radius:6px; border-left: 3px solid #3b82f6;"><strong>📚 Class Note:</strong> ${rec.data.note}</div>` : '';
                                             
-                                            attHtml += `<div style="margin-bottom:12px; padding:15px; background:#fff; border-radius:12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); border:1px solid #e2e8f0;">
-                                                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                                                    <div>
-                                                        <div style="font-size:14px; font-weight:700; color:#1e293b;">📅 ${dateStr}</div>
-                                                        <div style="font-size:12px; color:#64748b; margin-top:2px;">🕒 ${dayStr} • ${timeStr}</div>
+                                            // শুধু Present, Absent বা Note থাকলেই কার্ডটি পোর্টালে দেখাবে
+                                            if (isPresent || isAbsent || rec.data.note) {
+                                                attHtml += `<div style="margin-bottom:12px; padding:15px; background:#fff; border-radius:12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); border:1px solid #e2e8f0;">
+                                                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                                                        <div>
+                                                            <div style="font-size:14px; font-weight:700; color:#1e293b;">📅 ${dateStr}</div>
+                                                            <div style="font-size:12px; color:#64748b; margin-top:2px;">🕒 ${dayStr}${timeDisplay}</div>
+                                                        </div>
+                                                        ${badgeHtml}
                                                     </div>
-                                                    <span style="background:${stColor}; color:white; padding:4px 12px; border-radius:20px; font-size:11px; font-weight:bold; letter-spacing:0.5px;">${statusText}</span>
-                                                </div>
-                                                ${noteHtml}
-                                            </div>`;
+                                                    ${noteHtml}
+                                                </div>`;
+                                            }
                                         });
-                                    } else { attHtml = '<div style="text-align:center; padding:20px; color:#94a3b8; font-size:13px;">No class records found yet.</div>'; }
+                                    } 
+                                    if (attHtml === '') { attHtml = '<div style="text-align:center; padding:20px; color:#94a3b8; font-size:13px;">No class records found yet.</div>'; }
 
                                     // 🟢 2. Paid Fees Build (From Day 1)
                                     let feeRecords = [];
@@ -1408,6 +1421,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                                             if(rec.data.status === 'paid') {
                                                 let d = new Date(rec.month + '-01');
                                                 let monthName = d.toLocaleString('default', { month: 'short', year: 'numeric' });
+                                                
+                                                // 🟢 Transaction ID Logic (অনলাইন পেমেন্টের ক্ষেত্রে)
+                                                let txnHtml = rec.data.transactionId ? `<span style="display:block; font-size:10px; color:#4f46e5; margin-top:4px; font-weight:700;">Txn: ${rec.data.transactionId}</span>` : '';
+
                                                 paidHtml += `<div style="margin-bottom:10px; padding:12px; background:#f0fdf4; border-radius:12px; border:1px solid #bbf7d0; display:flex; justify-content:space-between; align-items:center;">
                                                     <div>
                                                         <span style="font-weight:700; color:#166534; display:block;">${monthName}</span>
@@ -1416,6 +1433,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                                                     <div style="text-align:right;">
                                                         <span style="display:block; font-size:14px; font-weight:bold; color:#15803d;">₹${rec.data.amount}</span>
                                                         <span style="font-size:10px; color:#166534; font-weight:bold; background:#dcfce7; padding:2px 6px; border-radius:4px;">${rec.data.mode || 'Cash'}</span>
+                                                        ${txnHtml}
                                                     </div>
                                                 </div>`;
                                             }
