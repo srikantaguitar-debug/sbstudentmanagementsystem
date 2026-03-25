@@ -1149,23 +1149,73 @@ if (studentViewId && managerUid) {
                                     </div>`;
                                 }).join('') : '<p style="text-align:center; color:gray; font-size:13px;">No payment records.</p>';
 
-// ৪. Due Data (Red Warning Design without Bengali text)
+// ৪. Due Data (Fixed for Standalone Portal View)
                                 let dueHtml = '';
-                                if (checkGlobalDues(studentViewId)) {
-                                    const dueMonths = getDueMonthsList(studentViewId);
-                                    if(dueMonths.length > 0) {
-                                        const dueAmt = dueMonths.length * (s.fee_amount || 500);
-                                        dueHtml = `
-                                        <style>@keyframes pulseWarning { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }</style>
-                                        <div style="background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border-radius:16px; padding:20px; margin-bottom:25px; border: 2px solid #f87171; text-align: center; animation: pulseWarning 2s infinite;">
-                                            <div style="background: #ef4444; color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; margin: 0 auto 10px auto;">
-                                                <i class="fas fa-exclamation-triangle"></i>
-                                            </div>
-                                            <h4 style="margin:0; color:#b91c1c; font-size:16px; font-weight: 800; text-transform:uppercase; letter-spacing: 1px;">Payment Overdue</h4>
-                                            <p style="margin:8px 0; font-size:32px; font-weight:900; color:#dc2626;">₹${dueAmt}</p>
-                                            <p style="margin:0; font-size:13px; color:#991b1b; font-weight: 600;">Due for: ${dueMonths.join(', ')}</p>
-                                        </div>`;
+                                let dueMonthsList = [];
+                                const portalNow = new Date();
+                                const portalToday = portalNow.getDate();
+                                const portalDUE_DATE = 10; // মাসের ১০ তারিখের পর ডিউ দেখাবে
+                                
+                                let iterDate = new Date(s.joining_date);
+                                if (!isNaN(iterDate.getTime())) {
+                                    iterDate.setDate(1);
+                                    while (iterDate <= portalNow) {
+                                        const y = iterDate.getFullYear();
+                                        const m = iterDate.getMonth() + 1;
+                                        const monthStr = `${y}-${m.toString().padStart(2, '0')}`;
+                                        
+                                        // ১. চেক করা হচ্ছে মাসটি ডিউ হয়েছে কিনা
+                                        let isPastDue = false;
+                                        if (y < portalNow.getFullYear()) isPastDue = true;
+                                        else if (y === portalNow.getFullYear() && m - 1 < portalNow.getMonth()) isPastDue = true;
+                                        else if (y === portalNow.getFullYear() && m - 1 === portalNow.getMonth() && portalToday > portalDUE_DATE) isPastDue = true;
+
+                                        // ২. চেক করা হচ্ছে স্টুডেন্ট ওই মাসে অ্যাক্টিভ ছিল কিনা
+                                        let wasActive = false;
+                                        const monthEnd = new Date(y, m, 0, 23, 59, 59);
+                                        const joinDate = new Date(s.joining_date);
+                                        if (joinDate <= monthEnd) {
+                                            const history = (s.status?.history || []).sort((a, b) => new Date(a.date) - new Date(b.date));
+                                            let statusAtStart = 'Active'; 
+                                            for (let i = 0; i < history.length; i++) { 
+                                                if (new Date(history[i].date) < new Date(y, m - 1, 1)) statusAtStart = history[i].status; 
+                                            }
+                                            let changesInMonth = history.filter(h => { 
+                                                const d = new Date(h.date); 
+                                                return d >= new Date(y, m - 1, 1) && d <= monthEnd; 
+                                            });
+                                            
+                                            if (changesInMonth.length === 0) {
+                                                wasActive = (statusAtStart === 'Active');
+                                            } else {
+                                                const lastChange = changesInMonth[changesInMonth.length - 1];
+                                                wasActive = lastChange.status === 'Inactive' ? new Date(lastChange.date).getDate() > 10 : true;
+                                            }
+                                        }
+
+                                        // ৩. যদি ডিউ হয় এবং পেমেন্ট না করা থাকে
+                                        if (isPastDue && wasActive) {
+                                            if (globalFees[monthStr]?.[studentViewId]?.status !== 'paid') {
+                                                const formattedMonth = new Date(y, m - 1).toLocaleString('en-US', { month: 'long', year: 'numeric' });
+                                                dueMonthsList.push(formattedMonth);
+                                            }
+                                        }
+                                        iterDate.setMonth(iterDate.getMonth() + 1);
                                     }
+                                }
+
+                                if(dueMonthsList.length > 0) {
+                                    const dueAmt = dueMonthsList.length * (s.fee_amount || 500);
+                                    dueHtml = `
+                                    <style>@keyframes pulseWarning { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }</style>
+                                    <div style="background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border-radius:16px; padding:20px; margin-bottom:25px; border: 2px solid #f87171; text-align: center; animation: pulseWarning 2s infinite;">
+                                        <div style="background: #ef4444; color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; margin: 0 auto 10px auto;">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                        </div>
+                                        <h4 style="margin:0; color:#b91c1c; font-size:16px; font-weight: 800; text-transform:uppercase; letter-spacing: 1px;">Payment Overdue</h4>
+                                        <p style="margin:8px 0; font-size:32px; font-weight:900; color:#dc2626;">₹${dueAmt}</p>
+                                        <p style="margin:0; font-size:13px; color:#991b1b; font-weight: 600;">Due for: ${dueMonthsList.join(', ')}</p>
+                                    </div>`;
                                 }
 
                                 // ৫. Study Materials Data
