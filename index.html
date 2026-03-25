@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Music Classes Manager (Pro)</title>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="preconnect" href="https://www.gstatic.com">
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -17,14 +20,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Hind+Siliguri:wght@300;400;600&family=Noto+Serif+Bengali:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js" defer></script>
+    <script src="https://unpkg.com/html5-qrcode" defer></script>
     
     <style>
     /* --- Dashboard Reminder Stylish CSS --- */
@@ -1019,6 +1022,18 @@
                     <div style="font-size:11px; color:red; margin-top:5px;">Absent: <ul id="modalAbsentList" class="scrollable-list" style="max-height:80px;"></ul></div>
                  </div>
             </div>
+            
+    <div style="background: var(--bg-input); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--border-color);">
+        <h4 style="margin: 0 0 10px 0; border-bottom: 2px solid var(--info); padding-bottom: 5px;">
+            <i class="fas fa-book-open" style="color: var(--info);"></i> Study Materials
+        </h4>
+        <button class="btn-info" onclick="openAddMaterialModal(currentlyViewingStudentId)" style="width: 100%; margin-bottom: 10px; background: #0ea5e9;">
+            <i class="fas fa-plus-circle"></i> Add Note/Video/PDF Link
+        </button>
+        <div style="max-height: 120px; overflow-y: auto; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-color);">
+            <ul id="modalStudyMaterialsList" style="list-style: none; padding: 0; margin: 0;"></ul>
+        </div>
+    </div>
             <div style="background: var(--bg-input); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--border-color);">
     <h4 style="margin: 0 0 10px 0; border-bottom: 2px solid var(--warning); padding-bottom: 5px;">
         <i class="fas fa-sticky-note" style="color: var(--warning);"></i> Class Notes History
@@ -1498,9 +1513,43 @@ document.addEventListener('DOMContentLoaded', async () => {
                                     }
 
                                     let upcomingClassText = (s.class_day) ? `${s.class_day} at ${s.class_time ? formatTime12H(s.class_time) : ''}` : 'Not Set';
+                                    // --- স্টুডেন্টের পোর্টালে Study Material দেখানোর HTML তৈরি করা ---
+    let materialsHtml = '';
+    if (s.study_materials && s.study_materials.length > 0) {
+        s.study_materials.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(mat => {
+            let icon = mat.type === 'video' ? '<i class="fab fa-youtube" style="color:#ef4444; font-size:20px;"></i>' : 
+                       mat.type === 'pdf' ? '<i class="fas fa-file-pdf" style="color:#ef4444; font-size:20px;"></i>' : 
+                       '<i class="fas fa-headphones" style="color:#3b82f6; font-size:20px;"></i>';
+            let btnText = mat.type === 'video' ? 'Watch Video' : 'Download/Listen';
+            
+            materialsHtml += `
+                <div style="margin-bottom:12px; padding:15px; background:#fff; border-radius:12px; border:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        ${icon}
+                        <div>
+                            <span style="font-weight:700; color:#1e293b; display:block; font-size:14px;">${mat.title}</span>
+                            <span style="font-size:11px; color:#64748b;">Uploaded: ${new Date(mat.date).toLocaleDateString('en-IN')}</span>
+                        </div>
+                    </div>
+                    <a href="${mat.link}" target="_blank" style="background:#4f46e5; color:#fff; padding:6px 12px; border-radius:8px; text-decoration:none; font-size:12px; font-weight:600;">
+                        ${btnText}
+                    </a>
+                </div>`;
+        });
+    } else {
+        materialsHtml = '<div style="text-align:center; padding:15px; color:#94a3b8; font-size:13px; background:#fff; border-radius:12px; border:1px dashed #cbd5e1;">No study materials shared yet.</div>';
+    }
                                     let dobFormat = s.dob ? new Date(s.dob).toLocaleDateString('en-IN') : 'N/A';
 
                                     document.body.innerHTML = `
+                                    <h4 style="margin: 25px 0 12px 5px; color:#475569; font-size:15px;">
+        <i class="fas fa-book-reader" style="margin-right:8px; color:#8b5cf6;"></i> My Study Materials
+    </h4>
+    <div style="padding-right: 5px;">
+        ${materialsHtml}
+    </div>
+    
+    
                                         <div style="background: #f8fafc; min-height: 100vh; font-family: 'Poppins', sans-serif; padding-bottom: 30px; -webkit-user-select: none; -webkit-touch-callout: none; user-select: none;" oncontextmenu="return false;">
                                             <div style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); padding: 40px 20px 80px 20px; text-align: center; color: white;">
                                                 <h3 style="margin:0; font-size:14px; opacity:0.8; letter-spacing:2px; text-transform:uppercase;">Student Profile</h3>
@@ -1536,9 +1585,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                                                 </div>
 
                                                 <h4 style="margin: 25px 0 12px 5px; color:#475569; font-size:15px;"><i class="fas fa-file-invoice-dollar" style="margin-right:8px; color:#10b981;"></i> Payment History</h4>
-                                                <div style="max-height: 300px; overflow-y: auto; padding-right: 5px;">
-                                                    ${paidHtml}
-                                                </div>
+<div style="max-height: 300px; overflow-y: auto; padding-right: 5px;">
+    ${paidHtml}
+</div>
+
+<h4 style="margin: 25px 0 12px 5px; color:#475569; font-size:15px;">
+    <i class="fas fa-book-reader" style="margin-right:8px; color:#8b5cf6;"></i> My Study Materials
+</h4>
+<div style="padding-right: 5px;">
+    ${materialsHtml}
+</div>
+<div style="margin-top:30px; display: flex; gap: 10px;">
+    <a href="tel:7001471235" style="flex:1; text-align:center; background:#1e293b; color:white; ...
 
                                                 <div style="margin-top:30px; display: flex; gap: 10px;">
                                                     <a href="tel:7001471235" style="flex:1; text-align:center; background:#1e293b; color:white; padding:15px; border-radius:15px; text-decoration:none; font-size:14px; font-weight:600;"><i class="fas fa-phone-alt"></i> Help</a>
@@ -2717,7 +2775,7 @@ function getStudentHtml(student) {
     const hiddenAddress = `<span style="display:none;">${student.address || ''}</span>`;
     return `
     <div class="student-cell">
-        <img src="${photoSrc}" class="student-thumb">
+        <img src="${photoSrc}" class="student-thumb" loading="lazy">
         <div class="student-info">
             <span class="student-name-link" onclick="showStudentDetails(${student.id})">${student.name}</span>
             ${phoneText}
@@ -3656,11 +3714,93 @@ function switchStudentView(view) {
         inactiveDiv.style.display = 'block';
     }
 }
+let studentDisplayLimit = 20; // একবারে ২০ জন দেখাবে
+
+function loadStudentsList(showAll = false) { 
+    const activeList = document.getElementById('activeStudentsList');
+    const inactiveList = document.getElementById('inactiveStudentsList');
+    activeList.innerHTML = ''; inactiveList.innerHTML = '';
+    
+    let activeCount = 0;
+    let inactiveCount = 0;
+
+    students.forEach(student => { 
+        const isActive = student.status?.isActive;
+        
+        // Lazy load logic (সার্চ করলে সবাইকে দেখাবে, নাহলে লিমিট অনুযায়ী দেখাবে)
+        if (!showAll) {
+            if (isActive && activeCount >= studentDisplayLimit) return;
+            if (!isActive && inactiveCount >= studentDisplayLimit) return;
+        }
+
+        const statusBtnText = isActive ? 'Deactivate' : 'Activate'; 
+        const hasGlobalDue = checkGlobalDues(student.id); 
+        
+        let rowClass = '';
+        if (!isActive) rowClass = 'inactive-student';
+        if (isActive && hasGlobalDue) rowClass += ' has-dues-alert'; 
+        
+        let timeDisplay = ''; 
+        if(student.class_time) { 
+            const [h, m] = student.class_time.split(':'); const ampm = h >= 12 ? 'PM' : 'AM'; const h12 = h % 12 || 12; timeDisplay = `${h12}:${m} ${ampm}`; 
+        } 
+        const dayTimeStr = (student.class_day || student.class_time) ? `<br><span class="student-time-sub">${student.class_day || ''} ${timeDisplay}</span>` : ''; 
+        
+        const row = document.createElement('tr');
+        if (rowClass) row.className = rowClass;
+        
+        row.innerHTML = `
+            <td>${student.serial_no}</td>
+            <td>${getStudentHtml(student)}</td>
+            <td>${student.class || 'N/A'}${dayTimeStr}</td>
+            <td>₹${student.fee_amount || DEFAULT_FEE}</td>
+            <td style="min-width: 160px;">${getAllContactButtons(student)}</td>
+            <td>${isActive ? 'Active' : 'Inactive'}</td>
+            <td class="action-buttons">
+                <button class="${isActive ? 'btn-info' : 'btn-success'}" onclick="openStatusChangeModal(${student.id}, ${!isActive})">${statusBtnText}</button> 
+                <button class="btn-warning" onclick="openEditStudentModal(${student.id})">Edit</button>
+            </td>`;
+        
+        if(isActive) { 
+            activeList.appendChild(row); 
+            activeCount++;
+        } else { 
+            inactiveList.appendChild(row); 
+            inactiveCount++;
+        }
+    }); 
+
+    // Add "Load More" button 
+    if (!showAll) {
+        const activeTotal = students.filter(s => s.status?.isActive).length;
+        const inactiveTotal = students.filter(s => !s.status?.isActive).length;
+
+        if (activeTotal > studentDisplayLimit) {
+            activeList.innerHTML += `<tr><td colspan="7" style="text-align:center; padding:15px;"><button class="btn-secondary" onclick="loadMoreStudents()" style="width:100%; border-radius:8px;"><i class="fas fa-chevron-down"></i> Load More Students</button></td></tr>`;
+        }
+        if (inactiveTotal > studentDisplayLimit) {
+            inactiveList.innerHTML += `<tr><td colspan="7" style="text-align:center; padding:15px;"><button class="btn-secondary" onclick="loadMoreStudents()" style="width:100%; border-radius:8px;"><i class="fas fa-chevron-down"></i> Load More Students</button></td></tr>`;
+        }
+    }
+}
+
+function loadMoreStudents() {
+    studentDisplayLimit += 20; // ক্লিকে আরও ২০ জন বাড়বে
+    loadStudentsList(false);
+}
 
 function filterStudentLists() {
     const input = document.getElementById('searchStudents');
     const filter = input.value.toUpperCase();
     
+    // সার্চ বক্সে কিছু লিখলে সবাইকে একসাথে লোড করবে, নাহলে লিমিটে ফিরে যাবে
+    if (filter.length > 0) {
+        loadStudentsList(true); 
+    } else {
+        studentDisplayLimit = 20; 
+        loadStudentsList(false);
+    }
+
     searchTable('searchStudents', 'activeStudentsTable');
     searchTable('searchStudents', 'inactiveStudentsTable');
     
@@ -4051,44 +4191,6 @@ function renderAttendance() {
     if(document.getElementById('attAbsentCount')) document.getElementById('attAbsentCount').textContent = absentCount;
 
     searchTable('searchAttendance', 'attendanceTable'); 
-}
-
-function loadStudentsList() { 
-    const activeList = document.getElementById('activeStudentsList');
-    const inactiveList = document.getElementById('inactiveStudentsList');
-    activeList.innerHTML = ''; inactiveList.innerHTML = '';
-    
-    students.forEach(student => { 
-        const statusBtnText = student.status?.isActive ? 'Deactivate' : 'Activate'; 
-        const hasGlobalDue = checkGlobalDues(student.id); 
-        
-        let rowClass = '';
-        if (!student.status?.isActive) rowClass = 'inactive-student';
-        if (student.status?.isActive && hasGlobalDue) rowClass += ' has-dues-alert'; 
-        
-        let timeDisplay = ''; 
-        if(student.class_time) { 
-            const [h, m] = student.class_time.split(':'); const ampm = h >= 12 ? 'PM' : 'AM'; const h12 = h % 12 || 12; timeDisplay = `${h12}:${m} ${ampm}`; 
-        } 
-        const dayTimeStr = (student.class_day || student.class_time) ? `<br><span class="student-time-sub">${student.class_day || ''} ${timeDisplay}</span>` : ''; 
-        
-        const row = document.createElement('tr');
-        if (rowClass) row.className = rowClass;
-        
-        row.innerHTML = `
-            <td>${student.serial_no}</td>
-            <td>${getStudentHtml(student)}</td>
-            <td>${student.class || 'N/A'}${dayTimeStr}</td>
-            <td>₹${student.fee_amount || DEFAULT_FEE}</td>
-            <td style="min-width: 160px;">${getAllContactButtons(student)}</td>
-            <td>${student.status?.isActive ? 'Active' : 'Inactive'}</td>
-            <td class="action-buttons">
-                <button class="${student.status?.isActive ? 'btn-info' : 'btn-success'}" onclick="openStatusChangeModal(${student.id}, ${!student.status?.isActive})">${statusBtnText}</button> 
-                <button class="btn-warning" onclick="openEditStudentModal(${student.id})">Edit</button>
-            </td>`;
-        
-        if(student.status?.isActive) { activeList.appendChild(row); } else { inactiveList.appendChild(row); }
-    }); 
 }
 
 function markAttendance(studentId, status) {
@@ -4487,6 +4589,7 @@ function showStudentDetails(studentId) {
     renderStudentDetailsHistory();
     document.getElementById('exportPdfBtn').onclick = () => exportStudentDetailsAsPDF(studentId); 
     renderStudentNotes(studentId);
+    renderStudyMaterials(studentId); // <-- এই নতুন লাইনটি বসাবেন
     document.getElementById('studentDetailsModal').style.display = 'flex'; 
 }
 
@@ -5046,6 +5149,113 @@ function onScanSuccess(decodedText, decodedResult) {
 function onScanError(errorMessage) {
     // Ignore minor scan errors
 }
+ // --- এখান থেকে Study Material এর JavaScript শুরু ---
+
+async function openAddMaterialModal(studentId) {
+    const student = students.find(s => s.id === studentId);
+    if (!student) return;
+
+    const { value: formValues } = await Swal.fire({
+        title: 'Add Study Material',
+        html: `
+            <input id="swal-mat-title" class="swal2-input" placeholder="Title (e.g. C Major Scale)" style="width: 85%;">
+            <select id="swal-mat-type" class="swal2-select" style="width: 85%; margin-top: 10px;">
+                <option value="video">🎬 Video Lesson (YouTube)</option>
+                <option value="pdf">📄 PDF / Sheet Music (Drive Link)</option>
+                <option value="audio">🎵 Audio Loop / Track (Drive Link)</option>
+            </select>
+            <input id="swal-mat-link" class="swal2-input" placeholder="Paste Link Here" style="width: 85%; margin-top: 10px;">
+        `,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: 'Save Material',
+        preConfirm: () => {
+            return {
+                title: document.getElementById('swal-mat-title').value.trim(),
+                type: document.getElementById('swal-mat-type').value,
+                link: document.getElementById('swal-mat-link').value.trim()
+            }
+        }
+    });
+
+    if (formValues && formValues.title && formValues.link) {
+        if (!student.study_materials) student.study_materials = [];
+        
+        student.study_materials.push({
+            id: Date.now(),
+            title: formValues.title,
+            type: formValues.type,
+            link: formValues.link,
+            date: new Date().toISOString().split('T')[0]
+        });
+
+        // ফায়ারবেসে সেভ করা
+        await db.collection(COLLECTION_NAME).doc(DOC_ID).collection('students').doc(String(studentId)).update({
+            study_materials: student.study_materials
+        });
+
+        renderStudyMaterials(studentId);
+        Swal.fire('Saved!', 'Material shared with student.', 'success');
+    } else if (formValues) {
+        Swal.fire('Error', 'Title and Link are required.', 'error');
+    }
+}
+
+function renderStudyMaterials(studentId) {
+    const student = students.find(s => s.id === studentId);
+    const listContainer = document.getElementById('modalStudyMaterialsList');
+    if (!listContainer || !student) return;
+
+    listContainer.innerHTML = '';
+    
+    if (!student.study_materials || student.study_materials.length === 0) {
+        listContainer.innerHTML = '<li style="padding: 10px; text-align: center; color: var(--text-muted); font-size: 12px;">No materials shared yet.</li>';
+        return;
+    }
+
+    student.study_materials.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(mat => {
+        let icon = mat.type === 'video' ? '<i class="fab fa-youtube" style="color:red;"></i>' : 
+                   mat.type === 'pdf' ? '<i class="fas fa-file-pdf" style="color:red;"></i>' : 
+                   '<i class="fas fa-music" style="color:blue;"></i>';
+
+        listContainer.innerHTML += `
+            <li style="padding: 8px 10px; border-bottom: 1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+                <div style="font-size:13px; color:var(--text-main);">
+                    ${icon} <strong style="margin-left:5px;">${mat.title}</strong><br>
+                    <span style="font-size:10px; color:var(--text-muted);">${new Date(mat.date).toLocaleDateString('en-IN')}</span>
+                </div>
+                <div>
+                    <a href="${mat.link}" target="_blank" class="btn-info" style="padding:4px 8px; font-size:10px; text-decoration:none; border-radius: 4px;"><i class="fas fa-eye"></i> View</a>
+                    <button class="btn-danger" onclick="deleteStudyMaterial(${studentId}, ${mat.id})" style="padding:4px 8px; font-size:10px; margin-left:5px; border-radius: 4px; border:none; cursor:pointer;"><i class="fas fa-trash"></i></button>
+                </div>
+            </li>
+        `;
+    });
+}
+
+async function deleteStudyMaterial(studentId, matId) {
+    const student = students.find(s => s.id === studentId);
+    if (!student) return;
+
+    Swal.fire({
+        title: 'Delete Material?',
+        text: "Are you sure you want to remove this?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        confirmButtonText: 'Yes, delete it'
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            student.study_materials = student.study_materials.filter(m => m.id !== matId);
+            await db.collection(COLLECTION_NAME).doc(DOC_ID).collection('students').doc(String(studentId)).update({
+                study_materials: student.study_materials
+            });
+            renderStudyMaterials(studentId);
+            Swal.fire('Deleted!', 'Material has been removed.', 'success');
+        }
+    });
+}
+// --- Study Material এর JavaScript শেষ ---
 
 </script>
 </body>
