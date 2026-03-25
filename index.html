@@ -5103,7 +5103,8 @@ function shareQRCode(studentId) {
     if(!student) return;
     
     // Generate Web Link
-    const baseUrl = window.location.origin + window.location.pathname;
+    // আপনার লাইভ ওয়েবসাইটের লিংকটি নিচের ইনভার্টেড কমার ভেতরে বসান
+    const baseUrl = "https://আপনার-ওয়েবসাইটের-লিংক.com/"; 
     const qrText = `${baseUrl}?student=${student.id}&manager=${DOC_ID}`;
     
     // Generate QR Image
