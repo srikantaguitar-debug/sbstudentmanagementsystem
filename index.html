@@ -282,6 +282,15 @@
                 font-size: 15px;
             }
         }
+        @media (max-width: 768px) {
+            .modal-content { 
+                padding: 15px !important; /* মোবাইলে প্যাডিং কমানো হলো */
+                width: 95% !important;
+            }
+            .dashboard-card {
+                padding: 15px !important;
+            }
+            /* ... আপনার আগের লেখা টেবিলের কোডগুলো যেমন আছে তেমনই থাকবে ... */
         @media (min-width: 769px) { th { background: var(--bg-input); padding: 12px; text-align: left; color: var(--text-muted); font-size: 12px; border-bottom: 1px solid var(--border-color); } td { padding: 12px; border-bottom: 1px solid var(--border-color); color: var(--text-main); } }
 
         /* Status Colors */
@@ -972,6 +981,7 @@
     </div>
 
     <div id="studentDetailsModal" class="modal">
+        
         <div class="modal-content">
             <span class="close-button" onclick="closeModal('studentDetailsModal')">&times;</span>
             <div style="text-align: center; margin-bottom: 20px;">
@@ -1006,6 +1016,7 @@
                 <select id="detailsFilterYear" style="flex:1; font-size:12px; padding:8px;" onchange="renderStudentDetailsHistory()"></select>
                 <select id="detailsFilterMonth" style="flex:1; font-size:12px; padding:8px;" onchange="renderStudentDetailsHistory()"></select>
             </div>
+            
 
             <div style="margin-bottom:20px;">
                 <h4 style="margin:0 0 10px 0;">Status History</h4>
@@ -1047,6 +1058,17 @@
         <ul id="modalNotesList" style="list-style: none; padding: 0; margin: 0;">
             </ul>
     </div>
+    <div style="background: var(--bg-input); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--border-color);">
+    <h4 style="margin: 0 0 10px 0; border-bottom: 2px solid var(--warning); padding-bottom: 5px;">
+        <i class="fas fa-bullhorn" style="color: var(--warning);"></i> Personal Notice
+    </h4>
+    <div id="currentNoticeDisplay" style="font-size:12px; margin-bottom:10px; color: var(--text-main); font-weight:600;"></div>
+    <textarea id="personalNoticeInput" rows="2" placeholder="Write notice for this student..." style="width:100%; border-radius:8px; border:1px solid var(--border-color); padding:8px; font-size:12px; background: var(--bg-card); color: var(--text-main); box-sizing: border-box;"></textarea>
+    <div style="display:flex; gap:10px; margin-top:10px;">
+        <button class="btn-success" onclick="savePersonalNotice()" style="flex:1; padding:8px; font-size:12px;">Save Notice</button>
+        <button class="btn-danger" onclick="deletePersonalNotice()" style="flex:1; padding:8px; font-size:12px;">Delete</button>
+    </div>
+</div>
 </div>
             <div style="background: var(--bg-input); padding: 15px; border-radius: 12px;">
                 <label>Generate Documents</label>
@@ -1309,6 +1331,15 @@ if (studentViewId && managerUid) {
 
                 // --- 🟢 NEW: Function to render portal ---
                 async function renderStudentPortal() {
+                    // 🟢 5. Animated Personal Notice HTML Build
+let noticeHtml = '';
+if (s.personal_notice && s.personal_notice.trim() !== '') {
+    noticeHtml = `
+    <div style="background: linear-gradient(90deg, #fef3c7, #fef08a); padding: 10px 15px; border-radius: 12px; border-left: 4px solid #f59e0b; margin-bottom: 25px; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        <i class="fas fa-bell fa-shake" style="color: #d97706; font-size: 18px;"></i>
+        <marquee scrollamount="4" style="font-size: 14px; font-weight: 600; color: #b45309; margin: 0;">${s.personal_notice}</marquee>
+    </div>`;
+}
                     document.body.innerHTML = '<div style="display:flex; height:100vh; align-items:center; justify-content:center; flex-direction:column; background:#f8fafc;"><i class="fas fa-spinner fa-spin fa-3x" style="color:#1e40af; margin-bottom:15px;"></i><h3 style="color:#1e293b; font-family:\'Poppins\', sans-serif;">Loading your profile...</h3></div>';
                     
                     try {
@@ -1534,50 +1565,48 @@ if (studentViewId && managerUid) {
                                                 <div style="display:inline-block; background:#dcfce7; color:#15803d; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:700;">Active Student</div>
                                             </div>
 
+                                            ${noticeHtml}
+
                                             <h4 style="margin: 25px 0 10px 5px; color:#334155; font-size:16px; display:flex; align-items:center; gap:8px;">
                                                 <i class="fas fa-info-circle" style="color:#3b82f6; font-size: 18px;"></i> Complete Profile Details
                                             </h4>
-                                            <div style="background: #fff; border-radius: 16px; padding: 15px 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.02); font-size: 14px; color: #1e293b; line-height: 1.8;">
-                                                <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;">
-                                                    <span style="font-weight:700;">ID No:</span> 
-                                                    <span style="font-weight:700; color:#1e40af;">#${s.serial_no}</span>
-                                                </div>
-                                                <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;">
-                                                    <span style="font-weight:700;">Class:</span> 
-                                                    <span style="color:#475569;">${s.class || 'N/A'}</span>
-                                                </div>
-                                                <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;">
-                                                    <span style="font-weight:700;">Schedule:</span> 
-                                                    <span style="color:#ea580c; font-weight:600;">${upcomingClassText}</span>
-                                                </div>
-                                                <div style="display:flex; justify-content:space-between; padding: 6px 0;">
-                                                    <span style="font-weight:700;">Monthly Fee:</span> 
-                                                    <span style="font-weight:700; color:#10b981;">₹${s.fee_amount || DEFAULT_FEE}</span>
-                                                </div>
-                                            </div>
-
-                                            <h4 style="margin: 25px 0 10px 5px; color:#334155; font-size:16px; display:flex; align-items:center; gap:8px;">
-                                                <i class="fas fa-calendar-check" style="color:#8b5cf6; font-size: 18px;"></i> Attendance History
-                                            </h4>
-                                            <div class="scroller-box" style="max-height: 350px; overflow-y: auto; padding-right: 5px;">
-                                                ${attHtml}
-                                            </div>
-
-                                            <h4 style="margin: 25px 0 10px 5px; color:#334155; font-size:16px; display:flex; align-items:center; gap:8px;">
-                                                <i class="fas fa-file-invoice-dollar" style="color:#10b981; font-size: 18px;"></i> Payment History
-                                            </h4>
-                                            ${dueHtml ? `<div style="margin-bottom: 10px;">${dueHtml}</div>` : ''}
                                             <div class="scroller-box" style="max-height: 250px; overflow-y: auto; padding-right: 5px;">
-                                                ${paidHtml}
+                                                <div style="background: #fff; border-radius: 16px; padding: 15px 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.02); font-size: 14px; color: #1e293b; line-height: 1.8;">
+                                                    <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;">
+                                                        <span style="font-weight:700;">Name:</span> <span>${s.name}</span>
+                                                    </div>
+                                                    <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;">
+                                                        <span style="font-weight:700;">ID No:</span> <span style="font-weight:700; color:#1e40af;">#${s.serial_no}</span>
+                                                    </div>
+                                                    <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;">
+                                                        <span style="font-weight:700;">Class:</span> <span>${s.class || 'N/A'}</span>
+                                                    </div>
+                                                    <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;">
+                                                        <span style="font-weight:700;">Schedule:</span> <span style="color:#ea580c; font-weight:600;">${upcomingClassText}</span>
+                                                    </div>
+                                                    <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;">
+                                                        <span style="font-weight:700;">Monthly Fee:</span> <span style="font-weight:700; color:#10b981;">₹${s.fee_amount || DEFAULT_FEE}</span>
+                                                    </div>
+                                                    <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;">
+                                                        <span style="font-weight:700;">Phone:</span> <span>${s.phone || 'N/A'}</span>
+                                                    </div>
+                                                    <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;">
+                                                        <span style="font-weight:700;">Email:</span> <span>${s.email || 'N/A'}</span>
+                                                    </div>
+                                                    <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;">
+                                                        <span style="font-weight:700;">DOB:</span> <span>${dobFormat}</span>
+                                                    </div>
+                                                    <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;">
+                                                        <span style="font-weight:700;">Guardian:</span> <span>${s.guardian || 'N/A'}</span>
+                                                    </div>
+                                                    <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;">
+                                                        <span style="font-weight:700;">Joined On:</span> <span>${new Date(s.joining_date).toLocaleDateString('en-IN')}</span>
+                                                    </div>
+                                                    <div style="display:flex; justify-content:space-between; padding: 6px 0;">
+                                                        <span style="font-weight:700;">Address:</span> <span style="text-align: right; max-width: 65%;">${s.address || 'N/A'}</span>
+                                                    </div>
+                                                </div>
                                             </div>
-
-                                            <h4 style="margin: 25px 0 10px 5px; color:#334155; font-size:16px; display:flex; align-items:center; gap:8px;">
-                                                <i class="fas fa-book-reader" style="color:#6366f1; font-size: 18px;"></i> My Study Materials
-                                            </h4>
-                                            <div class="scroller-box" style="max-height: 300px; overflow-y: auto; padding-right: 5px;">
-                                                ${materialsHtml}
-                                            </div>
-                                        </div>
                                         
                                         <div style="position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; padding: 15px; box-shadow: 0 -5px 20px rgba(0,0,0,0.06); display: flex; gap: 10px; align-items: center; box-sizing: border-box; z-index: 100; border-top-left-radius: 20px; border-top-right-radius: 20px;">
                                             
@@ -4587,6 +4616,10 @@ function showStudentDetails(studentId) {
     document.getElementById('modalPhone').innerHTML = student.phone ? `${student.phone}` : 'N/A'; 
     document.getElementById('modalEmail').innerHTML = student.email ? `${student.email}` : 'N/A'; 
     document.getElementById('modalAddress').textContent = student.address || 'N/A'; 
+    // 🟢 Load Personal Notice in Modal
+    const currentNotice = student.personal_notice || '';
+    document.getElementById('currentNoticeDisplay').innerHTML = currentNotice ? `Current Notice: <span>${currentNotice}</span>` : 'No active notice.';
+    document.getElementById('personalNoticeInput').value = currentNotice;
     
     let dobDisplay = 'N/A';
     if(student.dob) {
@@ -5316,6 +5349,39 @@ async function deleteStudyMaterial(studentId, matId) {
     });
 }
 // --- Study Material এর JavaScript শেষ ---
+// 🟢 Save Personal Notice
+async function savePersonalNotice() {
+    const text = document.getElementById('personalNoticeInput').value.trim();
+    if (!text) { Swal.fire('Error', 'Write a notice first!', 'error'); return; }
+
+    const studentIndex = students.findIndex(s => s.id === currentlyViewingStudentId);
+    if(studentIndex !== -1) {
+        students[studentIndex].personal_notice = text; // নোটিশ স্টুডেন্টের ডেটায় সেভ করা হলো
+        
+        await db.collection(COLLECTION_NAME).doc(DOC_ID).collection('students').doc(String(currentlyViewingStudentId)).update({ 
+            personal_notice: text 
+        });
+        
+        Swal.fire('Saved', 'Notice added successfully', 'success');
+        showStudentDetails(currentlyViewingStudentId); // পেজ রিফ্রেশ
+    }
+}
+
+// 🟢 Delete Personal Notice
+async function deletePersonalNotice() {
+    const studentIndex = students.findIndex(s => s.id === currentlyViewingStudentId);
+    if(studentIndex !== -1) {
+        students[studentIndex].personal_notice = ""; // নোটিশ ক্লিয়ার করা হলো
+        
+        await db.collection(COLLECTION_NAME).doc(DOC_ID).collection('students').doc(String(currentlyViewingStudentId)).update({ 
+            personal_notice: "" 
+        });
+        
+        document.getElementById('personalNoticeInput').value = '';
+        Swal.fire('Deleted', 'Notice removed', 'success');
+        showStudentDetails(currentlyViewingStudentId);
+    }
+}
 
 </script>
 </body>
