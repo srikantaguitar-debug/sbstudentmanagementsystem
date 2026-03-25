@@ -1330,32 +1330,35 @@ if (studentViewId && managerUid) {
                 document.getElementById('loginOverlay').style.display = 'none';
 
                 // --- 🟢 NEW: Function to render portal ---
-                async function renderStudentPortal() {
-                    // 🟢 5. Animated Personal Notice HTML Build
-let noticeHtml = '';
-if (s.personal_notice && s.personal_notice.trim() !== '') {
-    noticeHtml = `
-    <div style="background: linear-gradient(90deg, #fef3c7, #fef08a); padding: 10px 15px; border-radius: 12px; border-left: 4px solid #f59e0b; margin-bottom: 25px; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-        <i class="fas fa-bell fa-shake" style="color: #d97706; font-size: 18px;"></i>
-        <marquee scrollamount="4" style="font-size: 14px; font-weight: 600; color: #b45309; margin: 0;">${s.personal_notice}</marquee>
-    </div>`;
-}
-                    document.body.innerHTML = '<div style="display:flex; height:100vh; align-items:center; justify-content:center; flex-direction:column; background:#f8fafc;"><i class="fas fa-spinner fa-spin fa-3x" style="color:#1e40af; margin-bottom:15px;"></i><h3 style="color:#1e293b; font-family:\'Poppins\', sans-serif;">Loading your profile...</h3></div>';
-                    
-                    try {
-                        const docRef = db.collection('music_classes').doc(managerUid);
-                        const [studentDoc, mainDoc] = await Promise.all([
-                            docRef.collection('students').doc(studentViewId).get(),
-                            docRef.get()
-                        ]);
+async function renderStudentPortal() {
+    // প্রথমেই শুধু লোডিং স্ক্রিন দেখান
+    document.body.innerHTML = '<div style="display:flex; height:100vh; align-items:center; justify-content:center; flex-direction:column; background:#f8fafc;"><i class="fas fa-spinner fa-spin fa-3x" style="color:#1e40af; margin-bottom:15px;"></i><h3 style="color:#1e293b; font-family:\'Poppins\', sans-serif;">Loading your profile...</h3></div>';
+    
+    try {
+        const docRef = db.collection('music_classes').doc(managerUid);
+        const [studentDoc, mainDoc] = await Promise.all([
+            docRef.collection('students').doc(studentViewId).get(),
+            docRef.get()
+        ]);
 
-                        if(studentDoc.exists && mainDoc.exists) {
-                            const s = studentDoc.data();
-                            const globalData = mainDoc.data();
-                            const globalAtt = globalData.attendance || {};
-                            const globalFees = globalData.fees || {};
-                            
-                            if (s.status && s.status.isActive && s.allow_profile_view !== false) {
+        if(studentDoc.exists && mainDoc.exists) {
+            const s = studentDoc.data(); // <--- 's' এখন ডিফাইন হলো
+            const globalData = mainDoc.data();
+            const globalAtt = globalData.attendance || {};
+            const globalFees = globalData.fees || {};
+
+            // 🟢 5. Animated Personal Notice HTML Build (এটিকে এখানে নিয়ে আসা হয়েছে)
+            let noticeHtml = '';
+            if (s.personal_notice && s.personal_notice.trim() !== '') {
+                noticeHtml = `
+                <div style="background: linear-gradient(90deg, #fef3c7, #fef08a); padding: 10px 15px; border-radius: 12px; border-left: 4px solid #f59e0b; margin-bottom: 25px; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                    <i class="fas fa-bell fa-shake" style="color: #d97706; font-size: 18px;"></i>
+                    <marquee scrollamount="4" style="font-size: 14px; font-weight: 600; color: #b45309; margin: 0;">${s.personal_notice}</marquee>
+                </div>`;
+            }
+            
+            if (s.status && s.status.isActive && s.allow_profile_view !== false) {
+// ... এর পরের সমস্ত কোড আপনার যেমন ছিল তেমনই থাকবে ...
                                 // 🟢 1. Date by Date Attendance Build
                                 let attRecords = [];
                                 Object.keys(globalAtt).forEach(date => {
@@ -5103,8 +5106,7 @@ function shareQRCode(studentId) {
     if(!student) return;
     
     // Generate Web Link
-    // আপনার লাইভ ওয়েবসাইটের লিংকটি নিচের ইনভার্টেড কমার ভেতরে বসান
-    const baseUrl = "https://আপনার-ওয়েবসাইটের-লিংক.com/"; 
+    const baseUrl = window.location.origin + window.location.pathname;
     const qrText = `${baseUrl}?student=${student.id}&manager=${DOC_ID}`;
     
     // Generate QR Image
