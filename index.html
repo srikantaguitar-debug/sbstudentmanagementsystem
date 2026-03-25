@@ -1364,49 +1364,115 @@ if (studentViewId && managerUid) {
                                 // (বাকি ডাটা প্রসেসিং লজিক আগের মতই থাকবে...)
 
                                 // ফাইনাল ডিজাইন স্ট্রাকচার (আপনার রিকোয়েস্ট অনুযায়ী)
+                                // ৩. পোর্টাল ডিজাইন (পপআপ ও স্ক্রলিং)
                                 document.body.innerHTML = `
                                     <style>
-                                        .modal-portal { display:none; position:fixed; z-index:20000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.7); align-items:center; justify-content:center; }
-                                        .modal-content-portal { background:#fff; width:90%; max-width:400px; padding:20px; border-radius:20px; max-height:80vh; overflow-y:auto; }
-                                        .scroller-box { max-height: 250px; overflow-y: auto; }
+                                        .modal-portal { display:none; position:fixed; z-index:20000; left:0; top:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.7); align-items:center; justify-content:center; backdrop-filter: blur(4px); }
+                                        .modal-content-portal { background:#fff; width:90%; max-width:400px; padding:25px; border-radius:24px; max-height:80vh; overflow-y:auto; position:relative; animation: slideUp 0.3s ease; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+                                        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+                                        .scroller-box { max-height: 350px; overflow-y: auto; padding-right: 5px; }
+                                        .scroller-box::-webkit-scrollbar { width: 4px; }
+                                        .scroller-box::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+                                        .close-btn { position:absolute; top:15px; right:20px; font-size:24px; cursor:pointer; color:#94a3b8; background: #f1f5f9; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
                                     </style>
                                     
-                                    <div style="background: #f8fafc; min-height: 100vh; font-family: 'Poppins', sans-serif; padding-bottom: 90px;">
-                                        <div style="background: linear-gradient(135deg, #1e3c72, #2a5298); padding: 40px 20px 80px 20px; text-align:center; color:#fff;">
-                                            <img src="${s.photo || ''}" style="width:90px; height:90px; border-radius:50%; border:4px solid #fff; object-fit:cover; background:#eee;">
-                                            <h2 style="margin:10px 0;">Welcome, ${s.name}</h2>
+                                    <div style="background: #f4f7f6; min-height: 100vh; font-family: 'Poppins', sans-serif; padding-bottom: 100px;">
+                                        <div style="background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); padding: 40px 20px 90px 20px; text-align:center; color:#fff; border-radius: 0 0 35px 35px; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);">
+                                            <h3 style="margin:0; font-size:12px; font-weight:400; opacity:0.9; letter-spacing: 1px;">STUDENT PORTAL</h3>
+                                            <h2 style="margin:5px 0 0 0; font-size:24px; font-weight:700;">Welcome, ${s.name.split(' ')[0]}!</h2>
                                         </div>
 
-                                        <div style="margin-top:-40px; padding:0 15px;">
-                                            ${noticeHtml}
-
-                                            <div style="display:flex; flex-direction:column; gap:12px;">
-                                                <button onclick="document.getElementById('m-profile').style.display='flex'" style="padding:15px; background:#3b82f6; color:#fff; border:none; border-radius:12px; font-weight:bold; display:flex; justify-content:space-between;"><span>Profile Details</span> <i class="fas fa-chevron-right"></i></button>
-                                                
-                                                <button onclick="document.getElementById('m-att').style.display='flex'" style="padding:15px; background:#8b5cf6; color:#fff; border:none; border-radius:12px; font-weight:bold; display:flex; justify-content:space-between;"><span>Attendance History</span> <i class="fas fa-chevron-right"></i></button>
-                                                
-                                                <button onclick="document.getElementById('m-pay').style.display='flex'" style="padding:15px; background:#10b981; color:#fff; border:none; border-radius:12px; font-weight:bold; display:flex; justify-content:space-between;"><span>Payment History</span> <i class="fas fa-chevron-right"></i></button>
+                                        <div style="margin-top:-60px; padding:0 20px;">
+                                            <div style="text-align: center; margin-bottom: 25px;">
+                                                <img src="${s.photo || 'https://via.placeholder.com/150'}" style="width:110px; height:110px; border-radius:50%; border:5px solid #fff; object-fit:cover; background:#eee; box-shadow:0 8px 16px rgba(0,0,0,0.1);">
+                                                <h2 style="margin:10px 0 5px 0; color:#1e293b; font-size:20px; font-weight: 700;">${s.name}</h2>
+                                                <span style="background:#dcfce7; color:#166534; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; border: 1px solid #bbf7d0;">Active Student</span>
                                             </div>
 
-                                            <h4 style="margin:25px 0 10px 5px;">📚 My Study Materials</h4>
-                                            <div class="scroller-box" style="background:#fff; border-radius:15px; padding:10px;">
-                                                </div>
+                                            ${noticeHtml}
+
+                                            <div style="display:flex; flex-direction:column; gap:12px; margin-bottom: 25px;">
+                                                
+                                                <button onclick="document.getElementById('m-profile').style.display='flex'" style="width:100%; background:#fff; padding:16px 20px; border-radius:16px; border:none; box-shadow:0 4px 15px rgba(0,0,0,0.04); display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+                                                    <div style="display:flex; align-items:center; gap:15px;">
+                                                        <div style="background:#eff6ff; width:45px; height:45px; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#3b82f6; font-size:18px;"><i class="fas fa-user"></i></div>
+                                                        <span style="font-size:15px; font-weight:600; color:#334155;">Complete Profile Details</span>
+                                                    </div>
+                                                    <i class="fas fa-chevron-right" style="color:#cbd5e1;"></i>
+                                                </button>
+                                                
+                                                <button onclick="document.getElementById('m-att').style.display='flex'" style="width:100%; background:#fff; padding:16px 20px; border-radius:16px; border:none; box-shadow:0 4px 15px rgba(0,0,0,0.04); display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+                                                    <div style="display:flex; align-items:center; gap:15px;">
+                                                        <div style="background:#f3e8ff; width:45px; height:45px; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#a855f7; font-size:18px;"><i class="fas fa-calendar-check"></i></div>
+                                                        <span style="font-size:15px; font-weight:600; color:#334155;">Attendance History</span>
+                                                    </div>
+                                                    <i class="fas fa-chevron-right" style="color:#cbd5e1;"></i>
+                                                </button>
+                                                
+                                                <button onclick="document.getElementById('m-pay').style.display='flex'" style="width:100%; background:#fff; padding:16px 20px; border-radius:16px; border:none; box-shadow:0 4px 15px rgba(0,0,0,0.04); display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+                                                    <div style="display:flex; align-items:center; gap:15px;">
+                                                        <div style="background:#dcfce7; width:45px; height:45px; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#22c55e; font-size:18px;"><i class="fas fa-receipt"></i></div>
+                                                        <span style="font-size:15px; font-weight:600; color:#334155;">Payment History</span>
+                                                    </div>
+                                                    <i class="fas fa-chevron-right" style="color:#cbd5e1;"></i>
+                                                </button>
+
+                                            </div>
+
+                                            ${dueHtml}
+
+                                            <div style="margin-top: 10px;">
+                                                <h4 style="margin:0 0 15px 5px; color:#334155; font-size:16px;"><i class="fas fa-book-open" style="color:#6366f1; margin-right:5px;"></i> My Study Materials</h4>
+                                                <div class="scroller-box" style="background:#fff; border-radius:16px; padding:15px; box-shadow:0 4px 15px rgba(0,0,0,0.04);">${materialsHtml}</div>
+                                            </div>
                                         </div>
 
-                                        <div id="m-profile" class="modal-portal" onclick="this.style.display='none'"><div class="modal-content-portal" onclick="event.stopPropagation()">
-                                            <h3>Profile Details</h3>
-                                            <div class="scroller-box">
-                                                <p><b>ID:</b> #${s.serial_no}</p>
-                                                <p><b>Phone:</b> ${s.phone}</p>
-                                                <p><b>DOB:</b> ${s.dob}</p>
-                                                <p><b>Address:</b> ${s.address}</p>
+                                        <div id="m-profile" class="modal-portal"><div class="modal-content-portal">
+                                            <div class="close-btn" onclick="document.getElementById('m-profile').style.display='none'">&times;</div>
+                                            <h3 style="margin-top:5px; color:#334155; font-size:18px; border-bottom:2px solid #f1f5f9; padding-bottom:10px;">Profile Details</h3>
+                                            <div class="scroller-box" style="font-size: 14px; color: #475569;">
+                                                <div style="display:flex; justify-content:space-between; padding: 10px 0; border-bottom: 1px dashed #e2e8f0;">
+                                                    <span style="font-weight:600;">Joining Date:</span> <span style="color:#1e293b;">${s.joining_date ? new Date(s.joining_date).toLocaleDateString('en-IN') : 'N/A'}</span>
+                                                </div>
+                                                <div style="display:flex; justify-content:space-between; padding: 10px 0; border-bottom: 1px dashed #e2e8f0;">
+                                                    <span style="font-weight:600;">ID No:</span> <span style="color:#1e40af; font-weight:700;">#${s.serial_no}</span>
+                                                </div>
+                                                <div style="display:flex; justify-content:space-between; padding: 10px 0; border-bottom: 1px dashed #e2e8f0;">
+                                                    <span style="font-weight:600;">Class:</span> <span style="color:#1e293b;">${s.class || 'N/A'}</span>
+                                                </div>
+                                                <div style="display:flex; justify-content:space-between; padding: 10px 0; border-bottom: 1px dashed #e2e8f0;">
+                                                    <span style="font-weight:600;">Fee Amount:</span> <span style="color:#10b981; font-weight:700;">₹${s.fee_amount || 500}</span>
+                                                </div>
+                                                <div style="display:flex; justify-content:space-between; padding: 10px 0; border-bottom: 1px dashed #e2e8f0;">
+                                                    <span style="font-weight:600;">Phone:</span> <span style="color:#1e293b;">${s.phone || 'N/A'}</span>
+                                                </div>
+                                                <div style="display:flex; justify-content:space-between; padding: 10px 0; border-bottom: 1px dashed #e2e8f0;">
+                                                    <span style="font-weight:600;">DOB:</span> <span style="color:#1e293b;">${s.dob ? new Date(s.dob).toLocaleDateString('en-IN') : 'N/A'}</span>
+                                                </div>
+                                                <div style="display:flex; justify-content:space-between; padding: 10px 0;">
+                                                    <span style="font-weight:600;">Address:</span> <span style="text-align: right; max-width: 60%; color:#1e293b;">${s.address || 'N/A'}</span>
+                                                </div>
                                             </div>
                                         </div></div>
 
-                                        <div style="position:fixed; bottom:0; width:100%; background:#fff; padding:15px; display:flex; gap:10px; box-shadow:0 -5px 15px rgba(0,0,0,0.1); border-radius:20px 20px 0 0; box-sizing:border-box;">
-                                            <button onclick="window.location.reload()" style="flex:1; background:#1e293b; color:#fff; padding:12px; border-radius:10px;">Home</button>
-                                            <a href="tel:7001471235" style="flex:1; background:#1e293b; color:#fff; text-decoration:none; text-align:center; padding:12px; border-radius:10px;">Help</a>
-                                            <button onclick="localStorage.removeItem('verified_student_${studentViewId}'); window.location.reload();" style="flex:1; background:#fff; color:#ef4444; border:1px solid #ef4444; padding:12px; border-radius:10px;">Logout</button>
+                                        <div id="m-att" class="modal-portal"><div class="modal-content-portal">
+                                            <div class="close-btn" onclick="document.getElementById('m-att').style.display='none'">&times;</div>
+                                            <h3 style="margin-top:5px; color:#334155; font-size:18px; border-bottom:2px solid #f1f5f9; padding-bottom:10px;">Attendance History</h3>
+                                            <div class="scroller-box">${attHtml}</div>
+                                        </div></div>
+
+                                        <div id="m-pay" class="modal-portal"><div class="modal-content-portal">
+                                            <div class="close-btn" onclick="document.getElementById('m-pay').style.display='none'">&times;</div>
+                                            <h3 style="margin-top:5px; color:#334155; font-size:18px; border-bottom:2px solid #f1f5f9; padding-bottom:10px;">Payment History</h3>
+                                            <div class="scroller-box">${paidHtml}</div>
+                                        </div></div>
+
+                                        <div style="position:fixed; bottom:0; left:0; width:100%; background:#fff; padding:15px; display:flex; gap:12px; box-shadow:0 -10px 30px rgba(0,0,0,0.06); border-radius:24px 24px 0 0; box-sizing:border-box;">
+                                            <button onclick="window.location.reload()" style="flex:0.7; background:#f1f5f9; color:#334155; border:none; border-radius:14px; height:50px; font-size:20px; cursor:pointer;"><i class="fas fa-home"></i></button>
+                                            
+                                            <a href="tel:7001471235" style="flex:1; background:#6366f1; color:#fff; text-decoration:none; display:flex; align-items:center; justify-content:center; border-radius:14px; font-weight:600; font-size:15px; box-shadow:0 4px 10px rgba(99,102,241,0.3);"><i class="fas fa-headset" style="margin-right:6px;"></i> Help</a>
+                                            
+                                            <button onclick="localStorage.removeItem('verified_student_${studentViewId}'); window.location.reload();" style="flex:1; background:#fff; color:#ef4444; border:2px solid #fecaca; border-radius:14px; font-weight:600; font-size:15px; cursor:pointer;">Log Out</button>
                                         </div>
                                     </div>`;
                             }
