@@ -1547,6 +1547,7 @@ async function renderStudentPortal() {
                                 let dobFormat = s.dob ? new Date(s.dob).toLocaleDateString('en-IN') : 'N/A';
 
                                 // 🟢 HTML Construction Matching the Image
+                                // 🟢 HTML Construction Matching the Image
                                 document.body.innerHTML = `
                                     <style>
                                         .scroller-box::-webkit-scrollbar { width: 4px; }
@@ -1570,63 +1571,107 @@ async function renderStudentPortal() {
 
                                             ${noticeHtml}
 
-                                            <h4 style="margin: 25px 0 10px 5px; color:#334155; font-size:16px; display:flex; align-items:center; gap:8px;">
-                                                <i class="fas fa-info-circle" style="color:#3b82f6; font-size: 18px;"></i> Complete Profile Details
-                                            </h4>
-                                            <div class="scroller-box" style="max-height: 250px; overflow-y: auto; padding-right: 5px;">
-                                                <div style="background: #fff; border-radius: 16px; padding: 15px 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.02); font-size: 14px; color: #1e293b; line-height: 1.8;">
-                                                    <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;">
-                                                        <span style="font-weight:700;">Name:</span> <span>${s.name}</span>
-                                                    </div>
-                                                    <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;">
-                                                        <span style="font-weight:700;">ID No:</span> <span style="font-weight:700; color:#1e40af;">#${s.serial_no}</span>
-                                                    </div>
-                                                    <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;">
-                                                        <span style="font-weight:700;">Class:</span> <span>${s.class || 'N/A'}</span>
-                                                    </div>
-                                                    <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;">
-                                                        <span style="font-weight:700;">Schedule:</span> <span style="color:#ea580c; font-weight:600;">${upcomingClassText}</span>
-                                                    </div>
-                                                    <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;">
-                                                        <span style="font-weight:700;">Monthly Fee:</span> <span style="font-weight:700; color:#10b981;">₹${s.fee_amount || DEFAULT_FEE}</span>
-                                                    </div>
-                                                    <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;">
-                                                        <span style="font-weight:700;">Phone:</span> <span>${s.phone || 'N/A'}</span>
-                                                    </div>
-                                                    <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;">
-                                                        <span style="font-weight:700;">Email:</span> <span>${s.email || 'N/A'}</span>
-                                                    </div>
-                                                    <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;">
-                                                        <span style="font-weight:700;">DOB:</span> <span>${dobFormat}</span>
-                                                    </div>
-                                                    <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;">
-                                                        <span style="font-weight:700;">Guardian:</span> <span>${s.guardian || 'N/A'}</span>
-                                                    </div>
-                                                    <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;">
-                                                        <span style="font-weight:700;">Joined On:</span> <span>${new Date(s.joining_date).toLocaleDateString('en-IN')}</span>
-                                                    </div>
-                                                    <div style="display:flex; justify-content:space-between; padding: 6px 0;">
-                                                        <span style="font-weight:700;">Address:</span> <span style="text-align: right; max-width: 65%;">${s.address || 'N/A'}</span>
-                                                    </div>
-                                                </div>
+                                            <div style="display:flex; flex-direction:column; gap:12px; margin-top:10px;">
+                                                <button onclick="document.getElementById('portalProfileModal').style.display='flex'" style="background:#3b82f6; color:#fff; padding:15px 20px; border-radius:12px; border:none; font-size:15px; font-weight:600; display:flex; justify-content:space-between; align-items:center; box-shadow:0 4px 6px rgba(59, 130, 246, 0.2); cursor:pointer;">
+                                                    <span><i class="fas fa-user-circle"></i> Complete Profile Details</span> <i class="fas fa-chevron-right"></i>
+                                                </button>
+                                                
+                                                <button onclick="document.getElementById('portalAttModal').style.display='flex'" style="background:#8b5cf6; color:#fff; padding:15px 20px; border-radius:12px; border:none; font-size:15px; font-weight:600; display:flex; justify-content:space-between; align-items:center; box-shadow:0 4px 6px rgba(139, 92, 246, 0.2); cursor:pointer;">
+                                                    <span><i class="fas fa-calendar-check"></i> Attendance History</span> <i class="fas fa-chevron-right"></i>
+                                                </button>
+                                                
+                                                <button onclick="document.getElementById('portalPayModal').style.display='flex'" style="background:#10b981; color:#fff; padding:15px 20px; border-radius:12px; border:none; font-size:15px; font-weight:600; display:flex; justify-content:space-between; align-items:center; box-shadow:0 4px 6px rgba(16, 185, 129, 0.2); cursor:pointer;">
+                                                    <span><i class="fas fa-file-invoice-dollar"></i> Payment History</span> <i class="fas fa-chevron-right"></i>
+                                                </button>
                                             </div>
+
+                                            ${dueHtml ? `<div style="margin-top: 20px;">${dueHtml}</div>` : ''}
+
+                                            <h4 style="margin: 25px 0 10px 5px; color:#334155; font-size:16px; display:flex; align-items:center; gap:8px;">
+                                                <i class="fas fa-book-reader" style="color:#6366f1; font-size: 18px;"></i> My Study Materials
+                                            </h4>
+                                            <div class="scroller-box" style="max-height: 300px; overflow-y: auto; padding-right: 5px;">
+                                                ${materialsHtml}
+                                            </div>
+                                        </div>
                                         
                                         <div style="position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; padding: 15px; box-shadow: 0 -5px 20px rgba(0,0,0,0.06); display: flex; gap: 10px; align-items: center; box-sizing: border-box; z-index: 100; border-top-left-radius: 20px; border-top-right-radius: 20px;">
-                                            
                                             <button onclick="window.scrollTo({top: 0, behavior: 'smooth'}); setTimeout(() => window.location.reload(), 500);" style="flex: 0.6; background: #1e293b; color: #fff; border: none; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; height: 48px; font-size: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
                                                 <i class="fas fa-home"></i>
                                             </button>
-                                            
                                             <a href="tel:7001471235" style="flex: 1; display: flex; align-items: center; justify-content: center; background: #1e293b; color: white; border-radius: 12px; text-decoration: none; font-size: 15px; font-weight: 600; height: 48px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
                                                 <i class="fas fa-phone-alt" style="margin-right: 8px;"></i> Help
                                             </a>
-                                            
                                             <button onclick="localStorage.removeItem('verified_student_${studentViewId}'); window.location.reload();" style="flex: 1; background: #fff; color: #ef4444; border: 2px solid #ef4444; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; height: 48px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
                                                 Log Out
                                             </button>
                                         </div>
+
+                                        <div id="portalProfileModal" class="modal" style="z-index: 10005;">
+                                            <div class="modal-content" style="padding: 20px 15px;">
+                                                <span class="close-button" onclick="document.getElementById('portalProfileModal').style.display='none'">&times;</span>
+                                                <h3 style="margin-top:0; color:#3b82f6;"><i class="fas fa-user-circle"></i> Profile Details</h3>
+                                                <div class="scroller-box" style="max-height: 60vh; overflow-y: auto; padding-right: 5px;">
+                                                    <div style="font-size: 14px; color: #1e293b; line-height: 1.8;">
+                                                        <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;">
+                                                            <span style="font-weight:700;">Name:</span> <span>${s.name}</span>
+                                                        </div>
+                                                        <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;">
+                                                            <span style="font-weight:700;">ID No:</span> <span style="font-weight:700; color:#1e40af;">#${s.serial_no}</span>
+                                                        </div>
+                                                        <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;">
+                                                            <span style="font-weight:700;">Class:</span> <span>${s.class || 'N/A'}</span>
+                                                        </div>
+                                                        <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;">
+                                                            <span style="font-weight:700;">Schedule:</span> <span style="color:#ea580c; font-weight:600;">${upcomingClassText}</span>
+                                                        </div>
+                                                        <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;">
+                                                            <span style="font-weight:700;">Monthly Fee:</span> <span style="font-weight:700; color:#10b981;">₹${s.fee_amount || DEFAULT_FEE}</span>
+                                                        </div>
+                                                        <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;">
+                                                            <span style="font-weight:700;">Phone:</span> <span>${s.phone || 'N/A'}</span>
+                                                        </div>
+                                                        <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;">
+                                                            <span style="font-weight:700;">Email:</span> <span style="word-break: break-all; max-width: 60%; text-align: right;">${s.email || 'N/A'}</span>
+                                                        </div>
+                                                        <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;">
+                                                            <span style="font-weight:700;">DOB:</span> <span>${dobFormat}</span>
+                                                        </div>
+                                                        <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;">
+                                                            <span style="font-weight:700;">Guardian:</span> <span>${s.guardian || 'N/A'}</span>
+                                                        </div>
+                                                        <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding: 6px 0;">
+                                                            <span style="font-weight:700;">Joined On:</span> <span>${new Date(s.joining_date).toLocaleDateString('en-IN')}</span>
+                                                        </div>
+                                                        <div style="display:flex; justify-content:space-between; padding: 6px 0;">
+                                                            <span style="font-weight:700;">Address:</span> <span style="text-align: right; max-width: 65%;">${s.address || 'N/A'}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div id="portalAttModal" class="modal" style="z-index: 10005;">
+                                            <div class="modal-content" style="padding: 20px 15px; background: #f8fafc;">
+                                                <span class="close-button" onclick="document.getElementById('portalAttModal').style.display='none'">&times;</span>
+                                                <h3 style="margin-top:0; color:#8b5cf6;"><i class="fas fa-calendar-check"></i> Attendance</h3>
+                                                <div class="scroller-box" style="max-height: 65vh; overflow-y: auto; padding-right: 5px;">
+                                                    ${attHtml}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div id="portalPayModal" class="modal" style="z-index: 10005;">
+                                            <div class="modal-content" style="padding: 20px 15px; background: #f8fafc;">
+                                                <span class="close-button" onclick="document.getElementById('portalPayModal').style.display='none'">&times;</span>
+                                                <h3 style="margin-top:0; color:#10b981;"><i class="fas fa-file-invoice-dollar"></i> Payments</h3>
+                                                <div class="scroller-box" style="max-height: 65vh; overflow-y: auto; padding-right: 5px;">
+                                                    ${paidHtml}
+                                                </div>
+                                            </div>
+                                        </div>
+
                                     </div>`;
-                            } else {
                                 document.body.innerHTML = `<div style="display:flex; height:100vh; align-items:center; justify-content:center; flex-direction:column; background:#f8fafc;"><h2 style="color:#ef4444; font-family:'Poppins', sans-serif;">Profile Inactive or Hidden</h2><button onclick="localStorage.removeItem('verified_student_${studentViewId}'); window.location.reload();" style="padding:10px 20px; border-radius:8px; border:none; background:#1e293b; color:#fff; margin-top:20px; cursor:pointer;">Go Back</button></div>`;
                             }
                         } else {
