@@ -1130,14 +1130,24 @@ if (studentViewId && managerUid) {
                                     </div>`;
                                 }).join('') : '<p style="text-align:center; color:gray; font-size:13px;">No attendance records.</p>';
 
-                                // ৩. Payment Data
+// ৩. Payment Data (Updated to show Transaction ID)
                                 let feeRecords = [];
                                 Object.keys(globalFees).forEach(month => { if(globalFees[month][studentViewId]) feeRecords.push({ month, data: globalFees[month][studentViewId] }); });
                                 feeRecords.sort((a,b) => new Date(b.month+'-01') - new Date(a.month+'-01')).reverse();
-                                let paidHtml = feeRecords.length > 0 ? feeRecords.map(rec => `<div style="margin-bottom:10px; padding:12px; background:#f0fdf4; border-radius:10px; border-left:4px solid #22c55e; display:flex; justify-content:space-between; align-items:center;">
-                                    <div><strong style="color:#166534;">${rec.month}</strong><br><span style="font-size:11px; color:#15803d;">Paid via ${rec.data.mode || 'Cash'}</span></div>
-                                    <div style="font-size:16px; font-weight:bold; color:#166534;">₹${rec.data.amount}</div>
-                                </div>`).join('') : '<p style="text-align:center; color:gray; font-size:13px;">No payment records.</p>';
+                                
+                                let paidHtml = feeRecords.length > 0 ? feeRecords.map(rec => {
+                                    // ট্রানজ্যাকশন আইডি থাকলে সেটি দেখানোর জন্য HTML তৈরি করা হচ্ছে
+                                    let txnHtml = rec.data.transactionId ? `<br><span style="font-size:10px; color:#047857; font-weight:600; display:inline-block; margin-top:3px; background:#d1fae5; padding:2px 6px; border-radius:4px;">Txn: ${rec.data.transactionId}</span>` : '';
+                                    
+                                    return `<div style="margin-bottom:10px; padding:12px; background:#f0fdf4; border-radius:10px; border-left:4px solid #22c55e; display:flex; justify-content:space-between; align-items:center; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
+                                        <div>
+                                            <strong style="color:#166534; font-size:14px;">${rec.month}</strong><br>
+                                            <span style="font-size:11px; color:#15803d;">Paid via ${rec.data.mode || 'Cash'}</span>
+                                            ${txnHtml}
+                                        </div>
+                                        <div style="font-size:16px; font-weight:bold; color:#166534;">₹${rec.data.amount}</div>
+                                    </div>`;
+                                }).join('') : '<p style="text-align:center; color:gray; font-size:13px;">No payment records.</p>';
 
                                 // ৪. Due Data
                                 let dueHtml = '';
