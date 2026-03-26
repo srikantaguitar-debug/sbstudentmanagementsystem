@@ -165,6 +165,17 @@
         #attendanceTable .student-name-link { font-size: 15px; }
         .modal-content { padding: 15px !important; width: 95% !important; }
         .dashboard-card { padding: 15px !important; }
+
+        /* --- Remind Tab Compact Mobile View --- */
+        #reminders input:not([type="search"]), 
+        #reminders select { padding: 8px 10px !important; font-size: 12px !important; height: 35px !important; }
+        #reminders .search-bar input { padding: 8px 10px 8px 35px !important; font-size: 12px !important; height: 35px !important; }
+        #reminders button { padding: 8px 10px !important; font-size: 12px !important; height: 35px !important; }
+        #reminders .dashboard-card { padding: 12px !important; margin-bottom: 10px !important; }
+        #reminders .form-group { margin-bottom: 10px !important; }
+        #reminders > div[style*="background: var(--bg-input)"] { padding: 12px !important; margin-bottom: 10px !important; }
+        #globalLibraryList > div { padding: 10px !important; gap: 6px !important; }
+        #globalLibraryList > div button, #globalLibraryList > div a { height: 30px !important; padding: 5px !important; font-size: 11px !important; }
     }
 
     /* Status Colors */
@@ -2804,13 +2815,15 @@ async function addReminder() {
 
     reminders.push({ id: Date.now(), text: text, day: day, date: dateVal }); 
     
-    await saveData(); 
-    
+    // UI সাথে সাথে আপডেট হবে
     document.getElementById('reminderText').value = ''; 
     document.getElementById('reminderDate').value = ''; 
     renderReminders(); 
     
-    Swal.fire('Added', 'Reminder added successfully.', 'success'); 
+    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Reminder added!', showConfirmButton: false, timer: 1500 });
+    
+    // ব্যাকগ্রাউন্ডে সেভ হবে (কোনো ল্যাগ করবে না)
+    saveData().catch(e => console.log("Background sync pending")); 
 }
 
 async function deleteReminder(id) { reminders = reminders.filter(r => r.id !== id); await saveData(); renderReminders(); }
@@ -5179,15 +5192,17 @@ async function saveGlobalMaterial() {
     };
 
     globalMaterials.push(newMaterial);
-    await saveData();
     
+    // UI সাথে সাথে আপডেট হবে
     document.getElementById('libMatTitle').value = '';
     document.getElementById('libMatLink').value = '';
-    
     renderGlobalMaterials();
     
     const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
     Toast.fire({ icon: 'success', title: 'Saved to Library' });
+
+    // ব্যাকগ্রাউন্ডে সেভ হবে
+    saveData().catch(e => console.log("Background sync pending"));
 }
 
 // 🟢 Global Material Library - Lazy Loading Variables
@@ -5262,12 +5277,12 @@ function loadMoreLibraryItems() {
                 <button onclick="deleteGlobalMaterial(${mat.id})" style="background:transparent; border:none; color:var(--danger); cursor:pointer; font-size:14px;"><i class="fas fa-trash"></i></button>
             </div>
             
-            <div style="display:flex; gap:10px; margin-top:5px;">
-                <button class="btn-info" onclick="openSendToStudentModal(${mat.id})" style="flex:2; font-size:12px; padding:8px;">
-                    <i class="fas fa-paper-plane"></i> Send to Student
+            <div style="display:flex; gap:10px; margin-top:5px; align-items: stretch;">
+                <button class="btn-info" onclick="openSendToStudentModal(${mat.id})" style="flex:2; font-size:12px; padding:8px 0; display:flex; align-items:center; justify-content:center; border-radius:8px; height: 35px; min-height: 35px; box-sizing: border-box; border: none;">
+                    <i class="fas fa-paper-plane" style="margin-right:5px;"></i> Send to Student
                 </button>
-                <a href="${mat.link}" target="_blank" class="btn-secondary" style="flex:1; font-size:12px; padding:8px; text-align:center;">
-                    <i class="fas fa-eye"></i> View
+                <a href="${mat.link}" target="_blank" class="btn-success" style="flex:1; font-size:12px; padding:8px 0; display:flex; align-items:center; justify-content:center; text-decoration:none; border-radius:8px; height: 35px; min-height: 35px; box-sizing: border-box; text-align: center;">
+                    <i class="fas fa-eye" style="margin-right:5px;"></i> View
                 </a>
             </div>
         `;
@@ -5380,27 +5395,28 @@ async function assignMaterialToStudent(studentId, material) {
     const student = students[studentIndex];
     if (!student.study_materials) student.study_materials = [];
 
-    // Add material to student's array
+    // স্টুডেন্টের লিস্টে অ্যাড করা
     student.study_materials.push({
-        id: Date.now(), // Generate new ID for the student's copy
+        id: Date.now(), 
         title: material.title,
         type: material.type,
         link: material.link,
         date: new Date().toISOString().split('T')[0]
     });
 
-    // Save directly to Firebase
-    await db.collection(COLLECTION_NAME).doc(DOC_ID).collection('students').doc(String(studentId)).update({
-        study_materials: student.study_materials
-    });
-
+    // সাথে সাথে সাকসেস মেসেজ দেখাবে
     Swal.fire({
-        title: 'Sent!',
-        text: `${material.title} has been added to ${student.name}'s portal.`,
+        title: 'Sent Fast!',
+        text: `${material.title} added to ${student.name}'s portal.`,
         icon: 'success',
-        timer: 2000,
+        timer: 1500,
         showConfirmButton: false
     });
+
+    // ব্যাকগ্রাউন্ডে নীরবে ফায়ারবেসে সেভ হবে
+    db.collection(COLLECTION_NAME).doc(DOC_ID).collection('students').doc(String(studentId)).update({
+        study_materials: student.study_materials
+    }).catch(e => console.log("Background sync pending"));
 }
 </script>
 </body>
