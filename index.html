@@ -464,6 +464,64 @@
                     <button class="btn-primary" onclick="addReminder()" style="width:100%; margin-top: 10px;">Add Reminder</button>
                 </div>
             </div>
+            <div id="reminderListContainer" style="margin-bottom: 30px;"></div>
+
+            <hr style="margin: 25px 0; border-top: 2px dashed var(--border-color);">
+            <h3 style="border-left: 4px solid var(--info); padding-left:10px; color: var(--info);">📚 Material Library</h3>
+            
+            <div class="dashboard-card" style="border-color: var(--info);">
+                <h4 style="margin-top:0; margin-bottom:15px; font-size:14px; color:var(--text-muted);">Add Link to Library</h4>
+                <div class="form-grid">
+                    <div class="form-group"><input type="text" id="libMatTitle" placeholder="Title (e.g. C Major Scale)"></div>
+                    <div style="display:flex; gap:10px;">
+                        <div class="form-group" style="flex:1;">
+                            <select id="libMatCategory">
+                                <option value="Guitar">🎸 Guitar</option>
+                                <option value="Bass Guitar">🎸 Bass Guitar</option>
+                                <option value="Keyboard">🎹 Keyboard/Piano</option>
+                                <option value="Mandolin">🪕 Mandolin</option>
+                                <option value="Other">📁 Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <select id="libMatType">
+                                <option value="video">🎬 Video</option>
+                                <option value="pdf">📄 PDF</option>
+                                <option value="audio">🎵 Audio</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group"><input type="url" id="libMatLink" placeholder="Paste Link Here"></div>
+                </div>
+                <button class="btn-info" onclick="saveGlobalMaterial()" style="width:100%; margin-top:5px;">
+                    <i class="fas fa-save"></i> Save to Library
+                </button>
+            </div>
+
+            <div style="background: var(--bg-input); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid var(--border-color);">
+                <div class="search-bar" style="margin-bottom: 10px;">
+                    <input type="search" id="searchLibrary" onkeyup="filterLibrary()" placeholder="🔍 Search by Title...">
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <select id="filterLibCategory" onchange="filterLibrary()" style="flex: 1; font-size: 12px; padding: 8px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main);">
+                        <option value="All">🎸 All Categories</option>
+                        <option value="Guitar">Guitar</option>
+                        <option value="Bass Guitar">Bass Guitar</option>
+                        <option value="Keyboard">Keyboard</option>
+                        <option value="Mandolin">Mandolin</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <select id="filterLibType" onchange="filterLibrary()" style="flex: 1; font-size: 12px; padding: 8px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main);">
+                        <option value="All">📂 All Types</option>
+                        <option value="video">🎬 Video</option>
+                        <option value="pdf">📄 PDF</option>
+                        <option value="audio">🎵 Audio</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div id="globalLibraryList" onscroll="handleLibraryScroll()" style="display:flex; flex-direction:column; gap:12px; max-height: 450px; overflow-y: auto; padding-right: 5px; padding-bottom: 20px;"></div>
+        </div>
             <div id="reminderListContainer"></div>
         </div>
 
@@ -1591,17 +1649,19 @@ if (studentViewId && managerUid) {
                     }
                 }
 
-                const [aData, fData, rData, scData] = await Promise.all([
+                const [aData, fData, rData, scData, gmData] = await Promise.all([
                     dbGet('attendance'),
                     dbGet('fees'),
                     dbGet('reminders'),
-                    dbGet('studentSerialCounter')
+                    dbGet('studentSerialCounter'),
+                    dbGet('globalMaterials')
                 ]);
 
                 students = loadedStudents || []; 
                 attendance = aData || {}; 
                 fees = fData || {}; 
                 reminders = rData || []; 
+                globalMaterials = gmData || [];
                 studentSerialCounter = parseInt(scData) || (students.length > 0 ? students.length + 1 : 1); 
                 
                 loadAllData(); 
@@ -1622,7 +1682,7 @@ if (studentViewId && managerUid) {
         const MY_NAME = "Srikanta Banerjee"; 
         const DEFAULT_FEE = 500, DUE_DATE = 10; 
         
-        let students = [], attendance = {}, fees = {}, reminders = [], studentSerialCounter = 1; 
+        let students = [], attendance = {}, fees = {}, reminders = [], globalMaterials = [], studentSerialCounter = 1; 
         let financeChartInstance = null; 
         let instituteLogo = null; 
         let authorizedSignature = null;
@@ -2243,7 +2303,8 @@ async function addStudent() {
 async function saveData() { 
     await dbSet('attendance', attendance); 
     await dbSet('fees', fees); 
-    await dbSet('reminders', reminders); 
+    await dbSet('reminders', reminders);
+    await dbSet('globalMaterials', globalMaterials); 
     await dbSet('studentSerialCounter', studentSerialCounter); 
 }
 
@@ -2324,7 +2385,10 @@ function openTab(tabName) {
         renderAttendance();
     }
     if(tabName === 'fees') renderFees();
-    if(tabName === 'reminders') renderReminders();
+    if(tabName === 'reminders') {
+        renderReminders();
+        renderGlobalMaterials();
+    }
 }
 
 function migrateStudentData(student) { 
@@ -5090,6 +5154,254 @@ async function deletePersonalNotice() {
     }
 }
 
+// ==========================================
+// GLOBAL MATERIAL LIBRARY LOGIC
+// ==========================================
+
+async function saveGlobalMaterial() {
+    const title = document.getElementById('libMatTitle').value.trim();
+    const category = document.getElementById('libMatCategory').value;
+    const type = document.getElementById('libMatType').value;
+    const link = document.getElementById('libMatLink').value.trim();
+
+    if (!title || !link) {
+        Swal.fire('Error', 'Title and Link are required!', 'error');
+        return;
+    }
+
+    const newMaterial = {
+        id: Date.now(),
+        title: title,
+        category: category,
+        type: type,
+        link: link,
+        date: new Date().toISOString().split('T')[0]
+    };
+
+    globalMaterials.push(newMaterial);
+    await saveData();
+    
+    document.getElementById('libMatTitle').value = '';
+    document.getElementById('libMatLink').value = '';
+    
+    renderGlobalMaterials();
+    
+    const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+    Toast.fire({ icon: 'success', title: 'Saved to Library' });
+}
+
+// 🟢 Global Material Library - Lazy Loading Variables
+let currentFilteredMaterials = [];
+let currentLibDisplayCount = 0;
+const LIB_ITEMS_PER_PAGE = 10; // একবারে ১০টি করে মেটেরিয়াল লোড হবে
+
+function renderGlobalMaterials() {
+    // ট্যাব ওপেন হলে বাই-ডিফল্ট সব ফিল্টার রিসেট করে সব ডাটা দেখাবে
+    document.getElementById('searchLibrary').value = '';
+    document.getElementById('filterLibCategory').value = 'All';
+    document.getElementById('filterLibType').value = 'All';
+    filterLibrary();
+}
+
+function filterLibrary() {
+    const searchText = document.getElementById('searchLibrary').value.toLowerCase();
+    const filterCat = document.getElementById('filterLibCategory').value;
+    const filterType = document.getElementById('filterLibType').value;
+    
+    const container = document.getElementById('globalLibraryList');
+    container.innerHTML = '';
+    currentLibDisplayCount = 0; // স্ক্রল কাউন্ট রিসেট
+
+    // Search এবং Filter অনুযায়ী ডাটা ফিল্টার করা
+    currentFilteredMaterials = globalMaterials.filter(mat => {
+        const matchText = mat.title.toLowerCase().includes(searchText) || 
+                          mat.category.toLowerCase().includes(searchText) ||
+                          mat.type.toLowerCase().includes(searchText);
+                          
+        const matchCat = filterCat === 'All' || mat.category === filterCat;
+        const matchType = filterType === 'All' || mat.type === filterType;
+        
+        return matchText && matchCat && matchType;
+    });
+
+    if (currentFilteredMaterials.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:var(--text-muted); font-size:13px; padding: 20px;">No materials found matching your search.</p>';
+        return;
+    }
+
+    // লেটেস্ট অ্যাড করা মেটেরিয়াল ওপরে দেখাবে
+    currentFilteredMaterials.sort((a, b) => b.id - a.id);
+
+    // প্রথম ১০টি মেটেরিয়াল লোড করা
+    loadMoreLibraryItems();
+}
+
+function loadMoreLibraryItems() {
+    const container = document.getElementById('globalLibraryList');
+    
+    // লিস্ট থেকে পরের ১০টি মেটেরিয়াল বের করা
+    const nextBatch = currentFilteredMaterials.slice(currentLibDisplayCount, currentLibDisplayCount + LIB_ITEMS_PER_PAGE);
+    
+    if (nextBatch.length === 0) return; // আর কিছু লোড করার নেই
+
+    nextBatch.forEach(mat => {
+        let icon = mat.type === 'video' ? '<i class="fab fa-youtube" style="color:#ef4444;"></i>' : 
+                   mat.type === 'pdf' ? '<i class="fas fa-file-pdf" style="color:#ef4444;"></i>' : 
+                   '<i class="fas fa-music" style="color:#3b82f6;"></i>';
+                   
+        const div = document.createElement('div');
+        div.style.cssText = 'background: var(--bg-card); padding: 15px; border-radius: 12px; border-left: 4px solid var(--info); box-shadow: var(--shadow); display:flex; flex-direction:column; gap:10px; flex-shrink: 0; animation: fadeIn 0.4s ease;';
+        
+        div.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <div>
+                    <span style="font-size:10px; background:var(--bg-input); padding:2px 8px; border-radius:4px; color:var(--text-muted); font-weight:600; text-transform:uppercase;">${mat.category}</span>
+                    <span style="font-size:10px; background:var(--bg-input); padding:2px 8px; border-radius:4px; color:var(--text-muted); font-weight:600; text-transform:uppercase; margin-left:5px;">${mat.type}</span>
+                    <div style="font-size:14px; font-weight:600; color:var(--text-main); margin-top:5px;">${icon} ${mat.title}</div>
+                </div>
+                <button onclick="deleteGlobalMaterial(${mat.id})" style="background:transparent; border:none; color:var(--danger); cursor:pointer; font-size:14px;"><i class="fas fa-trash"></i></button>
+            </div>
+            
+            <div style="display:flex; gap:10px; margin-top:5px;">
+                <button class="btn-info" onclick="openSendToStudentModal(${mat.id})" style="flex:2; font-size:12px; padding:8px;">
+                    <i class="fas fa-paper-plane"></i> Send to Student
+                </button>
+                <a href="${mat.link}" target="_blank" class="btn-secondary" style="flex:1; font-size:12px; padding:8px; text-align:center;">
+                    <i class="fas fa-eye"></i> View
+                </a>
+            </div>
+        `;
+        container.appendChild(div);
+    });
+
+    // স্ক্রল কাউন্ট আপডেট করা
+    currentLibDisplayCount += nextBatch.length;
+}
+
+// 🟢 Lazy Loading (Infinite Scroll) Scroll Detector
+function handleLibraryScroll() {
+    const container = document.getElementById('globalLibraryList');
+    
+    // ইউজার লিস্টের একদম নিচে পৌঁছালে নতুন ব্যাচ লোড হবে
+    if (container.scrollTop + container.clientHeight >= container.scrollHeight - 15) {
+        loadMoreLibraryItems();
+    }
+}
+
+async function deleteGlobalMaterial(id) {
+    Swal.fire({
+        title: 'Delete from Library?',
+        text: "Are you sure? (This won't remove it from students who already received it)",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        confirmButtonText: 'Yes, Delete'
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            globalMaterials = globalMaterials.filter(m => m.id !== id);
+            await saveData();
+            renderGlobalMaterials();
+        }
+    });
+}
+
+// 🟢 Send Material to Student Portal Logic (Searchable)
+let tempActiveStudents = []; // সার্চিং এর জন্য ডাটা স্টোর করতে
+
+async function openSendToStudentModal(matId) {
+    const material = globalMaterials.find(m => m.id === matId);
+    if (!material) return;
+
+    // Active স্টুডেন্টদের লিস্ট তৈরি করা
+    tempActiveStudents = students.filter(s => s.status?.isActive).sort((a,b) => a.name.localeCompare(b.name));
+    
+    let optionsHtml = '';
+    tempActiveStudents.forEach(s => {
+        optionsHtml += `<option value="${s.id}" style="padding: 10px; border-bottom: 1px solid var(--border-color); cursor:pointer;">${s.name} (${s.class || 'N/A'})</option>`;
+    });
+
+    const { value: selectedStudentId } = await Swal.fire({
+        title: 'Send Material',
+        html: `
+            <div style="text-align:left; margin-bottom:15px; font-size:13px; color:var(--text-main);">
+                <strong>Material:</strong> ${material.title} <br>
+                <span style="color:var(--info); font-weight:600;">${material.category}</span>
+            </div>
+            
+            <input type="text" id="swal-search-student" class="swal2-input" placeholder="🔍 Search student by name..." style="width: 100%; margin: 0 0 10px 0; font-size: 14px; box-sizing: border-box;" onkeyup="filterSendStudentList()">
+            
+            <select id="send-mat-student" class="swal2-select" size="6" style="width:100%; font-size:14px; margin:0; padding:5px; box-sizing: border-box; overflow-y: auto; border-radius: 8px;">
+                ${optionsHtml}
+            </select>
+            <div style="font-size:11px; color:var(--text-muted); text-align:left; margin-top:8px;">* Click on a student name to select</div>
+        `,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: '<i class="fas fa-paper-plane"></i> Send to Portal',
+        confirmButtonColor: 'var(--success)',
+        preConfirm: () => {
+            const val = document.getElementById('send-mat-student').value;
+            if (!val) { Swal.showValidationMessage('Please select a student from the list'); }
+            return val;
+        }
+    });
+
+    if (selectedStudentId) {
+        assignMaterialToStudent(parseInt(selectedStudentId), material);
+    }
+}
+
+// 🔍 Search Box Filter Function
+window.filterSendStudentList = function() {
+    const filter = document.getElementById('swal-search-student').value.toUpperCase();
+    const select = document.getElementById('send-mat-student');
+    
+    select.innerHTML = ''; // পুরোনো লিস্ট ক্লিয়ার করা
+    
+    // টাইপ করা নামের সাথে মিলিয়ে নতুন লিস্ট দেখানো
+    tempActiveStudents.forEach(s => {
+        const text = `${s.name} (${s.class || 'N/A'})`;
+        if (text.toUpperCase().indexOf(filter) > -1) {
+            const opt = document.createElement('option');
+            opt.value = s.id;
+            opt.innerHTML = text;
+            opt.style.padding = '10px';
+            opt.style.borderBottom = '1px solid #e2e8f0';
+            opt.style.cursor = 'pointer';
+            select.appendChild(opt);
+        }
+    });
+};
+
+async function assignMaterialToStudent(studentId, material) {
+    const studentIndex = students.findIndex(s => s.id === studentId);
+    if (studentIndex === -1) return;
+
+    const student = students[studentIndex];
+    if (!student.study_materials) student.study_materials = [];
+
+    // Add material to student's array
+    student.study_materials.push({
+        id: Date.now(), // Generate new ID for the student's copy
+        title: material.title,
+        type: material.type,
+        link: material.link,
+        date: new Date().toISOString().split('T')[0]
+    });
+
+    // Save directly to Firebase
+    await db.collection(COLLECTION_NAME).doc(DOC_ID).collection('students').doc(String(studentId)).update({
+        study_materials: student.study_materials
+    });
+
+    Swal.fire({
+        title: 'Sent!',
+        text: `${material.title} has been added to ${student.name}'s portal.`,
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false
+    });
+}
 </script>
 </body>
 </html>
