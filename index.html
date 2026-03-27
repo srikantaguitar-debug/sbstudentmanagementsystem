@@ -845,6 +845,15 @@
                     <div style="font-size:11px; color:red; margin-top:5px;">Absent: <ul id="modalAbsentList" class="scrollable-list" style="max-height:80px;"></ul></div>
                  </div>
             </div>
+            <div style="background: var(--bg-input); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--border-color);">
+        <h4 style="margin: 0 0 10px 0; border-bottom: 2px solid var(--success); padding-bottom: 5px;">
+            <i class="fas fa-stopwatch" style="color: var(--success);"></i> Practice History
+        </h4>
+        <div style="max-height: 150px; overflow-y: auto; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-color);">
+            <ul id="modalPracticeList" style="list-style: none; padding: 0; margin: 0;">
+                </ul>
+        </div>
+    </div>
             
     <div style="background: var(--bg-input); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--border-color);">
         <h4 style="margin: 0 0 10px 0; border-bottom: 2px solid var(--info); padding-bottom: 5px;">
@@ -1343,6 +1352,26 @@ if (studentViewId && managerUid) {
                                             </div>
 
                                             ${noticeHtml}
+                                            /* 🟢 Student Practice Tracker UI */
+<div style="margin-top: 25px; background: #fff; border-radius: 16px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); border-top: 4px solid #10b981;">
+    <h4 style="margin:0 0 15px 0; color:#334155; font-size:16px;">
+        <i class="fas fa-stopwatch" style="color:#10b981; margin-right:5px;"></i> Daily Practice Log
+    </h4>
+    
+    <div style="margin-bottom: 15px;">
+        <input type="text" value="🕒 Time: Auto-Captured (Right Now)" readonly title="You cannot change the time" style="width: 100%; padding: 10px; border: 1px dashed #cbd5e1; border-radius: 8px; font-size: 12px; background: #f8fafc; color: #64748b; cursor: not-allowed; outline: none; box-sizing: border-box; text-align: center; font-weight: 600;">
+    </div>
+
+    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+        <input type="number" id="practiceMinutes" placeholder="Mins (e.g. 45)" style="width: 35%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; outline: none; box-sizing: border-box;">
+        <input type="text" id="practiceTopic" placeholder="Topic (e.g. C Major Scale)" style="width: 65%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; outline: none; box-sizing: border-box;">
+    </div>
+    
+    <button onclick="submitPracticeLog(${studentViewId})" style="width: 100%; background: #10b981; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);">
+        <i class="fas fa-check-circle"></i> Log Practice
+    </button>
+    <div id="practiceHistoryPortal" style="margin-top: 15px; max-height: 150px; overflow-y: auto;"></div>
+</div>
 
                                             <div style="display:flex; flex-direction:column; gap:12px; margin-bottom: 25px;">
                                                 <button onclick="document.getElementById('m-profile').style.display='flex'" style="width:100%; background:#fff; padding:16px 20px; border-radius:16px; border:none; box-shadow:0 4px 15px rgba(0,0,0,0.04); display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
@@ -1425,9 +1454,14 @@ if (studentViewId && managerUid) {
                                             
                                             <button onclick="localStorage.removeItem('verified_student_${studentViewId}'); window.location.reload();" style="flex:1; background:#fff; color:#ef4444; border:2px solid #fecaca; border-radius:14px; font-weight:600; font-size:15px; cursor:pointer;">Log Out</button>
                                         </div>
-                                    </div>`;
+                                        </div></div>
+    `;
+    
+    /* 🟢 পোর্টালে অটোমেটিক হিস্ট্রি লোড করার জন্য এই লাইনটি অ্যাড করুন */
+    setTimeout(() => { renderPracticeHistoryPortal(s); }, 500);
+
                             } else {
-                                document.body.innerHTML = `<div style="display:flex; height:100vh; align-items:center; justify-content:center; flex-direction:column; background:#f8fafc;"><h2 style="color:#ef4444;">Profile Hidden</h2><p>Contact manager to enable access.</p><button onclick="localStorage.removeItem('verified_student_${studentViewId}'); window.location.reload();" style="padding:10px 20px; background:#1e293b; color:#fff; border:none; border-radius:8px;">Go Back</button></div>`;
+                                document.body.innerHTML = `<div style="display:flex; height:100vh; align-items:center; justify-content:center; flex-direction:column; background:#f8fafc;"><h2 style="color:#ef4444;">Profile Hidden</h2><p>Contact manager to enable access.</p>><button onclick="localStorage.removeItem('verified_student_${studentViewId}'); window.location.reload();" style="padding:10px 20px; background:#1e293b; color:#fff; border:none; border-radius:8px;">Go Back</button></div>`;
                             }
                         } else {
                             document.body.innerHTML = `<div style="display:flex; height:100vh; align-items:center; justify-content:center; flex-direction:column; background:#f8fafc;"><h2 style="color:#ef4444;">Student not found.</h2><button onclick="localStorage.removeItem('verified_student_${studentViewId}'); window.location.reload();" style="padding:10px 20px; background:#1e293b; color:#fff; border:none; border-radius:8px;">Go Back</button></div>`;
@@ -4475,7 +4509,8 @@ function showStudentDetails(studentId) {
     renderStudentDetailsHistory();
     document.getElementById('exportPdfBtn').onclick = () => exportStudentDetailsAsPDF(studentId); 
     renderStudentNotes(studentId);
-    renderStudyMaterials(studentId); // <-- এই নতুন লাইনটি বসাবেন
+    renderStudyMaterials(studentId);
+    renderPracticeLogTeacher(studentId); /* 🟢 এই লাইনটি অ্যাড করুন */
     document.getElementById('studentDetailsModal').style.display = 'flex'; 
 }
 
@@ -5483,6 +5518,190 @@ async function assignMaterialToStudent(studentId, material) {
         study_materials: student.study_materials
     }).catch(e => console.log("Background sync pending"));
 }
+// ==========================================
+// 🟢 PRACTICE TRACKER LOGIC (Limit Saver & Portal Fix)
+// ==========================================
+
+window.submitPracticeLog = async function(studentId) {
+    const minutes = document.getElementById('practiceMinutes').value;
+    const topic = document.getElementById('practiceTopic').value.trim();
+
+    if (!minutes || minutes <= 0 || !topic) {
+        Swal.fire({ toast: true, position: 'top-end', icon: 'warning', title: 'Enter valid minutes & topic!', showConfirmButton: false, timer: 2000 });
+        return;
+    }
+
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-IN'); 
+    const dayStr = now.toLocaleDateString('en-IN', { weekday: 'short' }); 
+    const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }); 
+
+    const studentIndex = students.findIndex(s => s.id === studentId);
+    if (studentIndex === -1) return;
+
+    const student = students[studentIndex];
+    if (!student.practice_log) student.practice_log = [];
+
+    student.practice_log.unshift({
+        id: Date.now(),
+        minutes: parseInt(minutes),
+        topic: topic,
+        date: dateStr,
+        day: dayStr,
+        time: timeStr
+    });
+
+    if (student.practice_log.length > 50) {
+        student.practice_log = student.practice_log.slice(0, 50);
+    }
+
+    // 🟢 Portal vs Manager Save Logic Fix
+    const urlParams = new URLSearchParams(window.location.search);
+    const managerUid = urlParams.get('manager');
+    const targetUid = managerUid ? managerUid : DOC_ID;
+
+    try { 
+        if (!managerUid) {
+            // যদি টিচার অ্যাপ থেকে সেভ করে তবেই লোকাল ডাটাবেসে যাবে
+            await dbSet('students', students); 
+        }
+        // ফায়ারবেসে সেভ হবে
+        await db.collection(COLLECTION_NAME).doc(targetUid).collection('students').doc(String(studentId)).update({
+            practice_log: student.practice_log
+        });
+    } catch(e) { console.log("Will sync later.", e); }
+
+    document.getElementById('practiceMinutes').value = '';
+    document.getElementById('practiceTopic').value = '';
+    
+    Swal.fire({ title: 'Great Job! 🌟', text: `Logged ${minutes} minutes!`, icon: 'success', timer: 2000, showConfirmButton: false });
+    renderPracticeHistoryPortal(student); 
+};
+
+window.renderPracticeHistoryPortal = function(student) {
+    const container = document.getElementById('practiceHistoryPortal');
+    if (!container) return;
+    if (!student.practice_log || student.practice_log.length === 0) {
+        container.innerHTML = '<div style="text-align:center; color:#94a3b8; font-size:12px;">No practice logged yet.</div>';
+        return;
+    }
+    let html = '';
+    student.practice_log.slice(0, 10).forEach(log => { 
+        html += `
+            <div style="background: #f0fdf4; padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #10b981; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <strong style="color: #065f46; font-size: 13px;">${log.topic}</strong><br>
+                    <span style="font-size: 11px; color: #166534;">📅 ${log.date} (${log.day}) 🕒 ${log.time}</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="background: #10b981; color: white; padding: 4px 8px; border-radius: 6px; font-weight: 600; font-size: 12px;">${log.minutes} mins</div>
+                    <button onclick="deletePracticeLog(${student.id}, ${log.id}, 'student')" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:14px;"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>`;
+    });
+    container.innerHTML = html;
+};
+
+window.renderPracticeLogTeacher = function(studentId) {
+    const student = students.find(s => s.id === studentId);
+    const container = document.getElementById('modalPracticeList');
+    if (!container || !student) return;
+
+    container.innerHTML = '';
+    if (student.practice_log && student.practice_log.length > 0) {
+        student.practice_log.forEach(log => {
+            container.innerHTML += `
+                <li style="padding: 8px 10px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong style="color: var(--success); font-size: 13px;">${log.topic}</strong><br>
+                        <span style="font-size: 10px; color: var(--text-muted);"><i class="fas fa-clock"></i> ${log.date} | ${log.day} | ${log.time}</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div style="font-size: 12px; font-weight: bold; color: var(--text-main); background: var(--bg-body); padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border-color);">${log.minutes} mins</div>
+                        <button onclick="editPracticeLogTeacher(${student.id}, ${log.id})" style="background:none; border:none; color:var(--warning); cursor:pointer; font-size:14px;"><i class="fas fa-edit"></i></button>
+                        <button onclick="deletePracticeLog(${student.id}, ${log.id}, 'teacher')" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:14px;"><i class="fas fa-trash"></i></button>
+                    </div>
+                </li>`;
+        });
+    } else {
+        container.innerHTML = '<li style="padding: 10px; text-align: center; color: var(--text-muted); font-size: 12px;">No practice records found.</li>';
+    }
+};
+
+window.deletePracticeLog = async function(studentId, logId, context) {
+    Swal.fire({
+        title: 'Delete Practice Log?',
+        text: "Are you sure?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        confirmButtonText: 'Yes, Delete'
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            const student = students.find(s => s.id === studentId);
+            if (!student) return;
+
+            student.practice_log = student.practice_log.filter(log => log.id !== logId);
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const managerUid = urlParams.get('manager');
+            const targetUid = managerUid ? managerUid : DOC_ID;
+
+            try {
+                if (!managerUid) await dbSet('students', students);
+                await db.collection(COLLECTION_NAME).doc(targetUid).collection('students').doc(String(studentId)).update({
+                    practice_log: student.practice_log
+                });
+            } catch(e) { console.log("Will sync later."); }
+
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Deleted successfully!', showConfirmButton: false, timer: 1500 });
+
+            if (context === 'student') renderPracticeHistoryPortal(student);
+            else renderPracticeLogTeacher(studentId);
+        }
+    });
+};
+
+window.editPracticeLogTeacher = async function(studentId, logId) {
+    const student = students.find(s => s.id === studentId);
+    if (!student) return;
+
+    const log = student.practice_log.find(l => l.id === logId);
+    if (!log) return;
+
+    const { value: formValues } = await Swal.fire({
+        title: 'Edit Practice Log',
+        html: `
+            <input id="edit-prac-mins" type="number" class="swal2-input" value="${log.minutes}" placeholder="Minutes" style="width: 85%;">
+            <input id="edit-prac-topic" type="text" class="swal2-input" value="${log.topic}" placeholder="Topic" style="width: 85%; margin-top: 10px;">
+        `,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: 'Save Changes',
+        confirmButtonColor: 'var(--success)',
+        preConfirm: () => {
+            const mins = document.getElementById('edit-prac-mins').value;
+            const topic = document.getElementById('edit-prac-topic').value.trim();
+            if (!mins || mins <= 0 || !topic) Swal.showValidationMessage('Please enter valid minutes and topic');
+            return { minutes: parseInt(mins), topic: topic };
+        }
+    });
+
+    if (formValues) {
+        log.minutes = formValues.minutes;
+        log.topic = formValues.topic;
+
+        try {
+            await dbSet('students', students);
+            await db.collection(COLLECTION_NAME).doc(DOC_ID).collection('students').doc(String(studentId)).update({
+                practice_log: student.practice_log
+            });
+        } catch(e) { console.log("Will sync later."); }
+
+        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Updated successfully!', showConfirmButton: false, timer: 1500 });
+        renderPracticeLogTeacher(studentId);
+    }
+};
 </script>
 </body>
 </html>
