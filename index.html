@@ -5522,7 +5522,7 @@ async function assignMaterialToStudent(studentId, material) {
 // 🟢 PRACTICE TRACKER LOGIC (Limit Saver & Portal Bug Fix)
 // ==========================================
 
-window.submitPracticeLog = async function(studentId) {
+window.submitPracticeLog = function(studentId) {
     const minutes = document.getElementById('practiceMinutes').value;
     const topic = document.getElementById('practiceTopic').value.trim();
     
@@ -5538,7 +5538,6 @@ window.submitPracticeLog = async function(studentId) {
     const dateStr = now.toLocaleDateString('en-IN'); 
     const dayStr = now.toLocaleDateString('en-IN', { weekday: 'short' }); 
     
-    // 🟢 Time Logic (ম্যানুয়াল টাইম দিলে সেটা নেবে, নাহলে বর্তমান টাইম)
     let timeStr = '';
     if (timeInputVal) {
         const [h, m] = timeInputVal.split(':');
@@ -5549,7 +5548,6 @@ window.submitPracticeLog = async function(studentId) {
         timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }); 
     }
 
-    // 🟢 Portal vs Manager Logic Fix
     const urlParams = new URLSearchParams(window.location.search);
     const managerUid = urlParams.get('manager');
     const isStudentPortal = !!managerUid;
@@ -5559,23 +5557,14 @@ window.submitPracticeLog = async function(studentId) {
     let studentIndex = -1;
 
     if (isStudentPortal) {
-        // স্টুডেন্ট পোর্টালের জন্য সরাসরি ডাটাবেস থেকে ফেচ করা
-        try {
-            const doc = await db.collection(COLLECTION_NAME).doc(targetUid).collection('students').doc(String(studentId)).get();
-            if (doc.exists) studentData = doc.data();
-        } catch (e) {
-            console.error("Fetch error:", e);
-        }
+        // পোর্টালের জন্য সরাসরি বর্তমান ভিউ থেকে স্টুডেন্ট ডাটা নেওয়া
+        studentData = students.find(s => String(s.id) === String(studentId));
     } else {
-        // টিচার অ্যাপের জন্য লোকাল অ্যারে থেকে ফেচ করা
         studentIndex = students.findIndex(s => String(s.id) === String(studentId));
         if (studentIndex !== -1) studentData = students[studentIndex];
     }
 
-    if (!studentData) {
-        Swal.fire('Error', 'Student profile not found.', 'error');
-        return;
-    }
+    if (!studentData) return;
 
     if (!studentData.practice_log) studentData.practice_log = [];
 
@@ -5592,27 +5581,23 @@ window.submitPracticeLog = async function(studentId) {
         studentData.practice_log = studentData.practice_log.slice(0, 50);
     }
 
-    try { 
-        if (!isStudentPortal) {
-            students[studentIndex] = studentData; // Update global array for teacher
-            await dbSet('students', students); 
-        }
-        
-        await db.collection(COLLECTION_NAME).doc(targetUid).collection('students').doc(String(studentId)).update({
-            practice_log: studentData.practice_log
-        });
+    // 🟢 1. Instant UI Update (অপেক্ষা না করে সাথে সাথে স্ক্রিন আপডেট)
+    document.getElementById('practiceMinutes').value = '';
+    document.getElementById('practiceTopic').value = '';
+    if(timeInputEl) timeInputEl.value = '';
+    
+    Swal.fire({ title: 'Great Job! 🌟', text: `Logged ${minutes} minutes!`, icon: 'success', timer: 2000, showConfirmButton: false });
+    renderPracticeHistoryPortal(studentData); 
 
-        document.getElementById('practiceMinutes').value = '';
-        document.getElementById('practiceTopic').value = '';
-        if(timeInputEl) timeInputEl.value = '';
-        
-        Swal.fire({ title: 'Great Job! 🌟', text: `Logged ${minutes} minutes!`, icon: 'success', timer: 2000, showConfirmButton: false });
-        renderPracticeHistoryPortal(studentData); 
-
-    } catch(e) { 
-        console.log("Sync error:", e); 
-        Swal.fire('Error', 'Failed to save. Check connection.', 'error');
+    // 🟢 2. Background Database Save (নীরবে সেভ হবে)
+    if (!isStudentPortal) {
+        students[studentIndex] = studentData;
+        dbSet('students', students).catch(e => console.log(e)); 
     }
+    
+    db.collection(COLLECTION_NAME).doc(targetUid).collection('students').doc(String(studentId)).update({
+        practice_log: studentData.practice_log
+    }).catch(e => console.log("Sync error:", e));
 };
 
 window.renderPracticeHistoryPortal = function(student) {
@@ -5665,7 +5650,7 @@ window.renderPracticeLogTeacher = function(studentId) {
     }
 };
 
-window.deletePracticeLog = async function(studentId, logId, context) {
+window.deletePracticeLog = function(studentId, logId, context) {
     Swal.fire({
         title: 'Delete Practice Log?',
         text: "Are you sure?",
@@ -5673,7 +5658,7 @@ window.deletePracticeLog = async function(studentId, logId, context) {
         showCancelButton: true,
         confirmButtonColor: '#ef4444',
         confirmButtonText: 'Yes, Delete'
-    }).then(async (result) => {
+    }).then((result) => { // async রিমুভ করা হয়েছে
         if (result.isConfirmed) {
             
             const urlParams = new URLSearchParams(window.location.search);
@@ -5685,8 +5670,7 @@ window.deletePracticeLog = async function(studentId, logId, context) {
             let studentIndex = -1;
 
             if (isStudentPortal) {
-                const doc = await db.collection(COLLECTION_NAME).doc(targetUid).collection('students').doc(String(studentId)).get();
-                if (doc.exists) studentData = doc.data();
+                studentData = students.find(s => String(s.id) === String(studentId));
             } else {
                 studentIndex = students.findIndex(s => String(s.id) === String(studentId));
                 if (studentIndex !== -1) studentData = students[studentIndex];
@@ -5696,20 +5680,20 @@ window.deletePracticeLog = async function(studentId, logId, context) {
 
             studentData.practice_log = studentData.practice_log.filter(log => log.id !== logId);
 
-            try {
-                if (!isStudentPortal) {
-                    students[studentIndex] = studentData;
-                    await dbSet('students', students);
-                }
-                await db.collection(COLLECTION_NAME).doc(targetUid).collection('students').doc(String(studentId)).update({
-                    practice_log: studentData.practice_log
-                });
+            // 🟢 1. Instant UI Update
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Deleted successfully!', showConfirmButton: false, timer: 1500 });
 
-                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Deleted successfully!', showConfirmButton: false, timer: 1500 });
+            if (context === 'student') renderPracticeHistoryPortal(studentData);
+            else renderPracticeLogTeacher(studentId);
 
-                if (context === 'student') renderPracticeHistoryPortal(studentData);
-                else renderPracticeLogTeacher(studentId);
-            } catch(e) { console.log("Delete sync failed.", e); }
+            // 🟢 2. Background Save
+            if (!isStudentPortal) {
+                students[studentIndex] = studentData;
+                dbSet('students', students).catch(e => console.log(e));
+            }
+            db.collection(COLLECTION_NAME).doc(targetUid).collection('students').doc(String(studentId)).update({
+                practice_log: studentData.practice_log
+            }).catch(e => console.log("Delete sync failed.", e));
         }
     });
 };
