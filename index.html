@@ -233,7 +233,7 @@ html, body {
     .sig-toolbar { position: absolute; bottom: 20px; left: 0; width: 100%; display: flex; justify-content: center; gap: 15px; z-index: 2002; }
 
     /* Welcome Note CSS - HIDDEN BY DEFAULT */
-    #welcomeNoteTemplate { position: absolute; z-index: -100; opacity: 0; top: 0; left: 0; width: 210mm; min-height: 297mm; background: #ffffff; color: #000; font-family: 'Hind Siliguri', sans-serif; padding: 40px; box-sizing: border-box; border: none; pointer-events: none;}
+    #welcomeNoteTemplate { display: none; position: absolute; z-index: -100; opacity: 0; top: 0; left: 0; width: 210mm; min-height: 297mm; background: #ffffff; color: #000; font-family: 'Hind Siliguri', sans-serif; padding: 40px; box-sizing: border-box; border: none; pointer-events: none;}
     .wn-watermark { display: none !important; }
     .wn-header { text-align: center; border-bottom: 3px solid #6a1b9a; padding-bottom: 15px; margin-bottom: 25px; position: relative; z-index: 2; }
     .wn-logo { height: 90px; width: auto; margin-bottom: 10px; }
@@ -2211,6 +2211,7 @@ setTimeout(async () => {
         const element = document.getElementById('welcomeNoteTemplate');
         
         // 🟢 FIX: PDF স্ক্যান করার ঠিক আগে পেজটিকে দৃশ্যমান করা হলো
+        element.style.display = 'block';  // <--- এটি যোগ করুন
         element.style.opacity = '1';
         
         try {
@@ -2224,6 +2225,7 @@ setTimeout(async () => {
             
             // 🟢 FIX: PDF তৈরি হয়ে গেলে পেজটিকে আবার লুকিয়ে ফেলা হলো
             element.style.opacity = '0';
+            element.style.display = 'none'; // <--- এটি যোগ করুন';
             
             const imgData = canvas.toDataURL('image/jpeg', 0.8);
             
