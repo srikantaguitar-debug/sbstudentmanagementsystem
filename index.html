@@ -1850,6 +1850,37 @@ if (studentViewId && managerUid) {
 
         function getFeeCalculationStartDate(student) { return new Date(student.joining_date); }
         
+        // 🟢 NEW: নির্দিষ্ট তারিখে স্টুডেন্ট অ্যাক্টিভ ছিল কিনা তা চেক করার ফাংশন
+function isStudentActiveOnDate(student, targetDateStr) {
+    if (!targetDateStr) return student.status?.isActive !== false;
+    
+    const targetDate = new Date(targetDateStr);
+    targetDate.setHours(23, 59, 59, 999); // দিনের শেষ সময় পর্যন্ত চেক
+    
+    const joinDate = new Date(student.joining_date);
+    joinDate.setHours(0, 0, 0, 0);
+
+    if (targetDate < joinDate) return false; // জয়েন করার আগের ডেট হলে দেখাবে না
+
+    if (!student.status || !student.status.history || student.status.history.length === 0) {
+        return student.status?.isActive !== false;
+    }
+
+    // ইতিহাস (History) ডেট অনুযায়ী সাজিয়ে চেক করা
+    const history = [...student.status.history].sort((a, b) => new Date(a.date) - new Date(b.date));
+    let currentStatus = 'Active'; 
+
+    for (let i = 0; i < history.length; i++) {
+        const hDate = new Date(history[i].date);
+        hDate.setHours(0, 0, 0, 0);
+        if (hDate <= targetDate) {
+            currentStatus = history[i].status; // টার্গেট ডেটের আগে কোনো পরিবর্তন হলে স্ট্যাটাস আপডেট হবে
+        } else {
+            break; // ভবিষ্যতের ইভেন্ট বাদ দেওয়া হলো
+        }
+    }
+    return currentStatus === 'Active';
+}
         function wasStudentActiveDuringMonth(student, monthStr) {
             const [year, month] = monthStr.split('-').map(Number);
             const monthStart = new Date(year, month - 1, 1);
@@ -4047,7 +4078,8 @@ function renderAttendance() {
 
     let totalActive = 0, presentCount = 0, absentCount = 0;
 
-    const activeStudents = students.filter(s => s.status?.isActive);
+    // 🟢 FIX: বর্তমান স্ট্যাটাসের বদলে, ওই নির্দিষ্ট ডেটের স্ট্যাটাস চেক করে লিস্ট করা হলো
+    const activeStudents = students.filter(s => isStudentActiveOnDate(s, dateInput));
 
     activeStudents.sort((a, b) => {
         const getScore = (student) => {
@@ -4841,7 +4873,8 @@ function showAttendanceList(type) {
 
     let list = [];
     let title = '';
-    const activeStudents = students.filter(s => s.status?.isActive);
+    // 🟢 FIX: এখানেও হিস্ট্রি স্ট্যাটাস চেক বসানো হলো
+    const activeStudents = students.filter(s => isStudentActiveOnDate(s, date));
 
     if (type === 'total') {
         list = activeStudents;
@@ -5519,18 +5552,22 @@ async function assignMaterialToStudent(studentId, material) {
     }).catch(e => console.log("Background sync pending"));
 }
 // ==========================================
-// 🟢 PRACTICE TRACKER LOGIC (Limit Saver & Portal Bug Fix)
+// 🟢 PRACTICE TRACKER LOGIC (Instant Save & Optional Topic)
 // ==========================================
 
-window.submitPracticeLog = async function(studentId) {
+window.submitPracticeLog = function(studentId) {
     const minutes = document.getElementById('practiceMinutes').value;
-    const topic = document.getElementById('practiceTopic').value.trim();
-    
+    let topic = document.getElementById('practiceTopic').value.trim();
     const timeInputEl = document.getElementById('practiceTimeInput');
     const timeInputVal = timeInputEl ? timeInputEl.value : '';
 
-    if (!minutes || minutes <= 0 || !topic) {
-        Swal.fire({ toast: true, position: 'top-end', icon: 'warning', title: 'Enter valid minutes & topic!', showConfirmButton: false, timer: 2000 });
+    // 🟢 Topic অপশনাল করা হলো (না দিলে 'Regular Practice' সেভ হবে)
+    if (!topic) {
+        topic = "Regular Practice"; 
+    }
+
+    if (!minutes || minutes <= 0) {
+        Swal.fire({ toast: true, position: 'top-end', icon: 'warning', title: 'Enter valid minutes!', showConfirmButton: false, timer: 2000 });
         return;
     }
 
@@ -5538,7 +5575,6 @@ window.submitPracticeLog = async function(studentId) {
     const dateStr = now.toLocaleDateString('en-IN'); 
     const dayStr = now.toLocaleDateString('en-IN', { weekday: 'short' }); 
     
-    // 🟢 Time Logic (ম্যানুয়াল টাইম দিলে সেটা নেবে, নাহলে বর্তমান টাইম)
     let timeStr = '';
     if (timeInputVal) {
         const [h, m] = timeInputVal.split(':');
@@ -5549,33 +5585,15 @@ window.submitPracticeLog = async function(studentId) {
         timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }); 
     }
 
-    // 🟢 Portal vs Manager Logic Fix
     const urlParams = new URLSearchParams(window.location.search);
     const managerUid = urlParams.get('manager');
     const isStudentPortal = !!managerUid;
     const targetUid = managerUid ? managerUid : DOC_ID;
-    
-    let studentData = null;
-    let studentIndex = -1;
 
-    if (isStudentPortal) {
-        // স্টুডেন্ট পোর্টালের জন্য সরাসরি ডাটাবেস থেকে ফেচ করা
-        try {
-            const doc = await db.collection(COLLECTION_NAME).doc(targetUid).collection('students').doc(String(studentId)).get();
-            if (doc.exists) studentData = doc.data();
-        } catch (e) {
-            console.error("Fetch error:", e);
-        }
-    } else {
-        // টিচার অ্যাপের জন্য লোকাল অ্যারে থেকে ফেচ করা
-        studentIndex = students.findIndex(s => String(s.id) === String(studentId));
-        if (studentIndex !== -1) studentData = students[studentIndex];
-    }
-
-    if (!studentData) {
-        Swal.fire('Error', 'Student profile not found.', 'error');
-        return;
-    }
+    // 🟢 Instant Find Student Data
+    let studentIndex = students.findIndex(s => String(s.id) === String(studentId));
+    if (studentIndex === -1) return;
+    let studentData = students[studentIndex];
 
     if (!studentData.practice_log) studentData.practice_log = [];
 
@@ -5588,30 +5606,31 @@ window.submitPracticeLog = async function(studentId) {
         time: timeStr
     });
 
-    try { 
-        if (!isStudentPortal) {
-            students[studentIndex] = studentData; // Update global array for teacher
-            await dbSet('students', students); 
-        }
-        
-        await db.collection(COLLECTION_NAME).doc(targetUid).collection('students').doc(String(studentId)).update({
-            practice_log: studentData.practice_log
-        });
+    // 🟢 1. Instant UI Update (সাথে সাথে সেভ দেখাবে)
+    document.getElementById('practiceMinutes').value = '';
+    document.getElementById('practiceTopic').value = '';
+    if(timeInputEl) timeInputEl.value = '';
+    
+    Swal.fire({ title: 'Great Job! 🌟', text: `Logged ${minutes} minutes!`, icon: 'success', timer: 2000, showConfirmButton: false });
+    renderPracticeHistoryPortal(studentData); 
 
-        document.getElementById('practiceMinutes').value = '';
-        document.getElementById('practiceTopic').value = '';
-        if(timeInputEl) timeInputEl.value = '';
-        
-        Swal.fire({ title: 'Great Job! 🌟', text: `Logged ${minutes} minutes!`, icon: 'success', timer: 2000, showConfirmButton: false });
-        renderPracticeHistoryPortal(studentData); 
-
-    } catch(e) { 
-        console.log("Sync error:", e); 
-        Swal.fire('Error', 'Failed to save. Check connection.', 'error');
+    // 🟢 2. Background Database Save (নীরবে সেভ হবে)
+    if (!isStudentPortal) {
+        students[studentIndex] = studentData;
+        dbSet('students', students).catch(e => {}); 
     }
+    
+    db.collection(COLLECTION_NAME).doc(targetUid).collection('students').doc(String(studentId)).update({
+        practice_log: studentData.practice_log
+    }).catch(e => console.log("Sync error:", e));
 };
 
 window.renderPracticeHistoryPortal = function(student) {
+    // 🟢 পোর্টাল ওপেন হলেই গ্লোবাল ভেরিয়েবলে ডেটা রেখে দেবে যাতে ইনস্ট্যান্ট সেভ হয়
+    const existingIdx = students.findIndex(s => String(s.id) === String(student.id));
+    if(existingIdx === -1) students.push(student);
+    else students[existingIdx] = student;
+
     const container = document.getElementById('practiceHistoryPortal');
     if (!container) return;
     if (!student.practice_log || student.practice_log.length === 0) {
@@ -5661,7 +5680,7 @@ window.renderPracticeLogTeacher = function(studentId) {
     }
 };
 
-window.deletePracticeLog = async function(studentId, logId, context) {
+window.deletePracticeLog = function(studentId, logId, context) {
     Swal.fire({
         title: 'Delete Practice Log?',
         text: "Are you sure?",
@@ -5669,43 +5688,32 @@ window.deletePracticeLog = async function(studentId, logId, context) {
         showCancelButton: true,
         confirmButtonColor: '#ef4444',
         confirmButtonText: 'Yes, Delete'
-    }).then(async (result) => {
+    }).then((result) => {
         if (result.isConfirmed) {
-            
             const urlParams = new URLSearchParams(window.location.search);
             const managerUid = urlParams.get('manager');
             const isStudentPortal = !!managerUid;
             const targetUid = managerUid ? managerUid : DOC_ID;
 
-            let studentData = null;
-            let studentIndex = -1;
-
-            if (isStudentPortal) {
-                const doc = await db.collection(COLLECTION_NAME).doc(targetUid).collection('students').doc(String(studentId)).get();
-                if (doc.exists) studentData = doc.data();
-            } else {
-                studentIndex = students.findIndex(s => String(s.id) === String(studentId));
-                if (studentIndex !== -1) studentData = students[studentIndex];
-            }
-
-            if (!studentData) return;
+            let studentIndex = students.findIndex(s => String(s.id) === String(studentId));
+            if (studentIndex === -1) return;
+            let studentData = students[studentIndex];
 
             studentData.practice_log = studentData.practice_log.filter(log => log.id !== logId);
 
-            try {
-                if (!isStudentPortal) {
-                    students[studentIndex] = studentData;
-                    await dbSet('students', students);
-                }
-                await db.collection(COLLECTION_NAME).doc(targetUid).collection('students').doc(String(studentId)).update({
-                    practice_log: studentData.practice_log
-                });
+            // 🟢 1. Instant UI Update
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Deleted successfully!', showConfirmButton: false, timer: 1500 });
+            if (context === 'student') renderPracticeHistoryPortal(studentData);
+            else renderPracticeLogTeacher(studentId);
 
-                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Deleted successfully!', showConfirmButton: false, timer: 1500 });
-
-                if (context === 'student') renderPracticeHistoryPortal(studentData);
-                else renderPracticeLogTeacher(studentId);
-            } catch(e) { console.log("Delete sync failed.", e); }
+            // 🟢 2. Background Save
+            if (!isStudentPortal) {
+                students[studentIndex] = studentData;
+                dbSet('students', students).catch(e => {});
+            }
+            db.collection(COLLECTION_NAME).doc(targetUid).collection('students').doc(String(studentId)).update({
+                practice_log: studentData.practice_log
+            }).catch(e => console.log("Delete sync failed.", e));
         }
     });
 };
@@ -5721,7 +5729,7 @@ window.editPracticeLogTeacher = async function(studentId, logId) {
         title: 'Edit Practice Log',
         html: `
             <input id="edit-prac-mins" type="number" class="swal2-input" value="${log.minutes}" placeholder="Minutes" style="width: 85%;">
-            <input id="edit-prac-topic" type="text" class="swal2-input" value="${log.topic}" placeholder="Topic" style="width: 85%; margin-top: 10px;">
+            <input id="edit-prac-topic" type="text" class="swal2-input" value="${log.topic}" placeholder="Topic (Optional)" style="width: 85%; margin-top: 10px;">
         `,
         focusConfirm: false,
         showCancelButton: true,
@@ -5729,8 +5737,9 @@ window.editPracticeLogTeacher = async function(studentId, logId) {
         confirmButtonColor: 'var(--success)',
         preConfirm: () => {
             const mins = document.getElementById('edit-prac-mins').value;
-            const topic = document.getElementById('edit-prac-topic').value.trim();
-            if (!mins || mins <= 0 || !topic) Swal.showValidationMessage('Please enter valid minutes and topic');
+            let topic = document.getElementById('edit-prac-topic').value.trim();
+            if (!topic) topic = "Regular Practice";
+            if (!mins || mins <= 0) Swal.showValidationMessage('Please enter valid minutes');
             return { minutes: parseInt(mins), topic: topic };
         }
     });
