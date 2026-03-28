@@ -1176,32 +1176,42 @@ if (studentViewId && managerUid) {
                                     </div>`;
                                 }
 
-// ২. Attendance Data (Fixed: Handled legacy strings + added Day & Time)
+// ২. Attendance Data (ফাঁকা এন্ট্রি হাইড করার লজিক)
                                 let attRecords = [];
                                 Object.keys(globalAtt).forEach(date => { if(globalAtt[date][studentViewId]) attRecords.push({ date, data: globalAtt[date][studentViewId] }); });
                                 attRecords.sort((a,b) => new Date(b.date) - new Date(a.date));
                                 
-                                let attHtml = attRecords.length > 0 ? attRecords.map(rec => {
-                                    // Handle both old string data ('present') and new object data {status: 'present', time: '10:00'}
-                                    let status = typeof rec.data === 'object' && rec.data !== null ? rec.data.status : rec.data;
-                                    let note = typeof rec.data === 'object' && rec.data !== null && rec.data.note ? rec.data.note : 'No note';
+                                // 🟢 NEW: শুধুমাত্র আসল ডেটা (Present/Absent বা Note থাকলে) ফিল্টার করা হচ্ছে
+                                let validAttRecords = attRecords.filter(rec => {
+                                    let status = typeof rec.data === 'object' && rec.data !== null ? rec.data.status : (typeof rec.data === 'string' ? rec.data : null);
+                                    let note = typeof rec.data === 'object' && rec.data !== null && rec.data.note ? rec.data.note.trim() : '';
+                                    
+                                    // যদি status বা note-এর যেকোনো একটি থাকে, তবেই লিস্টে দেখাবে
+                                    return (status === 'present' || status === 'absent' || note !== '');
+                                });
+
+                                let attHtml = validAttRecords.length > 0 ? validAttRecords.map(rec => {
+                                    let status = typeof rec.data === 'object' && rec.data !== null && rec.data.status ? rec.data.status : (typeof rec.data === 'string' ? rec.data : 'Not Marked');
+                                    let note = typeof rec.data === 'object' && rec.data !== null && rec.data.note ? rec.data.note : '';
                                     let time = typeof rec.data === 'object' && rec.data !== null && rec.data.time ? rec.data.time : '';
 
-                                    let clr = status === 'present' ? '#16a34a' : '#dc2626';
+                                    // কালার লজিক
+                                    let clr = status === 'present' ? '#16a34a' : (status === 'absent' ? '#dc2626' : '#f59e0b');
 
-                                    // Format Date and Day
+                                    // Date & Time ফরম্যাট
                                     const d = new Date(rec.date);
                                     const dayName = d.toLocaleDateString('en-IN', { weekday: 'short' });
                                     const formattedDate = d.toLocaleDateString('en-IN');
 
-                                    // Format Time (using the existing formatTime12H function)
                                     let timeDisplay = time ? formatTime12H(time) : '';
                                     let timeBadge = timeDisplay ? `<span style="font-size:11px; color:#3b82f6; background:#eff6ff; padding:2px 6px; border-radius:4px; margin-left:5px;">🕒 ${timeDisplay}</span>` : '';
+                                    
+                                    let noteDisplay = note ? `<br><span style="font-size:11px; color:#64748b;">📝 ${note}</span>` : '';
 
                                     return `<div style="margin-bottom:10px; padding:12px; background:#f8fafc; border-radius:10px; border:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
                                         <div>
                                             <strong style="color:#1e293b;">${formattedDate} (${dayName})</strong>${timeBadge}
-                                            <br><span style="font-size:11px; color:#64748b;">📝 ${note}</span>
+                                            ${noteDisplay}
                                         </div>
                                         <div style="color:${clr}; font-weight:bold; text-transform:uppercase;">${status}</div>
                                     </div>`;
