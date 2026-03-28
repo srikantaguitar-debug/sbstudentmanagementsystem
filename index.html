@@ -228,7 +228,7 @@
     .sig-toolbar { position: absolute; bottom: 20px; left: 0; width: 100%; display: flex; justify-content: center; gap: 15px; z-index: 2002; }
 
     /* Welcome Note CSS - HIDDEN BY DEFAULT */
-    #welcomeNoteTemplate { position: fixed; top: -9999px; left: -9999px; width: 210mm; min-height: 297mm; background: #ffffff; color: #000; font-family: 'Hind Siliguri', sans-serif; padding: 40px; box-sizing: border-box; border: none; z-index:-10;}
+    #welcomeNoteTemplate { position: absolute; z-index: -100; opacity: 0; top: 0; left: 0; width: 210mm; min-height: 297mm; background: #ffffff; color: #000; font-family: 'Hind Siliguri', sans-serif; padding: 40px; box-sizing: border-box; border: none; pointer-events: none;}
     .wn-watermark { display: none !important; }
     .wn-header { text-align: center; border-bottom: 3px solid #6a1b9a; padding-bottom: 15px; margin-bottom: 25px; position: relative; z-index: 2; }
     .wn-logo { height: 90px; width: auto; margin-bottom: 10px; }
@@ -533,8 +533,6 @@
             </div>
             
             <div id="globalLibraryList" onscroll="handleLibraryScroll()" style="display:flex; flex-direction:column; gap:12px; max-height: 450px; overflow-y: auto; padding-right: 5px; padding-bottom: 20px;"></div>
-        </div>
-            <div id="reminderListContainer"></div>
         </div>
 
         <div id="studentMgmt" class="tab-content">
@@ -1585,34 +1583,6 @@ if (studentViewId && managerUid) {
                     loginBtn.innerHTML = originalText;
                 });
         }
-        function handleSignUp() {
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
-    const errorMsg = document.getElementById('loginError');
-
-    if (!email || !password) {
-        errorMsg.textContent = "Email and password required to create an account!";
-        errorMsg.style.display = 'block';
-        return;
-    }
-
-    // বাটনের টেক্সট পরিবর্তন করে লোডিং দেখানো
-    const signUpBtn = document.querySelectorAll('#loginOverlay button')[1]; 
-    const originalText = signUpBtn.innerHTML;
-    signUpBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
-
-    auth.createUserWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-            // অ্যাকাউন্ট সফলভাবে তৈরি হলে Firebase অটোমেটিক লগইন করিয়ে দেবে।
-            // আপনার onAuthStateChanged ফাংশন বাকি কাজ সামলে নেবে।
-        })
-        .catch((error) => {
-            console.error(error);
-            errorMsg.textContent = "Error: " + error.message;
-            errorMsg.style.display = 'block';
-            signUpBtn.innerHTML = originalText;
-        });
-}
 
         function handleLogout() {
             Swal.fire({
@@ -5587,6 +5557,63 @@ async function assignMaterialToStudent(studentId, material) {
 // ==========================================
 // 🟢 PRACTICE TRACKER LOGIC (Instant Save & Optional Topic)
 // ==========================================
+// --- 🟢 NEW: Practice Stats Calculator Logic ---
+function parseINDate(dateStr) {
+    if (!dateStr) return new Date();
+    const parts = dateStr.split('/');
+    if (parts.length === 3) return new Date(parts[2], parts[1] - 1, parts[0]);
+    return new Date(dateStr);
+}
+
+function formatPracticeTime(totalMins) {
+    if (!totalMins || totalMins === 0) return "0m";
+    const h = Math.floor(totalMins / 60);
+    const m = totalMins % 60;
+    if (h > 0 && m > 0) return `${h}h ${m}m`;
+    if (h > 0) return `${h}h`;
+    return `${m}m`;
+}
+
+function getPracticeStats(student) {
+    let logs = student.practice_log || [];
+    let stats = { today: 0, week: 0, month: 0, year: 0, lifetime: 0, avg: 0 };
+    if (logs.length === 0) return stats;
+
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    
+    // Week start calculation (Monday)
+    const dayOfWeek = now.getDay();
+    const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); 
+    const weekStart = new Date(now);
+    weekStart.setDate(diff);
+    weekStart.setHours(0, 0, 0, 0);
+    
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const yearStart = new Date(now.getFullYear(), 0, 1);
+
+    logs.forEach(log => {
+        const mins = parseInt(log.minutes) || 0;
+        stats.lifetime += mins;
+        
+        const logDate = parseINDate(log.date);
+        logDate.setHours(0, 0, 0, 0);
+
+        if (logDate.getTime() === now.getTime()) stats.today += mins;
+        if (logDate >= weekStart && logDate <= now) stats.week += mins;
+        if (logDate >= monthStart && logDate <= now) stats.month += mins;
+        if (logDate >= yearStart && logDate <= now) stats.year += mins;
+    });
+
+    const joinDate = new Date(student.joining_date || now);
+    joinDate.setHours(0, 0, 0, 0);
+    let daysSinceJoin = Math.floor((now - joinDate) / (1000 * 60 * 60 * 24)) + 1;
+    if (daysSinceJoin < 1) daysSinceJoin = 1;
+    
+    stats.avg = Math.round(stats.lifetime / daysSinceJoin);
+    return stats;
+}
+// --- End of New Logic ---
 
 window.submitPracticeLog = function(studentId) {
     const minutes = document.getElementById('practiceMinutes').value;
@@ -5650,7 +5677,7 @@ window.submitPracticeLog = function(studentId) {
     // 🟢 2. Background Database Save (নীরবে সেভ হবে)
     if (!isStudentPortal) {
         students[studentIndex] = studentData;
-        dbSet('students', students).catch(e => {}); 
+        //dbSet('students', students).catch(e => {}); 
     }
     
     db.collection(COLLECTION_NAME).doc(targetUid).collection('students').doc(String(studentId)).update({
@@ -5659,20 +5686,54 @@ window.submitPracticeLog = function(studentId) {
 };
 
 window.renderPracticeHistoryPortal = function(student) {
-    // 🟢 পোর্টাল ওপেন হলেই গ্লোবাল ভেরিয়েবলে ডেটা রেখে দেবে যাতে ইনস্ট্যান্ট সেভ হয়
     const existingIdx = students.findIndex(s => String(s.id) === String(student.id));
     if(existingIdx === -1) students.push(student);
     else students[existingIdx] = student;
 
     const container = document.getElementById('practiceHistoryPortal');
     if (!container) return;
+
+    // Calculate Stats
+    const stats = getPracticeStats(student);
+
+    // Beautiful Grid Dashboard for Stats
+    let statsHtml = `
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px;">
+            <div style="background: #e0f2fe; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #bae6fd;">
+                <div style="font-size: 10px; color: #0369a1; font-weight: 600; text-transform: uppercase;">Today</div>
+                <div style="font-size: 14px; font-weight: 700; color: #0c4a6e;">${formatPracticeTime(stats.today)}</div>
+            </div>
+            <div style="background: #fef9c3; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #fef08a;">
+                <div style="font-size: 10px; color: #a16207; font-weight: 600; text-transform: uppercase;">This Week</div>
+                <div style="font-size: 14px; font-weight: 700; color: #713f12;">${formatPracticeTime(stats.week)}</div>
+            </div>
+            <div style="background: #ffedd5; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #fed7aa;">
+                <div style="font-size: 10px; color: #c2410c; font-weight: 600; text-transform: uppercase;">This Month</div>
+                <div style="font-size: 14px; font-weight: 700; color: #7c2d12;">${formatPracticeTime(stats.month)}</div>
+            </div>
+            <div style="background: #f3e8ff; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #e9d5ff;">
+                <div style="font-size: 10px; color: #7e22ce; font-weight: 600; text-transform: uppercase;">This Year</div>
+                <div style="font-size: 14px; font-weight: 700; color: #581c87;">${formatPracticeTime(stats.year)}</div>
+            </div>
+            <div style="background: #dcfce7; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #bbf7d0;">
+                <div style="font-size: 10px; color: #15803d; font-weight: 600; text-transform: uppercase;">Lifetime</div>
+                <div style="font-size: 14px; font-weight: 700; color: #14532d;">${formatPracticeTime(stats.lifetime)}</div>
+            </div>
+            <div style="background: #f1f5f9; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #e2e8f0;">
+                <div style="font-size: 10px; color: #475569; font-weight: 600; text-transform: uppercase;">Daily Avg</div>
+                <div style="font-size: 14px; font-weight: 700; color: #0f172a;">${formatPracticeTime(stats.avg)}</div>
+            </div>
+        </div>
+    `;
+
     if (!student.practice_log || student.practice_log.length === 0) {
-        container.innerHTML = '<div style="text-align:center; color:#94a3b8; font-size:12px;">No practice logged yet.</div>';
+        container.innerHTML = statsHtml + '<div style="text-align:center; color:#94a3b8; font-size:12px; padding-top: 10px;">No practice logged yet.</div>';
         return;
     }
-    let html = '';
+
+    let listHtml = '<div style="max-height: 150px; overflow-y: auto;">';
     student.practice_log.slice(0, 10).forEach(log => { 
-        html += `
+        listHtml += `
             <div style="background: #f0fdf4; padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #10b981; display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <strong style="color: #065f46; font-size: 13px;">${log.topic}</strong><br>
@@ -5684,13 +5745,53 @@ window.renderPracticeHistoryPortal = function(student) {
                 </div>
             </div>`;
     });
-    container.innerHTML = html;
+    listHtml += '</div>';
+
+    container.innerHTML = statsHtml + listHtml;
 };
 
 window.renderPracticeLogTeacher = function(studentId) {
     const student = students.find(s => s.id === studentId);
     const container = document.getElementById('modalPracticeList');
     if (!container || !student) return;
+
+    // 🟢 Insert Dynamic Stats Block for Teacher
+    let statsContainer = document.getElementById('teacherPracticeStatsObj');
+    if (!statsContainer) {
+        statsContainer = document.createElement('div');
+        statsContainer.id = 'teacherPracticeStatsObj';
+        container.parentElement.parentElement.insertBefore(statsContainer, container.parentElement);
+    }
+
+    const stats = getPracticeStats(student);
+    statsContainer.innerHTML = `
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px;">
+            <div style="background: var(--bg-card); padding: 10px; border-radius: 8px; text-align: center; border: 1px solid var(--border-color); box-shadow: var(--shadow);">
+                <div style="font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Today</div>
+                <div style="font-size: 14px; font-weight: 700; color: var(--primary);">${formatPracticeTime(stats.today)}</div>
+            </div>
+            <div style="background: var(--bg-card); padding: 10px; border-radius: 8px; text-align: center; border: 1px solid var(--border-color); box-shadow: var(--shadow);">
+                <div style="font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">This Week</div>
+                <div style="font-size: 14px; font-weight: 700; color: var(--warning);">${formatPracticeTime(stats.week)}</div>
+            </div>
+            <div style="background: var(--bg-card); padding: 10px; border-radius: 8px; text-align: center; border: 1px solid var(--border-color); box-shadow: var(--shadow);">
+                <div style="font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">This Month</div>
+                <div style="font-size: 14px; font-weight: 700; color: var(--danger);">${formatPracticeTime(stats.month)}</div>
+            </div>
+            <div style="background: var(--bg-card); padding: 10px; border-radius: 8px; text-align: center; border: 1px solid var(--border-color); box-shadow: var(--shadow);">
+                <div style="font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">This Year</div>
+                <div style="font-size: 14px; font-weight: 700; color: var(--info);">${formatPracticeTime(stats.year)}</div>
+            </div>
+            <div style="background: var(--bg-card); padding: 10px; border-radius: 8px; text-align: center; border: 1px solid var(--border-color); box-shadow: var(--shadow);">
+                <div style="font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Lifetime</div>
+                <div style="font-size: 14px; font-weight: 700; color: var(--success);">${formatPracticeTime(stats.lifetime)}</div>
+            </div>
+            <div style="background: var(--bg-card); padding: 10px; border-radius: 8px; text-align: center; border: 1px solid var(--border-color); box-shadow: var(--shadow);">
+                <div style="font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Daily Avg</div>
+                <div style="font-size: 14px; font-weight: 700; color: var(--pink);">${formatPracticeTime(stats.avg)}</div>
+            </div>
+        </div>
+    `;
 
     container.innerHTML = '';
     if (student.practice_log && student.practice_log.length > 0) {
@@ -5742,7 +5843,7 @@ window.deletePracticeLog = function(studentId, logId, context) {
             // 🟢 2. Background Save
             if (!isStudentPortal) {
                 students[studentIndex] = studentData;
-                dbSet('students', students).catch(e => {});
+                //dbSet('students', students).catch(e => {});
             }
             db.collection(COLLECTION_NAME).doc(targetUid).collection('students').doc(String(studentId)).update({
                 practice_log: studentData.practice_log
@@ -5782,7 +5883,7 @@ window.editPracticeLogTeacher = async function(studentId, logId) {
         log.topic = formValues.topic;
 
         try {
-            await dbSet('students', students);
+            //await dbSet('students', students);
             await db.collection(COLLECTION_NAME).doc(DOC_ID).collection('students').doc(String(studentId)).update({
                 practice_log: student.practice_log
             });
