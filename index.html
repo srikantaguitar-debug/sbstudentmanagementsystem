@@ -1747,6 +1747,39 @@ if (studentViewId && managerUid) {
         let html5QrcodeScanner = null;
         
         let dismissedBirthdays = JSON.parse(localStorage.getItem('dismissedBirthdays')) || [];
+        // 🟢 NEW: Future Date Inactive Logic (Time Machine)
+window.isStudentCurrentlyActive = function(student, targetDateStr = null) {
+    if (!student) return false;
+    if (!student.status || !student.status.history || student.status.history.length === 0) {
+        return isStudentCurrentlyActive(student) !== false;
+    }
+    
+    let targetDate = new Date(); // আজকের দিন
+    if (targetDateStr) targetDate = new Date(targetDateStr);
+    targetDate.setHours(23, 59, 59, 999); // দিনের শেষ মুহূর্ত পর্যন্ত চেক করবে
+    
+    const joinDate = new Date(student.joining_date);
+    joinDate.setHours(0, 0, 0, 0);
+    if (targetDate < joinDate) return false;
+    
+    // হিস্ট্রিগুলো তারিখ অনুযায়ী সাজানো
+    const history = [...student.status.history].sort((a, b) => new Date(a.date) - new Date(b.date));
+    let currentStatus = 'Active'; 
+    
+    for (let i = 0; i < history.length; i++) {
+        const hDate = new Date(history[i].date);
+        hDate.setHours(0, 0, 0, 0);
+        
+        // যদি ইনঅ্যাক্টিভ করার তারিখ আজকে বা আজকের আগে হয়, তবেই স্ট্যাটাস বদলাবে
+        if (hDate <= targetDate) {
+            currentStatus = history[i].status; 
+        } else {
+            // ভবিষ্যতের তারিখ হলে লুপ ব্রেক হয়ে যাবে (ফলে আগের Active স্ট্যাটাসটাই থেকে যাবে)
+            break; 
+        }
+    }
+    return currentStatus === 'Active';
+};
         
         async function saveInstituteLogo(input) { const file = input.files[0]; if (file) { const reader = new FileReader(); reader.onload = function(e) { const img = new Image(); img.onload = async function() { const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); const maxWidth = 200; const scaleSize = maxWidth / img.width; canvas.width = maxWidth; canvas.height = img.height * scaleSize; ctx.drawImage(img, 0, 0, canvas.width, canvas.height); const logoBase64 = canvas.toDataURL('image/jpeg', 0.8); await dbSet('instituteLogo', logoBase64); await loadInstituteLogo(); Swal.fire('Success', 'Logo saved!', 'success'); }; img.src = e.target.result; }; reader.readAsDataURL(file); } }
         async function loadInstituteLogo() { instituteLogo = await dbGet('instituteLogo'); const img = document.getElementById('logoPreview'); const headerLogo = document.getElementById('headerLogo'); const btn = document.getElementById('removeLogoBtn'); if (instituteLogo) { img.src = instituteLogo; img.style.display = 'block'; btn.style.display = 'inline-block'; headerLogo.src = instituteLogo; headerLogo.style.display = 'block'; } else { img.style.display = 'none'; btn.style.display = 'none'; headerLogo.style.display = 'none'; } }
@@ -1852,7 +1885,7 @@ if (studentViewId && managerUid) {
         
         // 🟢 NEW: নির্দিষ্ট তারিখে স্টুডেন্ট অ্যাক্টিভ ছিল কিনা তা চেক করার ফাংশন
 function isStudentActiveOnDate(student, targetDateStr) {
-    if (!targetDateStr) return student.status?.isActive !== false;
+    if (!targetDateStr) return isStudentCurrentlyActive(student) !== false;
     
     const targetDate = new Date(targetDateStr);
     targetDate.setHours(23, 59, 59, 999); // দিনের শেষ সময় পর্যন্ত চেক
@@ -1863,7 +1896,7 @@ function isStudentActiveOnDate(student, targetDateStr) {
     if (targetDate < joinDate) return false; // জয়েন করার আগের ডেট হলে দেখাবে না
 
     if (!student.status || !student.status.history || student.status.history.length === 0) {
-        return student.status?.isActive !== false;
+        return isStudentCurrentlyActive(student) !== false;
     }
 
     // ইতিহাস (History) ডেট অনুযায়ী সাজিয়ে চেক করা
@@ -2859,14 +2892,14 @@ function showClassStudents(className) {
     tableBody.innerHTML = ''; 
     
     // এখানে s.class.trim() যোগ করা হয়েছে যাতে স্পেস থাকলেও সব স্টুডেন্টকে খুঁজে পায়
-    const classStudents = students.filter(s => s.status?.isActive && (s.class ? s.class.trim() : 'Unassigned') === className); 
+    const classStudents = students.filter(s => isStudentCurrentlyActive(s) && (s.class ? s.class.trim() : 'Unassigned') === className); 
     
     classStudents.forEach(s => { tableBody.innerHTML += `<tr><td>${s.serial_no}</td><td>${getStudentHtml(s)}</td><td>${getContactButtons(s.id)}</td></tr>`; }); 
     document.getElementById('classStudentsModal').style.display = 'flex'; 
 }
 
 function showCategoryList(type) { 
-    const list = students.filter(s => type === 'active' ? s.status?.isActive : !s.status?.isActive); 
+    const list = students.filter(s => type === 'active' ? isStudentCurrentlyActive(s) : !isStudentCurrentlyActive(s)); 
     document.getElementById('classStudentsTitle').textContent = type === 'active' ? 'Active Students' : 'Inactive Students'; 
     const tableBody = document.querySelector('#classStudentsTable tbody'); 
     const tableHead = document.querySelector('#classStudentsTable thead tr');
@@ -2948,7 +2981,7 @@ function renderReminders() {
 }
 
 function renderDashboard() { 
-    const activeStudents = students.filter(s => s.status?.isActive); 
+    const activeStudents = students.filter(s => isStudentCurrentlyActive(s)); 
     document.getElementById('studentStatsSummary').innerHTML = `<div class="clickable-stat" onclick="showCategoryList('active')"><h4>Active</h4><p class="summary-collected">${activeStudents.length}</p></div><div class="clickable-stat" onclick="showCategoryList('inactive')"><h4>Inactive</h4><p class="summary-due">${students.length - activeStudents.length}</p></div><div><h4>Total</h4><p class="summary-total" style="color:var(--text-main);">${students.length}</p></div>`; 
     
     const birthdayBox = document.getElementById('birthdayAlertBox'); const birthdayList = document.getElementById('birthdayList'); 
@@ -3030,7 +3063,7 @@ function renderDashboard() {
 
     const dueTableBody = document.querySelector('#dueFeeTable tbody'); const dueMessageEl = document.getElementById('dueFeeMessage'); dueTableBody.innerHTML = ''; 
     
-    const defaulters = students.filter(s => s.status?.isActive).map(s => { return { student: s, months: getDueMonthsList(s.id) }; }).filter(item => item.months.length > 0); 
+    const defaulters = students.filter(s => isStudentCurrentlyActive(s)).map(s => { return { student: s, months: getDueMonthsList(s.id) }; }).filter(item => item.months.length > 0); 
     
     if (defaulters.length === 0) { 
         dueMessageEl.textContent = "No pending dues."; 
@@ -3408,7 +3441,7 @@ function updateYearlyChart() {
 function comparePeriods() { const m1 = document.getElementById('compMonth1').value; const m2 = document.getElementById('compMonth2').value; if(!m1 || !m2) { return; } const s1 = calculateMonthStats(m1); const s2 = calculateMonthStats(m2); document.getElementById('compIncome1').textContent = `₹${s1.income}`; document.getElementById('compIncome2').textContent = `₹${s2.income}`; document.getElementById('compStudent1').textContent = s1.studentCount; document.getElementById('compStudent2').textContent = s2.studentCount; const incDiff = s2.income - s1.income; const stuDiff = s2.studentCount - s1.studentCount; const incDiffEl = document.getElementById('compIncomeDiff'); incDiffEl.innerHTML = incDiff > 0 ? `<i class="fas fa-arrow-up"></i> ₹${incDiff}` : (incDiff < 0 ? `<i class="fas fa-arrow-down"></i> ₹${Math.abs(incDiff)}` : '-'); incDiffEl.className = 'comp-diff ' + (incDiff >= 0 ? 'diff-up' : 'diff-down'); const stuDiffEl = document.getElementById('compStudentDiff'); stuDiffEl.innerHTML = stuDiff > 0 ? `<i class="fas fa-arrow-up"></i> ${stuDiff}` : (stuDiff < 0 ? `<i class="fas fa-arrow-down"></i> ${Math.abs(stuDiff)}` : '-'); stuDiffEl.className = 'comp-diff ' + (stuDiff >= 0 ? 'diff-up' : 'diff-down'); document.getElementById('comparisonResults').style.display = 'block'; }
 
 function exportDashboardPDF() { 
-    const activeStudents = students.filter(s => s.status?.isActive); 
+    const activeStudents = students.filter(s => isStudentCurrentlyActive(s)); 
     const currentYear = new Date().getFullYear(); 
     const currentMonthStr = `${currentYear}-${(new Date().getMonth() + 1).toString().padStart(2, '0')}`; 
     let monthlyCollected = 0, monthlyDueAmount = 0, yearlyCollected = 0, yearlyDueAmount = 0; 
@@ -3671,7 +3704,7 @@ function loadStudentsList(showAll = false) {
     let inactiveCount = 0;
 
     students.forEach(student => { 
-        const isActive = student.status?.isActive;
+        const isActive = isStudentCurrentlyActive(student);
         
         // Lazy load logic (সার্চ করলে সবাইকে দেখাবে, নাহলে লিমিট অনুযায়ী দেখাবে)
         if (!showAll) {
@@ -3718,8 +3751,8 @@ function loadStudentsList(showAll = false) {
 
     // Add "Load More" button 
     if (!showAll) {
-        const activeTotal = students.filter(s => s.status?.isActive).length;
-        const inactiveTotal = students.filter(s => !s.status?.isActive).length;
+        const activeTotal = students.filter(s => isStudentCurrentlyActive(s)).length;
+        const inactiveTotal = students.filter(s => !isStudentCurrentlyActive(s)).length;
 
         if (activeTotal > studentDisplayLimit) {
             activeList.innerHTML += `<tr><td colspan="7" style="text-align:center; padding:15px;"><button class="btn-secondary" onclick="loadMoreStudents()" style="width:100%; border-radius:8px;"><i class="fas fa-chevron-down"></i> Load More Students</button></td></tr>`;
@@ -4079,7 +4112,7 @@ function renderAttendance() {
     let totalActive = 0, presentCount = 0, absentCount = 0;
 
     // 🟢 FIX: বর্তমান স্ট্যাটাসের বদলে, ওই নির্দিষ্ট ডেটের স্ট্যাটাস চেক করে লিস্ট করা হলো
-    const activeStudents = students.filter(s => isStudentActiveOnDate(s, dateInput));
+    const activeStudents = students.filter(s => isStudentCurrentlyActive(s, dateInput));
 
     activeStudents.sort((a, b) => {
         const getScore = (student) => {
@@ -4646,7 +4679,7 @@ async function exportToExcel() {
         Fee: s.fee_amount,
         Phone: s.phone,
         Guardian: s.guardian,
-        Status: s.status?.isActive ? 'Active' : 'Inactive',
+        Status: isStudentCurrentlyActive(s) ? 'Active' : 'Inactive',
         JoiningDate: s.joining_date
     }));
 
@@ -4874,7 +4907,7 @@ function showAttendanceList(type) {
     let list = [];
     let title = '';
     // 🟢 FIX: এখানেও হিস্ট্রি স্ট্যাটাস চেক বসানো হলো
-    const activeStudents = students.filter(s => isStudentActiveOnDate(s, date));
+    const activeStudents = students.filter(s => isStudentCurrentlyActive(s, date));
 
     if (type === 'total') {
         list = activeStudents;
@@ -4932,7 +4965,7 @@ function sendBulkMsg(type) {
         return;
     }
 
-    let targetStudents = students.filter(s => s.status?.isActive);
+    let targetStudents = students.filter(s => isStudentCurrentlyActive(s));
     if(filter !== 'All') {
         targetStudents = targetStudents.filter(s => s.class_day === filter);
     }
@@ -5443,7 +5476,7 @@ async function openSendToStudentModal(matId) {
     const material = globalMaterials.find(m => m.id === matId);
     if (!material) return;
 
-    tempActiveStudents = students.filter(s => s.status?.isActive).sort((a,b) => a.name.localeCompare(b.name));
+    tempActiveStudents = students.filter(s => isStudentCurrentlyActive(s)).sort((a,b) => a.name.localeCompare(b.name));
     let listHtml = generateStudentListHtml(tempActiveStudents);
 
     const result = await Swal.fire({
