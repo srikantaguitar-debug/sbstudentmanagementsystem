@@ -30,6 +30,10 @@
     <script src="https://unpkg.com/html5-qrcode" defer></script>
     
 <style>
+@media (max-width: 480px) {
+    .practice-inputs { flex-direction: column !important; }
+    .practice-inputs input { width: 100% !important; margin-bottom: 10px; }
+}
     /* --- Dashboard Reminder Stylish CSS --- */
     .dashboard-reminder-list { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
     .d-reminder-card { display: flex; align-items: center; justify-content: space-between; background: var(--bg-card); padding: 15px; border-radius: 15px; border-left: 6px solid var(--warning); box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); position: relative; overflow: hidden; animation: slideUpFade 0.4s ease-out; }
@@ -84,14 +88,14 @@ html, body {
         display: flex; align-items: center; justify-content: space-between;
         height: 60px; box-sizing: border-box;
         transition: background 0.3s ease;
-        max-width: 800px; margin: 0 auto; left: 0; right: 0; /* Centers header */
+        width: 100%; max-width: 100%; margin: 0; left: 0; right: 0;
     }
     .header-content { display: flex; align-items: center; gap: 12px; }
     #headerLogo { height: 40px; width: auto; border-radius: 6px; display: none; }
     header h1 { margin: 0; font-size: 16px; font-weight: 600; color: var(--primary); line-height: 1.2; }
     #liveClock { font-size: 10px; color: var(--text-muted); font-weight: 500; text-align: right; }
 
-    .container { width: 95%; max-width: 800px; margin: 15px auto; }
+    .container { width: 98%; max-width: 100%; margin: 15px auto; }
 
     .bottom-nav {
         position: fixed; bottom: 0; 
@@ -100,14 +104,14 @@ html, body {
         box-shadow: 0 -2px 15px rgba(0,0,0,0.08);
         z-index: 990; border-top-left-radius: 15px; border-top-right-radius: 15px;
         transition: background 0.3s ease;
-        max-width: 800px; left: 50%; transform: translateX(-50%); /* Centers navbar */
+        width: 100%; max-width: 100%; left: 0; transform: none;
     }
     .nav-item { border: none; background: none; display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 8px; font-weight: 500; padding: 5px; flex-grow: 1; transition: 0.2s; cursor: pointer; }
     .nav-item i { font-size: 16px; margin-bottom: 4px; }
     .nav-item.active { color: var(--primary); }
     .nav-item.active i { transform: translateY(-2px); }
     .tab-buttons { display: none; } 
-    .tab-content { display: none; animation: fadeIn 0.3s ease; }
+    .tab-content { display: none; animation: fadeIn 0.3s ease; overflow-x: auto; }
     .tab-content.active { display: block; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -153,7 +157,7 @@ html, body {
         th { background: var(--bg-input); padding: 12px; text-align: left; color: var(--text-muted); font-size: 12px; border-bottom: 1px solid var(--border-color); } 
         td { padding: 12px; border-bottom: 1px solid var(--border-color); color: var(--text-main); vertical-align: middle;} 
         /* Action buttons for Desktop */
-        td.action-buttons { display: flex; gap: 8px; flex-wrap: nowrap; align-items: center; }
+        td.action-buttons { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
         td.action-buttons button { padding: 8px 12px; font-size: 13px; border-radius: 6px; }
     }
     
@@ -615,6 +619,16 @@ html, body {
             <div id="birthdayAlertBox" class="dashboard-card birthday-card" style="display: none;">
                 <h3 style="color: var(--pink); border:none;"><i class="fas fa-birthday-cake"></i> Birthdays Today!</h3>
                 <div id="birthdayList"></div>
+            </div>
+            
+            <div id="todaysPracticeBox" class="dashboard-card" style="display: none; border-top-color: var(--success); background-color: rgba(16, 185, 129, 0.05);">
+                <h3 style="color: var(--success); border:none; margin-bottom:10px;">
+    <i class="fas fa-stopwatch"></i> Today's Practice Logs 
+    <span style="color: var(--primary); cursor: pointer; text-decoration: underline; font-size: 16px; margin-left: 5px;" onclick="showTodaysPracticingStudentsModal()">
+        (<span id="todaysPracticeCount">0</span>)
+    </span>
+</h3>
+                <div id="todaysPracticeList" style="max-height: 180px; overflow-y: auto; padding-right: 5px;"></div>
             </div>
 
             <div class="dashboard-grid">
@@ -1391,7 +1405,7 @@ if (studentViewId && managerUid) {
                                                 <button onclick="document.getElementById('m-profile').style.display='flex'" style="width:100%; background:#fff; padding:16px 20px; border-radius:16px; border:none; box-shadow:0 4px 15px rgba(0,0,0,0.04); display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
                                                     <div style="display:flex; align-items:center; gap:15px;">
                                                         <div style="background:#eff6ff; width:45px; height:45px; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#3b82f6; font-size:18px;"><i class="fas fa-user"></i></div>
-                                                        <span style="font-size:15px; font-weight:600; color:#334155;">Complete Profile Details</span>
+                                                        <span style="font-size:15px; font-weight:600; color:#334155;">Profile Details</span>
                                                     </div>
                                                     <i class="fas fa-chevron-right" style="color:#cbd5e1;"></i>
                                                 </button>
@@ -1421,6 +1435,41 @@ if (studentViewId && managerUid) {
                                             </div>
                                         </div>
 
+                     <div id="m-teacher" class="modal-portal"><div class="modal-content-portal">
+    <div class="close-btn" onclick="document.getElementById('m-teacher').style.display='none'">&times;</div>
+    <h3 style="margin-top:5px; color:#334155; font-size:18px; border-bottom:2px solid #f1f5f9; padding-bottom:10px;">Teacher Details</h3>
+    <div style="text-align: center; padding: 15px 0;">
+        <div style="background:#eff6ff; width:70px; height:70px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#3b82f6; font-size:30px; margin: 0 auto 15px auto; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);">
+            <i class="fas fa-user-tie"></i>
+        </div>
+        <h2 style="margin: 0 0 5px 0; color: #1e293b;">Srikanta Banerjee</h2>
+        <p style="margin: 0; color: #64748b; font-size: 13px; font-weight: 600;">Owner & Instructor</p>
+        
+        <div style="margin-top: 20px; text-align: left; font-size: 14px; color: #334155; background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px dashed #cbd5e1; line-height: 1.6;">
+            <div style="margin-bottom: 12px; display: flex; align-items: flex-start; gap: 10px;">
+                <i class="fas fa-map-marker-alt" style="color: #ef4444; font-size: 16px; margin-top: 3px;"></i> 
+                <div>
+                    <strong>Address:</strong><br>
+                    <span style="color: #475569;">Moyna, Nabagram,<br>Purba Bardhaman</span>
+                </div>
+            </div>
+            <div style="margin-bottom: 12px; display: flex; align-items: flex-start; gap: 10px;">
+                <i class="fas fa-phone-alt" style="color: #10b981; font-size: 16px; margin-top: 3px;"></i> 
+                <div>
+                    <strong>Contact:</strong><br>
+                    <span style="color: #475569;">7001471235 / 9475311199</span>
+                </div>
+            </div>
+            <div style="display: flex; align-items: flex-start; gap: 10px;">
+                <i class="fas fa-music" style="color: #8b5cf6; font-size: 16px; margin-top: 3px;"></i> 
+                <div>
+                    <strong>Classes:</strong><br>
+                    <span style="color: #475569;">Guitar, Bass Guitar, Piano, Keyboard, Mandolin</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div></div>                   
                                         <div id="m-profile" class="modal-portal"><div class="modal-content-portal">
                                             <div class="close-btn" onclick="document.getElementById('m-profile').style.display='none'">&times;</div>
                                             <h3 style="margin-top:5px; color:#334155; font-size:18px; border-bottom:2px solid #f1f5f9; padding-bottom:10px;">Profile Details</h3>
@@ -1462,9 +1511,9 @@ if (studentViewId && managerUid) {
                                         </div></div>
 
                                         <div style="position:fixed; bottom:0; left:0; width:100%; background:#fff; padding:15px; display:flex; gap:12px; box-shadow:0 -10px 30px rgba(0,0,0,0.06); border-radius:24px 24px 0 0; box-sizing:border-box;">
-                                            <button onclick="window.location.reload()" style="flex:0.7; background:#f1f5f9; color:#334155; border:none; border-radius:14px; height:50px; font-size:20px; cursor:pointer;"><i class="fas fa-home"></i></button>
+                                            <button onclick="document.getElementById('m-teacher').style.display='flex'"="window.location.reload()" style="flex:0.7; background:#f1f5f9; color:#334155; border:none; border-radius:14px; height:50px; font-size:20px; cursor:pointer;"><i class="fas fa-teacher"></i></button>
                                             
-                                            <a href="tel:7001471235" style="flex:1; background:#6366f1; color:#fff; text-decoration:none; display:flex; align-items:center; justify-content:center; border-radius:14px; font-weight:600; font-size:15px; box-shadow:0 4px 10px rgba(99,102,241,0.3);"><i class="fas fa-headset" style="margin-right:6px;"></i> Help</a>
+                                            <button onclick="showHelpOptions()" style="flex:1; background:#6366f1; color:#fff; border:none; display:flex; align-items:center; justify-content:center; border-radius:14px; font-weight:600; font-size:15px; box-shadow:0 4px 10px rgba(99,102,241,0.3); cursor:pointer;"><i class="fas fa-headset" style="margin-right:6px;"></i> Help</button>
                                             
                                             <button onclick="localStorage.removeItem('verified_student_${studentViewId}'); window.location.reload();" style="flex:1; background:#fff; color:#ef4444; border:2px solid #fecaca; border-radius:14px; font-weight:600; font-size:15px; cursor:pointer;">Log Out</button>
                                         </div>
@@ -1574,6 +1623,27 @@ if (studentViewId && managerUid) {
         });
 
 
+window.showHelpOptions = function() {
+            Swal.fire({
+                title: 'Contact Teacher',
+                text: 'How would you like to connect?',
+                showConfirmButton: false,
+                showCloseButton: true,
+                html: `
+                    <div style="display:flex; flex-direction:column; gap:10px; margin-top:15px;">
+                        <a href="tel:7001471235" style="background:#3b82f6; color:white; padding:12px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:15px;">
+                            <i class="fas fa-phone-alt"></i> Call Now
+                        </a>
+                        <a href="https://wa.me/917001471235" target="_blank" style="background:#25D366; color:white; padding:12px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:15px;">
+                            <i class="fab fa-whatsapp"></i> WhatsApp
+                        </a>
+                        <a href="sms:7001471235" style="background:#f59e0b; color:white; padding:12px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:15px;">
+                            <i class="fas fa-sms"></i> Send SMS
+                        </a>
+                    </div>
+                `
+            });
+        };
         function handleLogin() {
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
@@ -2985,6 +3055,58 @@ function renderDashboard() {
         !dismissedBirthdays.includes(`${s.id}_${currentYearForCheck}`)
     ); 
     if (birthdayStudents.length > 0) { birthdayList.innerHTML = ''; birthdayStudents.forEach(s => { birthdayList.innerHTML += `<div style="display:flex; align-items:center; justify-content:space-between; background:var(--bg-input); padding:10px; border-radius:8px; margin-bottom:5px; border:1px solid #ffe4e6; color:var(--text-main);"><div style="display:flex; align-items:center;"><img src="${s.photo || 'https://via.placeholder.com/40?text=S'}" style="width:40px; height:40px; border-radius:50%; margin-right:10px; object-fit:cover; border: 2px solid #000 !important;"><div><strong>${s.name}</strong><br><span style="font-size:11px; color:var(--text-muted);">${s.class || 'Student'}</span></div></div><div style="display:flex; gap:5px;"><button class="btn-whatsapp btn-like" onclick="sendBirthdayWish('wa', ${s.id})"><i class="fab fa-whatsapp"></i></button><button class="btn-sms btn-like" onclick="sendBirthdayWish('sms', ${s.id})"><i class="fas fa-sms"></i></button><button class="btn-success btn-like" onclick="dismissBirthday(${s.id})" title="Dismiss"><i class="fas fa-check"></i></button></div></div>`; }); birthdayBox.style.display = 'block'; } else { birthdayBox.style.display = 'none'; }
+    // 🟢 NEW: Today's Practice Logs Logic (Updated)
+    const pracBox = document.getElementById('todaysPracticeBox');
+    const pracList = document.getElementById('todaysPracticeList');
+    const pracCountEl = document.getElementById('todaysPracticeCount');
+    const todayDateStr = new Date().toLocaleDateString('en-IN');
+    let todaysLogs = [];
+
+    students.forEach(s => {
+        if(s.practice_log && s.practice_log.length > 0) {
+            s.practice_log.forEach(log => {
+                if(log.date === todayDateStr) {
+                    todaysLogs.push({
+                        studentId: s.id,
+                        studentName: s.name,
+                        studentPhoto: s.photo,
+                        topic: log.topic,
+                        minutes: log.minutes,
+                        time: log.time
+                    });
+                }
+            });
+        }
+    });
+
+    // কতজন ইউনিক স্টুডেন্ট আজ প্র্যাকটিস করেছে তা গোনা
+    const uniquePracticingStudents = [...new Set(todaysLogs.map(item => item.studentId))];
+
+    if(todaysLogs.length > 0) {
+        if(pracCountEl) pracCountEl.textContent = uniquePracticingStudents.length;
+        pracList.innerHTML = '';
+        todaysLogs.forEach(log => {
+            const photoSrc = log.studentPhoto ? log.studentPhoto : 'https://via.placeholder.com/40?text=S';
+            pracList.innerHTML += `
+            <div style="display:flex; align-items:center; justify-content:space-between; background:var(--bg-card); padding:8px 10px; border-radius:8px; margin-bottom:6px; border-left: 3px solid var(--success); box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <img src="${photoSrc}" style="width:32px; height:32px; border-radius:50%; object-fit:cover; border:1px solid #e2e8f0; cursor:pointer;" onclick="showStudentDetails(${log.studentId})">
+                    <div>
+                        <div style="font-weight:700; font-size:13px; color:var(--primary); cursor:pointer; line-height: 1.2;" onclick="showStudentDetails(${log.studentId})">${log.studentName}</div>
+                        <div style="font-size:10px; color:var(--text-muted); margin-top: 2px;"><i class="fas fa-book"></i> ${log.topic} &nbsp; <i class="fas fa-clock"></i> ${log.time}</div>
+                    </div>
+                </div>
+                <div style="background:var(--success); color:white; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:bold; white-space: nowrap;">
+                    ${log.minutes} mins
+                </div>
+            </div>
+        `;
+        });
+        pracBox.style.display = 'block';
+    } else {
+        pracBox.style.display = 'none';
+    }
+    // 🟢 END: Practice Logs Logic
     
     const classCounts = activeStudents.reduce((acc, student) => { const className = student.class ? student.class.trim() : 'Unassigned'; acc[className] = (acc[className] || 0) + 1; return acc; }, {}); const classListEl = document.getElementById('classStrengthList'); classListEl.innerHTML = ''; Object.entries(classCounts).sort().forEach(([className, count]) => { classListEl.innerHTML += `<li onclick="showClassStudents('${className}')" style="cursor:pointer; color:var(--text-main);"><strong>${className}:</strong> <span>${count} students</span></li>`; }); 
     
@@ -4233,19 +4355,55 @@ async function addAttendanceNote(studentId) {
     });
 
     if (text !== undefined) {
+        const newNoteTrimmed = text.trim();
+
+        // 🟢 NEW: Duplicate Note Check Logic (আগে দেওয়া হয়েছে কি না চেক করা)
+        if (newNoteTrimmed !== "" && newNoteTrimmed !== existingNote) {
+            let isDuplicate = false;
+            let duplicateDate = '';
+
+            // সব পুরনো ডেটা চেক করে দেখা হচ্ছে
+            for (const pastDate in attendance) {
+                if (pastDate !== date && attendance[pastDate][studentId]) {
+                    const pastEntry = attendance[pastDate][studentId];
+                    const pastNote = (typeof pastEntry === 'object' && pastEntry.note) ? pastEntry.note.trim() : '';
+                    
+                    // নোট যদি হুবহু মিলে যায় (ছোট/বড় হাতের অক্ষর ইগনোর করে)
+                    if (pastNote !== "" && pastNote.toLowerCase() === newNoteTrimmed.toLowerCase()) {
+                        isDuplicate = true;
+                        duplicateDate = pastDate;
+                        break;
+                    }
+                }
+            }
+
+            // যদি আগে দেওয়া হয়ে থাকে, তবে ওয়ার্নিং দেখাবে এবং সেভ হবে না
+            if (isDuplicate) {
+                const formattedDupDate = new Date(duplicateDate).toLocaleDateString('en-IN');
+                Swal.fire({
+                    title: 'Duplicate Note!',
+                    html: `এই নোটটি আগে <b>${formattedDupDate}</b> তারিখে দেওয়া হয়েছে!<br>দয়া করে নতুন কিছু লিখুন।`,
+                    icon: 'warning',
+                    confirmButtonColor: '#f59e0b'
+                });
+                return; // এখানেই সেভ হওয়া আটকে যাবে
+            }
+        }
+        // 🟢 END NEW LOGIC
+
         if (!attendance[date]) attendance[date] = {};
         
         attendance[date][studentId] = {
             ...currentEntry, 
-            note: text
+            note: newNoteTrimmed
         };
         
         renderAttendance();
         saveData().catch(e => console.log("Note saved locally, syncing later."));
 
-        if (text.trim() !== "") {
+        if (newNoteTrimmed !== "") {
             const student = students.find(s => s.id === studentId);
-            const safeNote = text.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            const safeNote = newNoteTrimmed.replace(/'/g, "\\'").replace(/"/g, '&quot;');
             
             Swal.fire({
                 title: 'Note Saved!',
@@ -5654,7 +5812,18 @@ function getPracticeStats(student) {
 }
 // --- End of New Logic ---
 
-window.submitPracticeLog = function(studentId) {
+window.submitPracticeLog = function(studentId) {const timeInput = document.getElementById('practiceTimeInput').value;
+    if (timeInput) {
+        const now = new Date();
+        const currentHours = now.getHours();
+        const currentMinutes = now.getMinutes();
+        const [inputHours, inputMinutes] = timeInput.split(':').map(Number);
+        
+        if (inputHours > currentHours || (inputHours === currentHours && inputMinutes > currentMinutes)) {
+            Swal.fire('Error', 'Future time cannot be selected!', 'error');
+            return; 
+        }
+    }
     const minutes = document.getElementById('practiceMinutes').value;
     let topic = document.getElementById('practiceTopic').value.trim();
     const timeInputEl = document.getElementById('practiceTimeInput');
@@ -5724,6 +5893,36 @@ window.submitPracticeLog = function(studentId) {
     }).catch(e => console.log("Sync error:", e));
 };
 
+window.showTodaysPracticingStudentsModal = function() {
+    const todayDateStr = new Date().toLocaleDateString('en-IN');
+    let practicedStudentIds = new Set();
+    
+    students.forEach(s => {
+        if(s.practice_log && s.practice_log.length > 0) {
+            if(s.practice_log.some(log => log.date === todayDateStr)) {
+                practicedStudentIds.add(s.id);
+            }
+        }
+    });
+
+    if (practicedStudentIds.size === 0) return;
+
+    document.getElementById('classStudentsTitle').textContent = `Today's Practice (${practicedStudentIds.size} Students)`; 
+    const tableBody = document.querySelector('#classStudentsTable tbody'); 
+    const tableHead = document.querySelector('#classStudentsTable thead tr');
+    
+    tableHead.innerHTML = '<th>ID</th><th>Student</th><th>Contact</th>'; 
+    tableBody.innerHTML = ''; 
+    
+    practicedStudentIds.forEach(id => { 
+        const s = students.find(student => student.id === id);
+        if (s) {
+            tableBody.innerHTML += `<tr><td>${s.serial_no}</td><td>${getStudentHtml(s)}</td><td>${getAllContactButtons(s)}</td></tr>`; 
+        }
+    }); 
+    
+    document.getElementById('classStudentsModal').style.display = 'flex'; 
+};
 window.renderPracticeHistoryPortal = function(student) {
     const existingIdx = students.findIndex(s => String(s.id) === String(student.id));
     if(existingIdx === -1) students.push(student);
@@ -5932,6 +6131,7 @@ window.editPracticeLogTeacher = async function(studentId, logId) {
         renderPracticeLogTeacher(studentId);
     }
 };
+
 </script>
 </body>
 </html>
