@@ -1654,69 +1654,81 @@ if (studentViewId && managerUid) {
             }
         }
 
-        async function initApp() { 
-            const now = new Date();
-            document.getElementById('attendanceDate').valueAsDate = now;
-            document.getElementById('attendanceTime').value = now.toLocaleTimeString('en-GB', {hour: '2-digit', minute:'2-digit'});
-            
-            const currentMonthStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`; 
-            const prevDate = new Date(now);
-            prevDate.setMonth(prevDate.getMonth() - 1);
-            const prevMonthStr = `${prevDate.getFullYear()}-${(prevDate.getMonth() + 1).toString().padStart(2, '0')}`;
+async function initApp() { 
+    const now = new Date();
+    document.getElementById('attendanceDate').valueAsDate = now;
+    document.getElementById('attendanceTime').value = now.toLocaleTimeString('en-GB', {hour: '2-digit', minute:'2-digit'});
+    
+    const currentMonthStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`; 
+    const prevDate = new Date(now);
+    prevDate.setMonth(prevDate.getMonth() - 1);
+    const prevMonthStr = `${prevDate.getFullYear()}-${(prevDate.getMonth() + 1).toString().padStart(2, '0')}`;
 
-            document.getElementById('feeMonth').value = currentMonthStr; 
-            document.getElementById('reportMonth').value = currentMonthStr; 
-            document.getElementById('reportYear').value = now.getFullYear(); 
-            document.getElementById('idCardIssueDate').valueAsDate = now; 
-            document.getElementById('analyticsYear').value = now.getFullYear(); 
-            document.getElementById('compMonth1').value = prevMonthStr;
-            document.getElementById('compMonth2').value = currentMonthStr;
+    document.getElementById('feeMonth').value = currentMonthStr; 
+    document.getElementById('reportMonth').value = currentMonthStr; 
+    document.getElementById('reportYear').value = now.getFullYear(); 
+    document.getElementById('idCardIssueDate').valueAsDate = now; 
+    document.getElementById('analyticsYear').value = now.getFullYear(); 
+    document.getElementById('compMonth1').value = prevMonthStr;
+    document.getElementById('compMonth2').value = currentMonthStr;
 
-            toggleReportInputs(); 
+    toggleReportInputs(); 
 
-            try {
-                let loadedStudents = await loadStudentsFromSubCollection();
+    try {
+        let loadedStudents = await loadStudentsFromSubCollection();
 
-                if (loadedStudents.length === 0) {
-                    const legacyStudents = await dbGet('students');
-                    if (legacyStudents && Array.isArray(legacyStudents) && legacyStudents.length > 0) {
-                        console.log("Found legacy data, migrating...");
-                        loadedStudents = legacyStudents.map(migrateStudentData);
-                        
-                        loadedStudents.forEach(st => {
-                             db.collection(COLLECTION_NAME).doc(DOC_ID).collection('students').doc(String(st.id)).set(st);
-                        });
-                    }
-                }
-
-                const [aData, fData, rData, scData, gmData] = await Promise.all([
-                    dbGet('attendance'),
-                    dbGet('fees'),
-                    dbGet('reminders'),
-                    dbGet('studentSerialCounter'),
-                    dbGet('globalMaterials')
-                ]);
-
-                students = loadedStudents || []; 
-                attendance = aData || {}; 
-                fees = fData || {}; 
-                reminders = rData || []; 
-                globalMaterials = gmData || [];
-                studentSerialCounter = parseInt(scData) || (students.length > 0 ? students.length + 1 : 1); 
-                
-                loadAllData(); 
-            } catch(e) {
-                console.error("Init Error:", e);
-                if(!students) students = [];
-                if(!attendance) attendance = {};
+        if (loadedStudents.length === 0) {
+            const legacyStudents = await dbGet('students');
+            if (legacyStudents && Array.isArray(legacyStudents) && legacyStudents.length > 0) {
+                loadedStudents = legacyStudents.map(migrateStudentData);
+                loadedStudents.forEach(st => {
+                     db.collection(COLLECTION_NAME).doc(DOC_ID).collection('students').doc(String(st.id)).set(st);
+                });
             }
-
-            document.getElementById('attendanceDate').addEventListener('change', renderAttendance); 
-            document.getElementById('feeMonth').addEventListener('change', renderFees); 
-            
-            comparePeriods(); 
-            updateYearlyChart();
         }
+
+        // 🟢 NEW: Attendance ও Fees আলাদা সাব-কালেকশন থেকে লোড হবে
+        let aData = {}; let fData = {};
+        try {
+            const [attSnap, feesSnap] = await Promise.all([
+                db.collection(COLLECTION_NAME).doc(DOC_ID).collection('attendance').get(),
+                db.collection(COLLECTION_NAME).doc(DOC_ID).collection('fees').get()
+            ]);
+            
+            if (!attSnap.empty) attSnap.forEach(doc => { Object.assign(aData, doc.data()); });
+            else aData = await dbGet('attendance') || {}; // Legacy fallback
+
+            if (!feesSnap.empty) feesSnap.forEach(doc => { Object.assign(fData, doc.data()); });
+            else fData = await dbGet('fees') || {}; // Legacy fallback
+        } catch(err) {
+            aData = await dbGet('attendance') || {};
+            fData = await dbGet('fees') || {};
+        }
+
+        const [rData, scData, gmData] = await Promise.all([
+            dbGet('reminders'),
+            dbGet('studentSerialCounter'),
+            dbGet('globalMaterials')
+        ]);
+
+        students = loadedStudents || []; 
+        attendance = aData || {}; 
+        fees = fData || {}; 
+        reminders = rData || []; 
+        globalMaterials = gmData || [];
+        studentSerialCounter = parseInt(scData) || (students.length > 0 ? students.length + 1 : 1); 
+        
+        loadAllData(); 
+    } catch(e) {
+        if(!students) students = [];
+        if(!attendance) attendance = {};
+    }
+
+    document.getElementById('attendanceDate').addEventListener('change', renderAttendance); 
+    document.getElementById('feeMonth').addEventListener('change', renderFees); 
+    comparePeriods(); 
+    updateYearlyChart();
+}
 
         const INSTITUTE_NAME = "Guitar, Bass Guitar, Piano, Keyboard, Mandolin Classes"; 
         const MY_NAME = "Srikanta Banerjee"; 
@@ -2414,8 +2426,7 @@ async function addStudent() {
 }
 
 async function saveData() { 
-    await dbSet('attendance', attendance); 
-    await dbSet('fees', fees); 
+    // 🟢 NEW: Attendance and Fees are now saved individually directly to Sub-collections
     await dbSet('reminders', reminders);
     await dbSet('globalMaterials', globalMaterials); 
     await dbSet('studentSerialCounter', studentSerialCounter); 
@@ -2534,12 +2545,31 @@ async function importData(event) {
 
             const user = firebase.auth().currentUser;
             if (user) {
-                document.getElementById('restore-status').innerText = "Cleaning old database...";
+                // 🟢 NEW: Upload Attendance & Fees to Scalable Sub-collections
+                document.getElementById('restore-status').innerText = "Uploading Records...";
                 
-                dbSet('attendance', attendance).catch(console.error);
-                dbSet('fees', fees).catch(console.error);
+                const attBatches = {};
+                Object.keys(attendance).forEach(date => {
+                    const monthKey = date.substring(0, 7);
+                    if (!attBatches[monthKey]) attBatches[monthKey] = {};
+                    attBatches[monthKey][date] = attendance[date];
+                });
+                for (const [monthKey, data] of Object.entries(attBatches)) {
+                    await db.collection(COLLECTION_NAME).doc(user.uid).collection('attendance').doc(monthKey).set(data, {merge: true});
+                }
+                
+                const feeBatches = {};
+                Object.keys(fees).forEach(month => {
+                    const yearKey = month.substring(0, 4);
+                    if (!feeBatches[yearKey]) feeBatches[yearKey] = {};
+                    feeBatches[yearKey][month] = fees[month];
+                });
+                for (const [yearKey, data] of Object.entries(feeBatches)) {
+                    await db.collection(COLLECTION_NAME).doc(user.uid).collection('fees').doc(yearKey).set(data, {merge: true});
+                }
+
                 dbSet('reminders', reminders).catch(console.error);
-                dbSet('globalMaterials', globalMaterials).catch(console.error); /* 🟢 এটি নতুন অ্যাড করা হলো */
+                dbSet('globalMaterials', globalMaterials).catch(console.error);
                 dbSet('studentSerialCounter', studentSerialCounter).catch(console.error);
                 if(instituteLogo) dbSet('instituteLogo', instituteLogo).catch(console.error);
                 if(authorizedSignature) dbSet('authorizedSignature', authorizedSignature).catch(console.error);
@@ -3802,7 +3832,6 @@ async function saveFee() {
     const payTypeContainer = document.getElementById('payTypeContainer');
     const payTypeSelect = document.getElementById('payTypeSelect');
     let receiptNo = Date.now().toString().slice(-6); 
-    
     let monthsToPay = [month];
     
     if (payTypeContainer.style.display !== 'none' && payTypeSelect.value === 'all') {
@@ -3810,10 +3839,19 @@ async function saveFee() {
     }
 
     const amountPerMonth = monthsToPay.length > 0 ? (amount / monthsToPay.length) : amount;
+    const user = firebase.auth().currentUser;
 
     monthsToPay.forEach(m => {
         if (!fees[m]) fees[m] = {}; 
         fees[m][studentId] = { status: 'paid', amount: amountPerMonth, date, mode: mode, transactionId: txnId, receiptNo: receiptNo }; 
+        
+        // 🟢 NEW: Save Fee to Year Sub-collection
+        if (user) {
+            const yearKey = m.substring(0, 4);
+            db.collection(COLLECTION_NAME).doc(user.uid).collection('fees').doc(yearKey).set({
+                [m]: fees[m]
+            }, { merge: true }).catch(e => console.log("Fee sync pending..."));
+        }
     });
 
     await saveData(); 
@@ -3821,7 +3859,6 @@ async function saveFee() {
     renderFees();
     
     const joinedMonths = monthsToPay.join(',');
-    
     Swal.fire({ 
         title: 'Payment Recorded!', 
         html: `<p>Payment successful.</p>
@@ -3830,11 +3867,7 @@ async function saveFee() {
                    <button class="btn-like btn-whatsapp" onclick="sendMsg('wa', ${studentId}, '${joinedMonths}', ${amount}, false)">WhatsApp</button>
                    <button class="btn-like btn-sms" onclick="sendMsg('sms', ${studentId}, '${joinedMonths}', ${amount}, false)">SMS</button>
                </div>`, 
-        icon: 'success', 
-        showConfirmButton: true, 
-        confirmButtonText: 'Close',
-        confirmButtonColor: '#d33',
-        allowOutsideClick: false 
+        icon: 'success', showConfirmButton: true, confirmButtonText: 'Close', confirmButtonColor: '#d33', allowOutsideClick: false 
     }); 
     loadAllData(); 
 }
@@ -4172,24 +4205,22 @@ function markAttendance(studentId, status) {
     if (!date) { Swal.fire('Alert','Please select a date.', 'warning'); return; } 
     
     if (!attendance[date]) attendance[date] = {}; 
-    
     const currentEntry = attendance[date][studentId];
     let existingNote = '';
-    
-    if (typeof currentEntry === 'object' && currentEntry !== null && currentEntry.note) {
-        existingNote = currentEntry.note;
-    }
+    if (typeof currentEntry === 'object' && currentEntry !== null && currentEntry.note) { existingNote = currentEntry.note; }
+
+    const monthKey = date.substring(0, 7); // YYYY-MM
+    const user = firebase.auth().currentUser;
 
     if (status === 'clear') { 
         if (existingNote) {
             attendance[date][studentId] = { status: null, time: '', note: existingNote };
+            if (user) db.collection(COLLECTION_NAME).doc(user.uid).collection('attendance').doc(monthKey).set({ [date]: attendance[date] }, { merge: true });
         } else {
             delete attendance[date][studentId]; 
-
-            const user = firebase.auth().currentUser;
-            if(user) {
-                const deletePath = `attendance.${date}.${studentId}`;
-                db.collection(COLLECTION_NAME).doc(user.uid).update({
+            if (user) {
+                const deletePath = `${date}.${studentId}`;
+                db.collection(COLLECTION_NAME).doc(user.uid).collection('attendance').doc(monthKey).update({
                     [deletePath]: firebase.firestore.FieldValue.delete()
                 }).catch(e => console.log("Delete queued for offline sync."));
             }
@@ -4197,15 +4228,15 @@ function markAttendance(studentId, status) {
     } else {
         let timeToSave = document.getElementById('attendanceTime').value; 
         if (!timeToSave) { 
-            const now = new Date(); 
-            timeToSave = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`; 
+            const now = new Date(); timeToSave = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`; 
         }
         
-        attendance[date][studentId] = { 
-            status: status, 
-            time: timeToSave,
-            note: existingNote 
-        }; 
+        attendance[date][studentId] = { status: status, time: timeToSave, note: existingNote }; 
+        if (user) {
+            db.collection(COLLECTION_NAME).doc(user.uid).collection('attendance').doc(monthKey).set({
+                [date]: attendance[date]
+            }, { merge: true }).catch(e => console.log("Sync Pending..."));
+        }
     }
     
     renderAttendance(); 
@@ -4234,14 +4265,18 @@ async function addAttendanceNote(studentId) {
 
     if (text !== undefined) {
         if (!attendance[date]) attendance[date] = {};
-        
-        attendance[date][studentId] = {
-            ...currentEntry, 
-            note: text
-        };
-        
+        attendance[date][studentId] = { ...currentEntry, note: text };
         renderAttendance();
-        saveData().catch(e => console.log("Note saved locally, syncing later."));
+        
+        // 🟢 NEW: Save Note to Month Sub-collection
+        const monthKey = date.substring(0, 7);
+        const user = firebase.auth().currentUser;
+        if (user) {
+            db.collection(COLLECTION_NAME).doc(user.uid).collection('attendance').doc(monthKey).set({
+                [date]: attendance[date]
+            }, { merge: true }).catch(e => console.log("Sync pending..."));
+        }
+        saveData();
 
         if (text.trim() !== "") {
             const student = students.find(s => s.id === studentId);
@@ -4252,56 +4287,36 @@ async function addAttendanceNote(studentId) {
                 html: `
                     <p style="font-size:14px; color:#666;">Send to <b>${student.name}</b>?</p>
                     <div style="display:flex; gap:10px; justify-content:center; margin-top:15px;">
-                        <button class="btn-whatsapp" onclick="sendNoteAction('wa', ${studentId}, '${safeNote}', '${date}')" style="padding:10px 20px !important;">
-                            <i class="fab fa-whatsapp"></i> WhatsApp
-                        </button>
-                        <button class="btn-sms" onclick="sendNoteAction('sms', ${studentId}, '${safeNote}', '${date}')" style="padding:10px 20px !important;">
-                            <i class="fas fa-sms"></i> SMS
-                        </button>
+                        <button class="btn-whatsapp" onclick="sendNoteAction('wa', ${studentId}, '${safeNote}', '${date}')" style="padding:10px 20px !important;"><i class="fab fa-whatsapp"></i> WhatsApp</button>
+                        <button class="btn-sms" onclick="sendNoteAction('sms', ${studentId}, '${safeNote}', '${date}')" style="padding:10px 20px !important;"><i class="fas fa-sms"></i> SMS</button>
                     </div>
                 `,
-                icon: 'success',
-                showConfirmButton: true,
-                confirmButtonText: 'Close',
-                confirmButtonColor: '#d33'
+                icon: 'success', showConfirmButton: true, confirmButtonText: 'Close', confirmButtonColor: '#d33'
             });
         } else {
-            const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
-            Toast.fire({ icon: 'success', title: 'Note cleared' });
+            Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 }).fire({ icon: 'success', title: 'Note cleared' });
         }
     }
 }
 
 async function unmarkFee(studentId, month) { 
     Swal.fire({ 
-        title: 'Unmark Payment?', 
-        text: "Are you sure you want to delete this payment?", 
-        icon: 'warning', 
-        showCancelButton: true, 
-        confirmButtonText: 'Yes, Delete',
-        cancelButtonText: 'No',
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
-        allowOutsideClick: false 
+        title: 'Unmark Payment?', text: "Are you sure you want to delete this payment?", icon: 'warning', showCancelButton: true, confirmButtonText: 'Yes, Delete', cancelButtonText: 'No', confirmButtonColor: '#d33', cancelButtonColor: '#3085d6', allowOutsideClick: false 
     }).then(async (result) => { 
         if (result.isConfirmed) {
-            
-            if (fees[month] && fees[month][studentId]) { 
-                delete fees[month][studentId]; 
-            }
-            
+            if (fees[month] && fees[month][studentId]) delete fees[month][studentId]; 
             renderFees(); 
 
             const user = firebase.auth().currentUser;
             if (user) {
-                const fieldPath = `fees.${month}.${studentId}`;
-                db.collection(COLLECTION_NAME).doc(user.uid).update({
+                const yearKey = month.substring(0, 4);
+                const fieldPath = `${month}.${studentId}`;
+                db.collection(COLLECTION_NAME).doc(user.uid).collection('fees').doc(yearKey).update({
                     [fieldPath]: firebase.firestore.FieldValue.delete()
                 }).catch(err => console.log("Offline mode: Delete queued for sync."));
             }
 
-            const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
-            Toast.fire({ icon: 'success', title: 'Payment removed' });
+            Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 }).fire({ icon: 'success', title: 'Payment removed' });
         } 
     }); 
 }
@@ -5629,12 +5644,27 @@ function getPracticeStats(student) {
         if (logDate >= yearStart && logDate <= now) stats.year += mins;
     });
 
-    const joinDate = new Date(student.joining_date || now);
-    joinDate.setHours(0, 0, 0, 0);
-    let daysSinceJoin = Math.floor((now - joinDate) / (1000 * 60 * 60 * 24)) + 1;
-    if (daysSinceJoin < 1) daysSinceJoin = 1;
+    // First practice entry date ber korar notun logic
+    let firstPracticeDate = new Date(now);
+    if (logs.length > 0) {
+        let earliestTime = now.getTime();
+        logs.forEach(log => {
+            const logDateObj = parseINDate(log.date);
+            logDateObj.setHours(0, 0, 0, 0);
+            if (logDateObj.getTime() < earliestTime) {
+                earliestTime = logDateObj.getTime();
+            }
+        });
+        firstPracticeDate = new Date(earliestTime);
+    } else {
+        firstPracticeDate = new Date(student.joining_date || now);
+    }
+    firstPracticeDate.setHours(0, 0, 0, 0);
+
+    let daysSinceStart = Math.floor((now - firstPracticeDate) / (1000 * 60 * 60 * 24)) + 1;
+    if (daysSinceStart < 1) daysSinceStart = 1;
     
-    stats.avg = Math.round(stats.lifetime / daysSinceJoin);
+    stats.avg = Math.round(stats.lifetime / daysSinceStart);
     return stats;
 }
 // --- End of New Logic ---
