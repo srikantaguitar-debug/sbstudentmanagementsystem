@@ -1165,7 +1165,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             const managerUid = urlParams.get('manager');
 
 if (studentViewId && managerUid) {
-                document.getElementById('loginOverlay').style.display = 'none';
+    // 🟢 Manager-এর সবকিছু সাথে সাথে রিমুভ করে দেওয়া হচ্ছে যাতে ব্যাকগ্রাউন্ডে কিছু না দেখায়
+    document.body.innerHTML = ''; 
+    document.body.style.background = '#f8fafc';
 
                 async function renderStudentPortal() {
                     document.body.innerHTML = '<div style="display:flex; height:100vh; align-items:center; justify-content:center; flex-direction:column; background:#f8fafc;"><i class="fas fa-spinner fa-spin fa-3x" style="color:#6366f1; margin-bottom:15px;"></i><h3 style="color:#1e293b; font-family:Poppins;">Loading Portal...</h3></div>';
@@ -1510,15 +1512,21 @@ if (studentViewId && managerUid) {
                                             <div class="scroller-box">${paidHtml}</div>
                                         </div></div>
 
-                                        <div style="position:fixed; bottom:0; left:0; width:100%; background:#fff; padding:15px; display:flex; gap:12px; box-shadow:0 -10px 30px rgba(0,0,0,0.06); border-radius:24px 24px 0 0; box-sizing:border-box;">
-                                            <button onclick="document.getElementById('m-teacher').style.display='flex'" style="flex:1; background:#3b82f6; color:#fff; border:none; display:flex; align-items:center; justify-content:center; border-radius:14px; font-weight:600; font-size:15px; cursor:pointer; box-shadow:0 4px 10px rgba(59, 130, 246, 0.3);">
-    <i class="fas fa-user-tie" style="margin-right:6px;"></i> Teacher
-</button>
-                                            
-                                            <button onclick="showHelpOptions()" style="flex:1; background:#6366f1; color:#fff; border:none; display:flex; align-items:center; justify-content:center; border-radius:14px; font-weight:600; font-size:15px; box-shadow:0 4px 10px rgba(99,102,241,0.3); cursor:pointer;"><i class="fas fa-headset" style="margin-right:6px;"></i> Help</button>
-                                            
-                                            <button onclick="localStorage.removeItem('verified_student_${studentViewId}'); window.location.reload();" style="flex:1; background:#fff; color:#ef4444; border:2px solid #fecaca; border-radius:14px; font-weight:600; font-size:15px; cursor:pointer;">Log Out</button>
-                                        </div>
+                                        <div style="position:fixed; bottom:0; left:0; width:100%; background:#fff; padding:15px 20px; display:flex; gap:12px; box-shadow:0 -10px 30px rgba(0,0,0,0.06); border-radius:24px 24px 0 0; box-sizing:border-box;">
+    
+    <button onclick="document.getElementById('m-teacher').style.display='flex'" style="width: 65px; height: 55px; flex-shrink: 0; background: #f1f5f9; color: #64748b; border: none; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer;">
+        <i class="fas fa-user-tie"></i>
+    </button>
+    
+    <button onclick="showHelpOptions()" style="flex: 1; height: 55px; background: #6366f1; color: #fff; border: none; display: flex; align-items: center; justify-content: center; border-radius: 16px; font-weight: 700; font-size: 16px; box-shadow: 0 6px 15px rgba(99,102,241,0.25); cursor: pointer;">
+        <i class="fas fa-headset" style="margin-right: 8px;"></i> Help
+    </button>
+    
+    <button onclick="localStorage.removeItem('verified_student_${studentViewId}'); window.location.reload();" style="flex: 1; height: 55px; background: #fff; color: #ef4444; border: 2px solid #fecaca; display: flex; align-items: center; justify-content: center; border-radius: 16px; font-weight: 700; font-size: 16px; cursor: pointer;">
+        Log Out
+    </button>
+
+</div>
                                         </div></div>
     `;
     
@@ -4336,6 +4344,76 @@ function markAttendance(studentId, status) {
     saveData().catch(err => console.log("Background Sync Pending...")); 
 }
 
+// 🟢 রিয়েল-টাইম ডুপ্লিকেট নোট চেকার
+window.checkNoteRealtime = function(studentId, inputVal, currentDate) {
+    const warningDiv = document.getElementById('note-duplicate-warning');
+    if(!inputVal.trim()) { warningDiv.style.display = 'none'; return; }
+    
+    let isDuplicate = false;
+    let duplicateDate = '';
+    
+    for (const pastDate in attendance) {
+        if (pastDate !== currentDate && attendance[pastDate] && attendance[pastDate][studentId]) {
+            const pastEntry = attendance[pastDate][studentId];
+            const pastNote = (typeof pastEntry === 'object' && pastEntry.note) ? pastEntry.note.trim() : '';
+            if (pastNote !== "" && pastNote.toLowerCase() === inputVal.trim().toLowerCase()) {
+                isDuplicate = true;
+                duplicateDate = pastDate;
+                break;
+            }
+        }
+    }
+    
+    if(isDuplicate) {
+        const formattedDate = new Date(duplicateDate).toLocaleDateString('en-IN');
+        warningDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> <b>Warning:</b> এই নোটটি আগে <b>${formattedDate}</b> তারিখে দেওয়া হয়েছে!`;
+        warningDiv.style.display = 'block';
+    } else {
+        warningDiv.style.display = 'none';
+    }
+};
+// 🟢 ক্লাস নোটের সিমিলার সাজেশন দেখানোর ফাংশন
+window.showNoteSuggestions = function(studentId, inputVal) {
+    const suggestionBox = document.getElementById('note-suggestions-container');
+    const val = inputVal.trim().toLowerCase();
+    
+    if (!val) {
+        suggestionBox.style.display = 'none';
+        return;
+    }
+
+    // ওই স্টুডেন্টের আগের সব নোট বের করা
+    let pastNotes = [];
+    for (const d in attendance) {
+        const entry = attendance[d]?.[studentId];
+        if (entry && entry.note) {
+            const n = entry.note.trim();
+            if (n && !pastNotes.includes(n)) {
+                pastNotes.push(n);
+            }
+        }
+    }
+
+    // টাইপ করা লেখার সাথে মিলে যায় এমন নোট খোঁজা
+    const matchedNotes = pastNotes.filter(n => n.toLowerCase().includes(val) && n.toLowerCase() !== val);
+
+    if (matchedNotes.length > 0) {
+        let html = '';
+        matchedNotes.forEach(note => {
+            const safeNote = note.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            html += `<div style="padding: 10px; border-bottom: 1px solid var(--border-color); font-size: 13px; cursor: pointer; color: var(--text-main); background: var(--bg-card);" 
+                          onclick="document.getElementById('swal-custom-note').value = '${safeNote}'; document.getElementById('note-suggestions-container').style.display='none'; checkNoteRealtime(${studentId}, '${safeNote}', document.getElementById('attendanceDate').value);">
+                          <i class="fas fa-history" style="color:var(--text-muted); margin-right:5px;"></i> ${note}
+                     </div>`;
+        });
+        suggestionBox.innerHTML = html;
+        suggestionBox.style.display = 'block';
+    } else {
+        suggestionBox.style.display = 'none';
+    }
+};
+
+// 🟢 আপডেটেড addAttendanceNote ফাংশন (Duplicate Popup Removed)
 async function addAttendanceNote(studentId) {
     const date = document.getElementById('attendanceDate').value;
     if (!date) { Swal.fire('Alert', 'Please select a date first.', 'warning'); return; }
@@ -4343,65 +4421,44 @@ async function addAttendanceNote(studentId) {
     const currentEntry = attendance[date]?.[studentId] || {};
     const existingNote = currentEntry.note || '';
 
-    const { value: text } = await Swal.fire({
+    const { value: text, isConfirmed } = await Swal.fire({
         title: 'Class Progress Note',
-        input: 'textarea',
-        inputLabel: 'আজ ক্লাসে কি শেখানো হলো?',
-        inputValue: existingNote,
-        placeholder: 'যেমন: C Major Scale শেখানো হয়েছে...',
+        html: `
+            <label style="font-size:13px; color:var(--text-main); margin-bottom:8px; display:block; text-align:left;">আজ ক্লাসে কি শেখানো হলো?</label>
+            <textarea id="swal-custom-note" class="swal2-textarea" placeholder="যেমন: C Major Scale শেখানো হয়েছে..." style="margin:0; width:100%; box-sizing:border-box; font-size: 14px; padding: 12px;" oninput="checkNoteRealtime(${studentId}, this.value, '${date}'); showNoteSuggestions(${studentId}, this.value);">${existingNote}</textarea>
+            
+            <div id="note-suggestions-container" style="display:none; max-height:120px; overflow-y:auto; border:1px solid var(--border-color); border-radius:6px; margin-top:5px; text-align:left; box-shadow:0 4px 6px rgba(0,0,0,0.1);"></div>
+            
+            <div id="note-duplicate-warning" style="display:none; color:#b45309; background:#fef3c7; border:1px solid #fcd34d; padding:8px 10px; border-radius:6px; font-size:12px; margin-top:8px; text-align:left;"></div>
+            
+            <button type="button" class="btn-info" onclick="openMaterialSelectorForStudent(${studentId})" style="width:100%; margin-top:15px; background-color: #0ea5e9; border-radius: 8px; padding: 10px; font-size: 14px; border: none; color: white; cursor: pointer;">
+                <i class="fas fa-book-open"></i> Send Study Material
+            </button>
+        `,
         showCancelButton: true,
         confirmButtonText: 'Save Note',
         confirmButtonColor: 'var(--primary)',
         cancelButtonColor: '#ef4444',
-        allowOutsideClick: false 
+        allowOutsideClick: false,
+        didOpen: () => {
+            if(existingNote) checkNoteRealtime(studentId, existingNote, date);
+        },
+        preConfirm: () => {
+            return document.getElementById('swal-custom-note').value;
+        }
     });
 
-    if (text !== undefined) {
+    if (isConfirmed && text !== undefined) {
         const newNoteTrimmed = text.trim();
 
-        // 🟢 NEW: Duplicate Note Check Logic (আগে দেওয়া হয়েছে কি না চেক করা)
-        if (newNoteTrimmed !== "" && newNoteTrimmed !== existingNote) {
-            let isDuplicate = false;
-            let duplicateDate = '';
-
-            // সব পুরনো ডেটা চেক করে দেখা হচ্ছে
-            for (const pastDate in attendance) {
-                if (pastDate !== date && attendance[pastDate][studentId]) {
-                    const pastEntry = attendance[pastDate][studentId];
-                    const pastNote = (typeof pastEntry === 'object' && pastEntry.note) ? pastEntry.note.trim() : '';
-                    
-                    // নোট যদি হুবহু মিলে যায় (ছোট/বড় হাতের অক্ষর ইগনোর করে)
-                    if (pastNote !== "" && pastNote.toLowerCase() === newNoteTrimmed.toLowerCase()) {
-                        isDuplicate = true;
-                        duplicateDate = pastDate;
-                        break;
-                    }
-                }
-            }
-
-            // যদি আগে দেওয়া হয়ে থাকে, তবে ওয়ার্নিং দেখাবে এবং সেভ হবে না
-            if (isDuplicate) {
-                const formattedDupDate = new Date(duplicateDate).toLocaleDateString('en-IN');
-                Swal.fire({
-                    title: 'Duplicate Note!',
-                    html: `এই নোটটি আগে <b>${formattedDupDate}</b> তারিখে দেওয়া হয়েছে!<br>দয়া করে নতুন কিছু লিখুন।`,
-                    icon: 'warning',
-                    confirmButtonColor: '#f59e0b'
-                });
-                return; // এখানেই সেভ হওয়া আটকে যাবে
-            }
-        }
-        // 🟢 END NEW LOGIC
-
         if (!attendance[date]) attendance[date] = {};
-        
         attendance[date][studentId] = {
             ...currentEntry, 
             note: newNoteTrimmed
         };
         
         renderAttendance();
-        saveData().catch(e => console.log("Note saved locally, syncing later."));
+        saveData().catch(e => console.log("Note saved locally."));
 
         if (newNoteTrimmed !== "") {
             const student = students.find(s => s.id === studentId);
@@ -4431,6 +4488,81 @@ async function addAttendanceNote(studentId) {
         }
     }
 }
+
+// 🟢 নির্দিষ্ট স্টুডেন্টকে Material পাঠানোর ফাংশন
+window.openMaterialSelectorForStudent = async function(studentId) {
+    const student = students.find(s => s.id === studentId);
+    if(!student) return;
+
+    let matHtml = globalMaterials.map(m => {
+        let icon = m.type === 'video' ? '🎬' : (m.type === 'pdf' ? '📄' : '🎵');
+        return `
+            <div onclick="sendSpecificMaterialToStudent(${studentId}, ${m.id})" style="padding:12px; border-bottom:1px solid var(--border-color); cursor:pointer; text-align:left; background:var(--bg-input); margin-bottom:8px; border-radius:8px; border-left:4px solid var(--primary); transition:0.2s;">
+                <div style="font-weight:600; font-size:14px; color:var(--text-main); margin-bottom:4px;">${icon} ${m.title}</div>
+                <span style="font-size:11px; background:var(--bg-card); padding:2px 6px; border-radius:4px; color:var(--text-muted); border:1px solid var(--border-color);">${m.category}</span>
+            </div>`;
+    }).join('');
+
+    if(globalMaterials.length === 0) matHtml = '<p style="font-size:13px; color:gray;">No materials in library yet.</p>';
+
+    Swal.fire({
+        title: `Send to ${student.name.split(' ')[0]}`,
+        html: `
+            <input type="text" id="search-mat-for-student" placeholder="🔍 Search material..." class="swal2-input" onkeyup="filterMatForStudent()" style="width:95%; max-width:100%; display:block; box-sizing:border-box; margin: 0 auto 15px auto; font-size:14px;">
+            <div id="mat-list-for-student" style="max-height: 250px; overflow-y: auto; padding-right:5px;">
+                ${matHtml}
+            </div>
+            <button class="btn-danger" onclick="addAttendanceNote(${studentId})" style="width:100%; margin-top:15px;"><i class="fas fa-arrow-left"></i> Back to Note</button>
+        `,
+        showConfirmButton: false,
+        showCancelButton: false,
+        allowOutsideClick: false
+    });
+};
+
+// 🟢 Search Material Function
+window.filterMatForStudent = function() {
+    const filter = document.getElementById('search-mat-for-student').value.toLowerCase();
+    const container = document.getElementById('mat-list-for-student');
+    const divs = container.children;
+    for(let i=0; i<divs.length; i++) {
+        if(divs[i].textContent.toLowerCase().indexOf(filter) > -1) {
+            divs[i].style.display = "";
+        } else {
+            divs[i].style.display = "none";
+        }
+    }
+};
+
+// 🟢 Portal বা WhatsApp-এ Material পাঠানো
+window.sendSpecificMaterialToStudent = async function(studentId, matId) {
+    const material = globalMaterials.find(m => m.id === matId);
+    if(!material) return;
+    
+    Swal.fire({
+        title: 'Send Material',
+        text: material.title,
+        showCancelButton: true,
+        showDenyButton: true,
+        confirmButtonText: '<i class="fas fa-paper-plane"></i> To Portal',
+        denyButtonText: '<i class="fab fa-whatsapp"></i> WhatsApp',
+        cancelButtonText: 'Back',
+        confirmButtonColor: 'var(--primary)',
+        denyButtonColor: '#25D366',
+        cancelButtonColor: '#ef4444', // 🟢 Back button made Red
+        allowOutsideClick: false
+    }).then((res) => {
+        if (res.isConfirmed) {
+            assignMaterialToStudent(studentId, material);
+            setTimeout(() => addAttendanceNote(studentId), 1500);
+        } else if (res.isDenied) {
+            sendMaterialViaWhatsApp(studentId, material);
+            addAttendanceNote(studentId); 
+        } else {
+            openMaterialSelectorForStudent(studentId); 
+        }
+    });
+};
 
 async function unmarkFee(studentId, month) { 
     Swal.fire({ 
