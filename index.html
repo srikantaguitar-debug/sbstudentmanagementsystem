@@ -1817,11 +1817,15 @@ window.showHelpOptions = function() {
             document.getElementById('attendanceDate').valueAsDate = now;
             document.getElementById('attendanceTime').value = now.toLocaleTimeString('en-GB', {hour: '2-digit', minute:'2-digit'});
             
+// বর্তমান মাস 
             const currentMonthStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`; 
-            const prevDate = new Date(now);
-            prevDate.setMonth(prevDate.getMonth() - 1);
+            
+            // আগের মাস (বাগ ফিক্সড লজিক)
+            const prevDate = new Date(now.getFullYear(), now.getMonth(), 1); // প্রথমে মাসের ১ তারিখ ধরা হলো
+            prevDate.setMonth(prevDate.getMonth() - 1); // এরপর ১ মাস পেছানো হলো
             const prevMonthStr = `${prevDate.getFullYear()}-${(prevDate.getMonth() + 1).toString().padStart(2, '0')}`;
 
+            // বিভিন্ন ইনপুটে ডেটা সেট করা
             document.getElementById('feeMonth').value = currentMonthStr; 
             document.getElementById('reportMonth').value = currentMonthStr; 
             document.getElementById('reportYear').value = now.getFullYear(); 
@@ -2525,10 +2529,7 @@ async function addStudent() {
 
         students.push(newStudent); 
         
-        await db.collection(COLLECTION_NAME).doc(DOC_ID).collection('students').doc(String(newStudent.id)).set(newStudent);
-        
-        await dbSet('studentSerialCounter', studentSerialCounter);
-        
+        // 🟢 ম্যাজিক: 'await' সরিয়ে দিয়ে সরাসরি UI আপডেট করা হলো
         document.getElementById('studentName').value = ''; 
         document.getElementById('studentClass').value = ''; 
         document.getElementById('studentFee').value = ''; 
@@ -2568,6 +2569,10 @@ async function addStudent() {
             showCloseButton: true,
             allowOutsideClick: false 
         });
+
+        // 🟢 ব্যাকগ্রাউন্ডে নীরবে ডেটাবেসে আপলোড হবে
+        db.collection(COLLECTION_NAME).doc(DOC_ID).collection('students').doc(String(newStudent.id)).set(newStudent).catch(e => console.log(e));
+        dbSet('studentSerialCounter', studentSerialCounter).catch(e => console.log(e));
     } 
 }
 
@@ -3961,7 +3966,10 @@ let studentDisplayLimit = 20; // একবারে ২০ জন দেখা�
 function loadStudentsList(showAll = false) { 
     const activeList = document.getElementById('activeStudentsList');
     const inactiveList = document.getElementById('inactiveStudentsList');
-    activeList.innerHTML = ''; inactiveList.innerHTML = '';
+    
+    // 🟢 নতুন: স্ট্রিং ভেরিয়েবল তৈরি করা হলো, যেখানে আমরা পুরো HTML জমিয়ে রাখব
+    let activeHtml = ''; 
+    let inactiveHtml = ''; 
     
     let activeCount = 0;
     let inactiveCount = 0;
@@ -3969,7 +3977,6 @@ function loadStudentsList(showAll = false) {
     students.forEach(student => { 
         const isActive = isStudentCurrentlyActive(student);
         
-        // Lazy load logic (সার্চ করলে সবাইকে দেখাবে, নাহলে লিমিট অনুযায়ী দেখাবে)
         if (!showAll) {
             if (isActive && activeCount >= studentDisplayLimit) return;
             if (!isActive && inactiveCount >= studentDisplayLimit) return;
@@ -3984,36 +3991,43 @@ function loadStudentsList(showAll = false) {
         
         let timeDisplay = ''; 
         if(student.class_time) { 
-            const [h, m] = student.class_time.split(':'); const ampm = h >= 12 ? 'PM' : 'AM'; const h12 = h % 12 || 12; timeDisplay = `${h12}:${m} ${ampm}`; 
+            const [h, m] = student.class_time.split(':'); 
+            const ampm = h >= 12 ? 'PM' : 'AM'; 
+            const h12 = h % 12 || 12; 
+            timeDisplay = `${h12}:${m} ${ampm}`; 
         } 
         const dayTimeStr = (student.class_day || student.class_time) ? `<br><span class="student-time-sub">${student.class_day || ''} ${timeDisplay}</span>` : ''; 
         
-        const row = document.createElement('tr');
-        if (rowClass) row.className = rowClass;
-        
-        row.innerHTML = `
-            <td>${student.serial_no}</td>
-            <td>${getStudentHtml(student)}</td>
-            <td>${student.class || 'N/A'}${dayTimeStr}</td>
-            <td>₹${student.fee_amount || DEFAULT_FEE}</td>
-            <td style="min-width: 160px;">${getAllContactButtons(student)}</td>
-            <td>${isActive ? 'Active' : 'Inactive'}</td>
-            <td class="action-buttons">
-                <button class="${isActive ? 'btn-info' : 'btn-success'}" onclick="openStatusChangeModal(${student.id}, ${!isActive})">${statusBtnText}</button> 
-                <button class="btn-warning" onclick="openEditStudentModal(${student.id})">Edit</button>
-                <button class="btn-danger" onclick="initiateDeleteStudent(${student.id})" title="Delete Permanently"><i class="fas fa-trash"></i></button>
-            </td>`;
+        // 🟢 নতুন: সরাসরি DOM এ append না করে String-এ row তৈরি করা হচ্ছে
+        const rowString = `
+            <tr class="${rowClass}">
+                <td>${student.serial_no}</td>
+                <td>${getStudentHtml(student)}</td>
+                <td>${student.class || 'N/A'}${dayTimeStr}</td>
+                <td>₹${student.fee_amount || DEFAULT_FEE}</td>
+                <td style="min-width: 160px;">${getAllContactButtons(student)}</td>
+                <td>${isActive ? 'Active' : 'Inactive'}</td>
+                <td class="action-buttons">
+                    <button class="${isActive ? 'btn-info' : 'btn-success'}" onclick="openStatusChangeModal(${student.id}, ${!isActive})">${statusBtnText}</button> 
+                    <button class="btn-warning" onclick="openEditStudentModal(${student.id})">Edit</button>
+                    <button class="btn-danger" onclick="initiateDeleteStudent(${student.id})" title="Delete Permanently"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>`;
         
         if(isActive) { 
-            activeList.appendChild(row); 
+            activeHtml += rowString; // 🟢 String-এ জমিয়ে রাখা হচ্ছে
             activeCount++;
         } else { 
-            inactiveList.appendChild(row); 
+            inactiveHtml += rowString; // 🟢 String-এ জমিয়ে রাখা হচ্ছে
             inactiveCount++;
         }
     }); 
 
-    // Add "Load More" button 
+    // 🟢 নতুন: লুপ শেষ হওয়ার পর একবারে DOM-এ পুশ করা হচ্ছে (এটি সুপার ফাস্ট!)
+    activeList.innerHTML = activeHtml;
+    inactiveList.innerHTML = inactiveHtml;
+
+    // Load More বাটন যুক্ত করা (আপনার আগের লজিক)
     if (!showAll) {
         const activeTotal = students.filter(s => isStudentCurrentlyActive(s)).length;
         const inactiveTotal = students.filter(s => !isStudentCurrentlyActive(s)).length;
@@ -4081,14 +4095,16 @@ async function saveFee() {
 
     const amountPerMonth = monthsToPay.length > 0 ? (amount / monthsToPay.length) : amount;
 
+    // ১. লোকাল মেমরিতে আপডেট করা হলো
     monthsToPay.forEach(m => {
         if (!fees[m]) fees[m] = {}; 
         fees[m][studentId] = { status: 'paid', amount: amountPerMonth, date, mode: mode, transactionId: txnId, receiptNo: receiptNo }; 
     });
 
-    await saveData(); 
+    // 🟢 ২. ম্যাজিক শুরু: সাথে সাথে স্ক্রিন আপডেট করে দেওয়া হচ্ছে (কোনো Wait নেই)
     closeModal('feeModal'); 
-    renderFees();
+    renderFees(); // ফিস টেবিল চোখের পলকে আপডেট হবে
+    renderDashboard(); // ড্যাশবোর্ডের হিসাব সাথে সাথে মিলে যাবে
     
     const joinedMonths = monthsToPay.join(',');
     
@@ -4106,17 +4122,23 @@ async function saveFee() {
         confirmButtonColor: '#d33',
         allowOutsideClick: false 
     }); 
-    loadAllData(); 
+
+    // 🟢 ৩. ব্যাকগ্রাউন্ডে ডেটাবেসে সেভ হবে (কোনো 'await' নেই, তাই অ্যাপ স্লো হবে না)
+    saveData().catch(e => console.log("Background sync error:", e)); 
 }
 
+// ৩ নম্বর রিপ্লেসমেন্ট: ফিস ট্যাব ফাস্ট করার জন্য
 function renderFees() { 
-    const selectedMonth = document.getElementById('feeMonth').value, tableBody = document.querySelector('#feeTable tbody'); 
-    tableBody.innerHTML = ''; 
-    if (!selectedMonth) return; 
+    const selectedMonth = document.getElementById('feeMonth').value;
+    const tableBody = document.querySelector('#feeTable tbody'); 
+    if (!selectedMonth) { tableBody.innerHTML = ''; return; } 
     
     let totalCollected = 0, totalDueAmount = 0, dueCount = 0, collectedCount = 0; 
     const monthIsDue = isMonthDue(selectedMonth); 
     
+    // 🟢 নতুন লজিক: Table Row গুলো String-এ জমানো হচ্ছে
+    let tableHtml = '';
+
     students.forEach(student => { 
         const wasActive = wasStudentActiveDuringMonth(student, selectedMonth); 
         if (!wasActive) return; 
@@ -4141,16 +4163,15 @@ function renderFees() {
         
         if (hasGlobalDue) rowClass += ' has-dues-alert'; 
         
-        const row = document.createElement('tr'); 
-        row.className = rowClass; 
-        
         let actionButtons = isPaid ? 
             `<button class="btn-receipt" onclick="generatePaymentReceipt(${student.id}, '${selectedMonth}')">Receipt</button> <button class="btn-warning" onclick="openFeeModal(${student.id}, '${selectedMonth}', true)">Edit</button><button class="btn-danger" onclick="unmarkFee(${student.id}, '${selectedMonth}')">Unmark</button>` 
             : `<button class="btn-success" onclick="openFeeModal(${student.id}, '${selectedMonth}')">Record Payment</button>` + (monthIsDue ? getContactButtons(student.id, selectedMonth) : ''); 
         
-        row.innerHTML = `<td>${getStudentHtml(student)}</td><td>${statusText}</td><td class="action-buttons">${actionButtons}</td>`; 
-        tableBody.appendChild(row); 
+        tableHtml += `<tr class="${rowClass}"><td>${getStudentHtml(student)}</td><td>${statusText}</td><td class="action-buttons">${actionButtons}</td></tr>`; 
     }); 
+    
+    // 🟢 লুপ শেষ, এবার একবারে স্ক্রিনে দেখানো হলো
+    tableBody.innerHTML = tableHtml;
     
     document.getElementById('feeSummary').innerHTML = `
         <div onclick="showFeeBreakdown('collected')">
@@ -4357,11 +4378,11 @@ async function generateIDCard() {
     } else { doc.save(fileName); } 
 }
 
+// ২ নম্বর রিপ্লেসমেন্ট: অ্যাটেন্ডেন্স ট্যাব ফাস্ট করার জন্য
 function renderAttendance() { 
     const dateInput = document.getElementById('attendanceDate').value;
     const tableBody = document.querySelector('#attendanceTable tbody'); 
-    tableBody.innerHTML = ''; 
-    if (!dateInput) return; 
+    if (!dateInput) { tableBody.innerHTML = ''; return; } 
 
     const selectedDate = new Date(dateInput);
     const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -4374,15 +4395,12 @@ function renderAttendance() {
     }
 
     let totalActive = 0, presentCount = 0, absentCount = 0;
-
-    // 🟢 FIX: বর্তমান স্ট্যাটাসের বদলে, ওই নির্দিষ্ট ডেটের স্ট্যাটাস চেক করে লিস্ট করা হলো
     const activeStudents = students.filter(s => isStudentCurrentlyActive(s, dateInput));
 
     activeStudents.sort((a, b) => {
         const getScore = (student) => {
             const entry = attendance[dateInput]?.[student.id];
             const status = (typeof entry === 'object' && entry !== null) ? entry.status : entry;
-            
             if (status === 'present') return 4; 
             if (status === 'absent') return 3;  
             if (student.class_day === currentDayName) return 2; 
@@ -4390,6 +4408,9 @@ function renderAttendance() {
         };
         return getScore(b) - getScore(a); 
     });
+
+    // 🟢 নতুন লজিক: Table Row গুলো String-এ জমানো হচ্ছে
+    let tableHtml = '';
 
     activeStudents.forEach(student => { 
         totalActive++; 
@@ -4408,27 +4429,28 @@ function renderAttendance() {
         const highlightStyle = isToday ? 'border: 1px solid var(--primary); background: rgba(79, 70, 229, 0.05);' : '';
 
         const noteBtnColor = note ? 'btn-warning' : 'btn-secondary';
-        const row = document.createElement('tr');
-        if (highlightStyle) row.style.cssText = highlightStyle;
+        let rowClass = checkGlobalDues(student.id) ? 'has-dues-alert' : '';
         
-        if (checkGlobalDues(student.id)) row.classList.add('has-dues-alert'); 
-        
-        row.innerHTML = `
-            <td>
-                ${getStudentHtml(student)}
-                <div style="font-size:11px; color:#d97706; margin-top:2px; margin-left:55px;">
-                    ${note ? '📝 ' + note : ''}
-                </div>
-            </td>
-            <td class="${statusClass}">${statusText}</td>
-            <td class="action-buttons">
-                <button class="btn-success" onclick="markAttendance(${student.id}, 'present')">P</button>
-                <button class="btn-danger" onclick="markAttendance(${student.id}, 'absent')">A</button>
-                <button class="${noteBtnColor}" onclick="addAttendanceNote(${student.id})" title="Edit Note"><i class="fas fa-pencil-alt"></i></button>
-                <button class="btn-secondary" onclick="markAttendance(${student.id}, 'clear')">X</button>
-            </td>`;
-        tableBody.appendChild(row);
+        tableHtml += `
+            <tr style="${highlightStyle}" class="${rowClass}">
+                <td>
+                    ${getStudentHtml(student)}
+                    <div style="font-size:11px; color:#d97706; margin-top:2px; margin-left:55px;">
+                        ${note ? '📝 ' + note : ''}
+                    </div>
+                </td>
+                <td class="${statusClass}">${statusText}</td>
+                <td class="action-buttons">
+                    <button class="btn-success" onclick="markAttendance(${student.id}, 'present')">P</button>
+                    <button class="btn-danger" onclick="markAttendance(${student.id}, 'absent')">A</button>
+                    <button class="${noteBtnColor}" onclick="addAttendanceNote(${student.id})" title="Edit Note"><i class="fas fa-pencil-alt"></i></button>
+                    <button class="btn-secondary" onclick="markAttendance(${student.id}, 'clear')">X</button>
+                </td>
+            </tr>`;
     }); 
+
+    // 🟢 লুপ শেষ, এবার একবারে স্ক্রিনে দেখানো হলো
+    tableBody.innerHTML = tableHtml;
 
     if(document.getElementById('attTotalCount')) document.getElementById('attTotalCount').textContent = totalActive;
     if(document.getElementById('attPresentCount')) document.getElementById('attPresentCount').textContent = presentCount;
@@ -4919,10 +4941,8 @@ async function saveStudentChanges() {
     student.address = document.getElementById('editAddress').value;
     student.dob = document.getElementById('editStudentDOB').value;
     
-    // 🟢 NEW: Get Toggle Value
     student.allow_profile_view = document.getElementById('editAllowProfile').checked;
     
-    // 🟢 NEW: Sync Portal Data (Attendance & Fees) for the Student View
     let studentAtt = [];
     Object.keys(attendance).forEach(date => { if (attendance[date]?.[id]) studentAtt.push({ date, data: attendance[date][id] }); });
     let studentFees = [];
@@ -4936,11 +4956,13 @@ async function saveStudentChanges() {
 
     students[studentIndex] = student;
 
-    await db.collection(COLLECTION_NAME).doc(DOC_ID).collection('students').doc(String(id)).set(student);
-    
+    // 🟢 ম্যাজিক: 'await' সরিয়ে দেওয়া হলো, সাথে সাথে স্ক্রিন আপডেট হবে
     closeModal('editStudentModal'); 
     loadAllData(); 
-    Swal.fire('Saved', 'Details updated successfully.', 'success'); 
+    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Details updated successfully!', showConfirmButton: false, timer: 1500 });
+    
+    // 🟢 ব্যাকগ্রাউন্ডে ডেটাবেসে সেভ হবে
+    db.collection(COLLECTION_NAME).doc(DOC_ID).collection('students').doc(String(id)).set(student).catch(e => console.log("Background sync error:", e));
 }
 
 function showStudentDetails(studentId) { 
