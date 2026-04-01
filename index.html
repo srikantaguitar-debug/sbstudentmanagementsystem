@@ -1220,14 +1220,38 @@ function getPastInactivePeriodsHtml(student) {
 
         const auth = firebase.auth();
 
+// 🟢 নতুন ফাংশন: স্টুডেন্ট পোর্টাল থেকে সঠিকভাবে লগআউট করার জন্য
+window.studentPortalLogout = function(sId) {
+    localStorage.removeItem('verified_student_' + sId);
+    localStorage.removeItem('saved_student_id');
+    localStorage.removeItem('saved_manager_id');
+    window.location.href = window.location.pathname; // লিংক ক্লিয়ার করে মেইন পেজে পাঠাবে
+};
+
 document.addEventListener('DOMContentLoaded', async () => {
-            loadTheme();
+    loadTheme();
 
-            const urlParams = new URLSearchParams(window.location.search);
-            const studentViewId = urlParams.get('student');
-            const managerUid = urlParams.get('manager');
+    const urlParams = new URLSearchParams(window.location.search);
+    let studentViewId = urlParams.get('student');
+    let managerUid = urlParams.get('manager');
 
-if (studentViewId && managerUid) {
+    // --- 🟢 Chrome Shortcut Fix শুরু ---
+    if (!studentViewId || !managerUid) {
+        const savedStudent = localStorage.getItem('saved_student_id');
+        const savedManager = localStorage.getItem('saved_manager_id');
+        // ব্রাউজারের মেমোরিতে স্টুডেন্ট আইডি থাকলে স্বয়ংক্রিয়ভাবে পোর্টালে নিয়ে যাবে
+        if (savedStudent && savedManager) {
+            window.location.replace(`?student=${savedStudent}&manager=${savedManager}`);
+            return;
+        }
+    } else {
+        // প্রথমবার লিংকে ক্লিক করলে ডেটা সেভ করে রাখবে
+        localStorage.setItem('saved_student_id', studentViewId);
+        localStorage.setItem('saved_manager_id', managerUid);
+    }
+    // --- 🟢 Chrome Shortcut Fix শেষ ---
+
+    if (studentViewId && managerUid) {
     // 🟢 Manager-এর সবকিছু সাথে সাথে রিমুভ করে দেওয়া হচ্ছে যাতে ব্যাকগ্রাউন্ডে কিছু না দেখায়
     document.body.innerHTML = ''; 
     document.body.style.background = '#f8fafc';
@@ -1590,7 +1614,7 @@ if (studentViewId && managerUid) {
         <i class="fas fa-headset" style="margin-right: 8px;"></i> Help
     </button>
     
-    <button onclick="localStorage.removeItem('verified_student_${studentViewId}'); window.location.reload();" style="flex: 1; height: 55px; background: #fff; color: #ef4444; border: 2px solid #fecaca; display: flex; align-items: center; justify-content: center; border-radius: 16px; font-weight: 700; font-size: 16px; cursor: pointer;">
+    <button onclick="studentPortalLogout('${studentViewId}')" style="flex: 1; height: 55px; background: #fff; color: #ef4444; border: 2px solid #fecaca; display: flex; align-items: center; justify-content: center; border-radius: 16px; font-weight: 700; font-size: 16px; cursor: pointer;">
         Log Out
     </button>
 
@@ -1601,10 +1625,10 @@ if (studentViewId && managerUid) {
     setTimeout(() => { renderPracticeHistoryPortal(s); }, 500);
 
                             } else {
-                                document.body.innerHTML = `<div style="display:flex; height:100vh; align-items:center; justify-content:center; flex-direction:column; background:#f8fafc;"><h2 style="color:#ef4444;">Profile Hidden</h2><p>Contact manager to enable access.</p><button onclick="localStorage.removeItem('verified_student_${studentViewId}'); window.location.reload();" style="padding:10px 20px; background:#1e293b; color:#fff; border:none; border-radius:8px;">Go Back</button></div>`;
+                                document.body.innerHTML = `<div style="display:flex; height:100vh; align-items:center; justify-content:center; flex-direction:column; background:#f8fafc;"><h2 style="color:#ef4444;">Profile Hidden</h2><p>Contact manager to enable access.</p><button onclick="studentPortalLogout('${studentViewId}')" style="padding:10px 20px; background:#1e293b; color:#fff; border:none; border-radius:8px;">Go Back</button></div>`;
                             }
                         } else {
-                            document.body.innerHTML = `<div style="display:flex; height:100vh; align-items:center; justify-content:center; flex-direction:column; background:#f8fafc;"><h2 style="color:#ef4444;">Student not found.</h2><button onclick="localStorage.removeItem('verified_student_${studentViewId}'); window.location.reload();" style="padding:10px 20px; background:#1e293b; color:#fff; border:none; border-radius:8px;">Go Back</button></div>`;
+                            document.body.innerHTML = `<div style="display:flex; height:100vh; align-items:center; justify-content:center; flex-direction:column; background:#f8fafc;"><h2 style="color:#ef4444;">Student not found.</h2><button onclick="studentPortalLogout('${studentViewId}')" style="padding:10px 20px; background:#1e293b; color:#fff; border:none; border-radius:8px;">Go Back</button></div>`;
                         }
                     } catch(e) { 
                         console.error(e); 
