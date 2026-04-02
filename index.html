@@ -1442,6 +1442,67 @@ document.addEventListener('DOMContentLoaded', async () => {
                                     materialsHtml = '<p style="text-align:center; color:gray; font-size:12px;">No materials shared yet.</p>';
                                 }
 
+// 🟢 NEW: Active/Inactive Status Check for Portal
+                                const isStudentActive = isStudentCurrentlyActive(s);
+                                let badgeHtml = '';
+                                let inactiveDetailsHtml = '';
+                                let practiceLogFormHtml = '';
+
+                                if (isStudentActive) {
+                                    badgeHtml = `<span style="background:#dcfce7; color:#166534; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; border: 1px solid #bbf7d0;">Active Student</span>`;
+                                    
+                                    practiceLogFormHtml = `
+                                    <div style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px dashed #cbd5e1;">
+                                        <span style="font-size: 13px; color: #64748b; font-weight: 600;"><i class="fas fa-clock"></i> Time:</span>
+                                        <input type="time" id="practiceTimeInput" style="flex: 1; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; outline: none; color: #1e293b; background: white;">
+                                        <span style="font-size: 10px; color: #94a3b8;">(Optional)</span>
+                                    </div>
+
+                                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                                        <input type="number" id="practiceMinutes" placeholder="Mins (e.g. 45)" style="width: 35%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; outline: none; box-sizing: border-box;">
+                                        <input type="text" id="practiceTopic" placeholder="Topic (e.g. C Major Scale)" style="width: 65%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; outline: none; box-sizing: border-box;">
+                                    </div>
+                                    
+                                    <button onclick="submitPracticeLog(${studentViewId})" style="width: 100%; background: #10b981; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);">
+                                        <i class="fas fa-check-circle"></i> Log Practice
+                                    </button>`;
+                                } else {
+                                    badgeHtml = `<span style="background:#fee2e2; color:#991b1b; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; border: 1px solid #fecaca;">Inactive Student</span>`;
+                                    
+                                    let inactiveDateText = 'N/A';
+                                    let durationText = '';
+                                    if (s.status && s.status.history && s.status.history.length > 0) {
+                                        const sortedHistory = [...s.status.history].sort((a, b) => new Date(b.date) - new Date(a.date));
+                                        if (sortedHistory[0].status === 'Inactive') {
+                                            const inactiveDate = new Date(sortedHistory[0].date);
+                                            inactiveDateText = inactiveDate.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'});
+                                            
+                                            const today = new Date();
+                                            let y = today.getFullYear() - inactiveDate.getFullYear();
+                                            let m = today.getMonth() - inactiveDate.getMonth();
+                                            let d = today.getDate() - inactiveDate.getDate();
+                                            
+                                            if (d < 0) { m--; const lm = new Date(today.getFullYear(), today.getMonth(), 0); d += lm.getDate(); }
+                                            if (m < 0) { y--; m += 12; }
+                                            
+                                            let dur = [];
+                                            if (y > 0) dur.push(y + ' Yrs');
+                                            if (m > 0) dur.push(m + ' Mths');
+                                            if (d > 0) dur.push(d + ' Days');
+                                            if (dur.length === 0) dur.push('Today');
+                                            durationText = `(Duration: ${dur.join(', ')})`;
+                                        }
+                                    }
+                                    inactiveDetailsHtml = `<div style="margin-top: 10px; font-size: 12px; color: #ef4444; font-weight: 600; background: #fef2f2; padding: 6px 12px; border-radius: 8px; display: inline-block;">Inactive Since: ${inactiveDateText} <br> <span style="font-size:11px; color:#b91c1c;">${durationText}</span></div>`;
+                                    
+                                    practiceLogFormHtml = `
+                                    <div style="background: #fef2f2; padding: 15px; border-radius: 8px; border: 1px dashed #fca5a5; text-align: center; color: #dc2626;">
+                                        <i class="fas fa-lock" style="font-size: 24px; margin-bottom: 8px;"></i>
+                                        <div style="font-size: 13px; font-weight: 600;">Practice Logging is Disabled</div>
+                                        <div style="font-size: 11px; margin-top: 4px;">You cannot log practice while your status is Inactive. Please contact your teacher to reactivate your profile.</div>
+                                    </div>`;
+                                }
+
                                 // ৬. HTML Structure
                                 document.body.innerHTML = `
                                     <style>
@@ -1464,30 +1525,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                                             <div style="text-align: center; margin-bottom: 25px;">
                                                 <img src="${s.photo || 'https://via.placeholder.com/150'}" style="width:110px; height:110px; border-radius:50%; border:5px solid #fff; object-fit:cover; background:#eee; box-shadow:0 8px 16px rgba(0,0,0,0.1);">
                                                 <h2 style="margin:10px 0 5px 0; color:#1e293b; font-size:20px; font-weight: 700;">${s.name}</h2>
-                                                <span style="background:#dcfce7; color:#166534; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; border: 1px solid #bbf7d0;">Active Student</span>
+                                                ${badgeHtml}
+                                                ${inactiveDetailsHtml}
                                             </div>
 
                                             ${noticeHtml}
                                             <div style="margin-top: 25px; background: #fff; border-radius: 16px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); border-top: 4px solid #10b981;">
-    <h4 style="margin:0 0 15px 0; color:#334155; font-size:16px;">
-        <i class="fas fa-stopwatch" style="color:#10b981; margin-right:5px;"></i> Daily Practice Log
-    </h4>
-    
-    <div style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px dashed #cbd5e1;">
-        <span style="font-size: 13px; color: #64748b; font-weight: 600;"><i class="fas fa-clock"></i> Time:</span>
-        <input type="time" id="practiceTimeInput" style="flex: 1; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; outline: none; color: #1e293b; background: white;">
-        <span style="font-size: 10px; color: #94a3b8;">(Optional)</span>
-    </div>
-
-    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-        <input type="number" id="practiceMinutes" placeholder="Mins (e.g. 45)" style="width: 35%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; outline: none; box-sizing: border-box;">
-        <input type="text" id="practiceTopic" placeholder="Topic (e.g. C Major Scale)" style="width: 65%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; outline: none; box-sizing: border-box;">
-    </div>
-    
-    <button onclick="submitPracticeLog(${studentViewId})" style="width: 100%; background: #10b981; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);">
-        <i class="fas fa-check-circle"></i> Log Practice
-    </button>
-    <div id="practiceHistoryPortal" style="margin-top: 15px; max-height: 150px; overflow-y: auto;"></div>
+                                                <h4 style="margin:0 0 15px 0; color:#334155; font-size:16px;">
+                                                    <i class="fas fa-stopwatch" style="color:#10b981; margin-right:5px;"></i> Daily Practice Log
+                                                </h4>
+                                                
+                                                ${practiceLogFormHtml}
+                                                
+                                                <div id="practiceHistoryPortal" style="margin-top: 15px; max-height: 150px; overflow-y: auto;"></div>
 </div>
 
                                             <div style="display:flex; flex-direction:column; gap:12px; margin-bottom: 25px;">
@@ -1604,17 +1654,24 @@ document.addEventListener('DOMContentLoaded', async () => {
                                             <div class="scroller-box">${paidHtml}</div>
                                         </div></div>
 
-                                        <div style="position:fixed; bottom:0; left:0; width:100%; background:#fff; padding:15px 20px; display:flex; gap:12px; box-shadow:0 -10px 30px rgba(0,0,0,0.06); border-radius:24px 24px 0 0; box-sizing:border-box;">
+                                        <div style="position:fixed; bottom:0; left:0; width:100%; background:#fff; padding:12px 15px; display:flex; justify-content: space-between; gap:8px; box-shadow:0 -10px 30px rgba(0,0,0,0.06); border-radius:24px 24px 0 0; box-sizing:border-box;">
     
-    <button onclick="document.getElementById('m-teacher').style.display='flex'" style="width: 65px; height: 55px; flex-shrink: 0; background: #f1f5f9; border: none; border-radius: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-        <i class="fas fa-user-tie" style="font-size: 24px; color: #334155;"></i>
+    <button onclick="document.getElementById('m-teacher').style.display='flex'" style="flex:1; height: 55px; background: #f1f5f9; border: none; border-radius: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+        <i class="fas fa-user-tie" style="font-size: 24px; color: #000000;"></i>
     </button>
     
-    <button onclick="showHelpOptions()" style="flex: 1; height: 55px; background: #6366f1; color: #fff; border: none; display: flex; align-items: center; justify-content: center; border-radius: 16px; font-weight: 700; font-size: 16px; box-shadow: 0 6px 15px rgba(99,102,241,0.25); cursor: pointer;">
-        <i class="fas fa-headset" style="margin-right: 8px;"></i> Help
+    <button onclick="showStudentPortalQR('${studentViewId}')" style="flex: 1.2; height: 55px; background: #3b82f6; color: #fff; border: none; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 16px; font-weight: 700; font-size: 11px; box-shadow: 0 4px 10px rgba(59,130,246,0.3); cursor: pointer;">
+        <i class="fas fa-qrcode" style="font-size: 20px; margin-bottom: 3px;"></i>
+        QR Code
     </button>
     
-    <button onclick="studentPortalLogout('${studentViewId}')" style="flex: 1; height: 55px; background: #fff; color: #ef4444; border: 2px solid #fecaca; display: flex; align-items: center; justify-content: center; border-radius: 16px; font-weight: 700; font-size: 16px; cursor: pointer;">
+    <button onclick="showHelpOptions()" style="flex: 1.2; height: 55px; background: #6366f1; color: #fff; border: none; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 16px; font-weight: 700; font-size: 11px; box-shadow: 0 4px 10px rgba(99,102,241,0.3); cursor: pointer;">
+        <i class="fas fa-headset" style="font-size: 20px; margin-bottom: 3px;"></i>
+        Help
+    </button>
+    
+    <button onclick="localStorage.removeItem('verified_student_${studentViewId}'); window.location.reload();" style="flex:1; height: 55px; background: #fff; color: #ef4444; border: 2px solid #fecaca; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 16px; font-weight: 700; font-size: 10px; cursor: pointer;">
+        <i class="fas fa-sign-out-alt" style="font-size: 18px; margin-bottom: 3px;"></i>
         Log Out
     </button>
 
@@ -6182,7 +6239,6 @@ function getPracticeStats(student) {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
     
-    // Week start calculation (Monday)
     const dayOfWeek = now.getDay();
     const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); 
     const weekStart = new Date(now);
@@ -6205,27 +6261,60 @@ function getPracticeStats(student) {
         if (logDate >= yearStart && logDate <= now) stats.year += mins;
     });
 
-    // First practice entry date ber korar notun logic
     let firstPracticeDate = new Date(now);
-    if (logs.length > 0) {
-        let earliestTime = now.getTime();
-        logs.forEach(log => {
-            const logDateObj = parseINDate(log.date);
-            logDateObj.setHours(0, 0, 0, 0);
-            if (logDateObj.getTime() < earliestTime) {
-                earliestTime = logDateObj.getTime();
-            }
-        });
-        firstPracticeDate = new Date(earliestTime);
-    } else {
-        firstPracticeDate = new Date(student.joining_date || now);
-    }
+    let earliestTime = now.getTime();
+    logs.forEach(log => {
+        const logDateObj = parseINDate(log.date);
+        logDateObj.setHours(0, 0, 0, 0);
+        if (logDateObj.getTime() < earliestTime) {
+            earliestTime = logDateObj.getTime();
+        }
+    });
+    firstPracticeDate = new Date(earliestTime);
     firstPracticeDate.setHours(0, 0, 0, 0);
 
-    let daysSinceStart = Math.floor((now - firstPracticeDate) / (1000 * 60 * 60 * 24)) + 1;
-    if (daysSinceStart < 1) daysSinceStart = 1;
+    // 🟢 মোট কতদিন হয়েছে প্র্যাকটিস শুরু করার পর
+    let totalDaysSinceStart = Math.floor((now - firstPracticeDate) / (1000 * 60 * 60 * 24)) + 1;
+
+    // 🟢 NEW: Inactive থাকা দিনগুলোর হিসাব করা এবং তা বাদ দেওয়া
+    let totalInactiveDays = 0;
+    if (student.status && student.status.history && student.status.history.length > 0) {
+        const historyAsc = [...student.status.history].sort((a, b) => new Date(a.date) - new Date(b.date));
+        let inactiveStart = null;
+        
+        for (let i = 0; i < historyAsc.length; i++) {
+            const hDate = new Date(historyAsc[i].date);
+            hDate.setHours(0, 0, 0, 0);
+            
+            if (historyAsc[i].status === 'Inactive' && !inactiveStart) {
+                inactiveStart = hDate;
+            } else if (historyAsc[i].status === 'Active' && inactiveStart) {
+                // Inactive থেকে আবার Active হলে মাঝের দিনগুলো গোনা হচ্ছে
+                let start = inactiveStart > firstPracticeDate ? inactiveStart : firstPracticeDate;
+                let end = hDate > now ? now : hDate;
+                
+                if (start < end) {
+                    totalInactiveDays += Math.floor((end - start) / (1000 * 60 * 60 * 24));
+                }
+                inactiveStart = null; 
+            }
+        }
+        
+        // যদি বর্তমানেও সে Inactive থাকে, তাহলে আজকের দিন পর্যন্ত হিসাব হবে
+        if (inactiveStart) {
+            let start = inactiveStart > firstPracticeDate ? inactiveStart : firstPracticeDate;
+            let end = now;
+            if (start < end) {
+                totalInactiveDays += Math.floor((end - start) / (1000 * 60 * 60 * 24));
+            }
+        }
+    }
+
+    // 🟢 মোট দিন থেকে Inactive দিনগুলো বাদ দিয়ে అసল Active দিনের হিসাব করা
+    let activeDaysSinceStart = totalDaysSinceStart - totalInactiveDays;
+    if (activeDaysSinceStart < 1) activeDaysSinceStart = 1;
     
-    stats.avg = Math.round(stats.lifetime / daysSinceStart);
+    stats.avg = Math.round(stats.lifetime / activeDaysSinceStart);
     return stats;
 }
 // --- End of New Logic ---
@@ -7064,6 +7153,40 @@ window.executeSingleRestore = async function(backupData) {
         console.error(error);
         Swal.fire('Error', 'Failed to restore student completely. Check internet connection.', 'error');
     }
+};
+// 🟢 NEW: Student Portal QR Code Viewer Function
+window.showStudentPortalQR = function(studentId) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const managerUid = urlParams.get('manager');
+    const baseUrl = window.location.origin + window.location.pathname;
+    
+    // QR কোডের ভেতরে থাকা টেক্সট/লিঙ্ক
+    const qrText = `${baseUrl}?student=${studentId}&manager=${managerUid}`;
+    
+    // QR ছবি তৈরি করা
+    const qr = new QRious({ value: qrText, size: 250, level: 'H' });
+    const qrImg = qr.toDataURL();
+    
+    Swal.fire({
+        title: 'My QR Code',
+        html: `
+            <p style="font-size:13px; color:gray; margin-bottom: 15px;">Show this to your teacher for quick attendance & payment.</p>
+            <div style="background: #f8fafc; padding: 15px; display: inline-block; border-radius: 16px; border: 2px dashed #cbd5e1;">
+                <img src="${qrImg}" style="width: 200px; height: 200px; border-radius: 8px;">
+            </div>
+        `,
+        showCloseButton: true,
+        showConfirmButton: true,
+        confirmButtonText: '<i class="fas fa-download"></i> Download QR',
+        confirmButtonColor: '#10b981',
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const link = document.createElement('a');
+            link.download = `My_Digital_ID.png`;
+            link.href = qrImg;
+            link.click();
+        }
+    });
 };
 </script>
 </body>
