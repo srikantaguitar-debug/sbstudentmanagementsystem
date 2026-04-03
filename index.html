@@ -1494,8 +1494,7 @@ if (isStudentActive) {
         <select id="practiceClassSelect" ${classSelectDisabled} style="width: 100%; padding: 12px 15px; border-radius: 10px; font-size: 15px; outline: none; box-sizing: border-box; appearance: none; -webkit-appearance: none; transition: all 0.3s;">
             ${classOptionsHtml}
         </select>
-        
-        ${classList.length > 1 ? `<i class="fas fa-chevron-down" style="position: absolute; right: 15px; top: 38px; color: #6366f1; pointer-events: none; font-size: 14px;"></i>` : ''}
+
     </div>
 
     <div style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px dashed #cbd5e1;">
@@ -6374,8 +6373,24 @@ function formatPracticeTime(totalMins) {
     return `${m}m`;
 }
 
-function getPracticeStats(student) {
-    let logs = student.practice_log || [];
+function getPracticeStats(student, filter = 'All') {
+    let rawLogs = student.practice_log || [];
+    let logs = [];
+    
+    // 🟢 ফিল্টার অনুযায়ী লগ আলাদা করা হচ্ছে
+    if (filter !== 'All') {
+        logs = rawLogs.filter(log => {
+            let logInst = log.instrument;
+            if (!logInst) {
+                let cList = student.class ? student.class.split(/[\/,]+/).map(c => c.trim()).filter(c => c.length > 0) : ['Music'];
+                logInst = cList.length > 0 ? cList[0] : 'Music';
+            }
+            return logInst.trim().toLowerCase() === filter.trim().toLowerCase();
+        });
+    } else {
+        logs = rawLogs;
+    }
+
     let stats = { today: 0, week: 0, month: 0, year: 0, lifetime: 0, avg: 0 };
     if (logs.length === 0) return stats;
 
@@ -6416,10 +6431,8 @@ function getPracticeStats(student) {
     firstPracticeDate = new Date(earliestTime);
     firstPracticeDate.setHours(0, 0, 0, 0);
 
-    // 🟢 মোট কতদিন হয়েছে প্র্যাকটিস শুরু করার পর
     let totalDaysSinceStart = Math.floor((now - firstPracticeDate) / (1000 * 60 * 60 * 24)) + 1;
 
-    // 🟢 NEW: Inactive থাকা দিনগুলোর হিসাব করা এবং তা বাদ দেওয়া
     let totalInactiveDays = 0;
     if (student.status && student.status.history && student.status.history.length > 0) {
         const historyAsc = [...student.status.history].sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -6432,7 +6445,6 @@ function getPracticeStats(student) {
             if (historyAsc[i].status === 'Inactive' && !inactiveStart) {
                 inactiveStart = hDate;
             } else if (historyAsc[i].status === 'Active' && inactiveStart) {
-                // Inactive থেকে আবার Active হলে মাঝের দিনগুলো গোনা হচ্ছে
                 let start = inactiveStart > firstPracticeDate ? inactiveStart : firstPracticeDate;
                 let end = hDate > now ? now : hDate;
                 
@@ -6443,7 +6455,6 @@ function getPracticeStats(student) {
             }
         }
         
-        // যদি বর্তমানেও সে Inactive থাকে, তাহলে আজকের দিন পর্যন্ত হিসাব হবে
         if (inactiveStart) {
             let start = inactiveStart > firstPracticeDate ? inactiveStart : firstPracticeDate;
             let end = now;
@@ -6453,7 +6464,6 @@ function getPracticeStats(student) {
         }
     }
 
-    // 🟢 মোট দিন থেকে Inactive দিনগুলো বাদ দিয়ে అసল Active দিনের হিসাব করা
     let activeDaysSinceStart = totalDaysSinceStart - totalInactiveDays;
     if (activeDaysSinceStart < 1) activeDaysSinceStart = 1;
     
@@ -6588,11 +6598,32 @@ window.renderPracticeHistoryPortal = function(student) {
     const container = document.getElementById('practiceHistoryPortal');
     if (!container) return;
 
-    // Calculate Stats
-    const stats = getPracticeStats(student);
+    // 🟢 NEW: Class List for Dropdown Filter
+    let classList = student.class ? student.class.split(/[\/,]+/).map(c => c.trim()).filter(c => c.length > 0) : [];
+    const filterSelect = document.getElementById('studentPortalPracticeFilter');
+    const selectedFilter = filterSelect ? filterSelect.value : 'All';
 
-    // Beautiful Grid Dashboard for Stats
-    let statsHtml = `
+    let filterDropdownHtml = '';
+    // যদি একাধিক সাবজেক্ট থাকে, তবেই ফিল্টার অপশন আসবে
+    if (classList.length > 1) {
+        let options = '<option value="All">All Subjects</option>';
+        classList.forEach(c => {
+            options += `<option value="${c}" ${selectedFilter === c ? 'selected' : ''}>${c}</option>`;
+        });
+        filterDropdownHtml = `
+            <div style="display:flex; justify-content:flex-end; margin-bottom:12px;">
+                <select id="studentPortalPracticeFilter" onchange="renderPracticeHistoryPortal(students.find(s => String(s.id) === String(${student.id})))" style="padding: 6px 12px; font-size: 12px; font-weight: 600; border-radius: 8px; border: 1px solid #cbd5e1; background: #f8fafc; color: #334155; outline: none; cursor:pointer;">
+                    ${options}
+                </select>
+            </div>
+        `;
+    }
+
+    // 🟢 ফিল্টার অনুযায়ী প্র্যাকটিস হিসেব করা হচ্ছে
+    const stats = getPracticeStats(student, selectedFilter);
+
+    // স্ট্যাটাস গ্রিড তৈরি
+    let statsHtml = filterDropdownHtml + `
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px;">
             <div style="background: #e0f2fe; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #bae6fd;">
                 <div style="font-size: 10px; color: #0369a1; font-weight: 600; text-transform: uppercase;">Today</div>
@@ -6621,15 +6652,32 @@ window.renderPracticeHistoryPortal = function(student) {
         </div>
     `;
 
-    if (!student.practice_log || student.practice_log.length === 0) {
-        container.innerHTML = statsHtml + '<div style="text-align:center; color:#94a3b8; font-size:12px; padding-top: 10px;">No practice logged yet.</div>';
+    // ফিল্টার অনুযায়ী লিস্ট তৈরি
+    let filteredLogs = student.practice_log || [];
+    if (selectedFilter !== 'All') {
+        filteredLogs = filteredLogs.filter(log => {
+            let logInst = log.instrument;
+            if (!logInst) {
+                let cList = student.class ? student.class.split(/[\/,]+/).map(c => c.trim()).filter(c => c.length > 0) : ['Music'];
+                logInst = cList.length > 0 ? cList[0] : 'Music';
+            }
+            return logInst.trim().toLowerCase() === selectedFilter.trim().toLowerCase();
+        });
+    }
+
+    if (filteredLogs.length === 0) {
+        container.innerHTML = statsHtml + '<div style="text-align:center; color:#94a3b8; font-size:12px; padding-top: 10px;">No practice logged for this selection.</div>';
         return;
     }
 
     let listHtml = '<div style="max-height: 150px; overflow-y: auto;">';
-    student.practice_log.slice(0, 10).forEach(log => { 
-        // 🟢 NEW: Show instrument badge if available
-        let instrumentBadge = log.instrument ? `<span style="background: #e0f2fe; color: #0284c7; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 5px;">${log.instrument}</span>` : '';
+    filteredLogs.slice(0, 10).forEach(log => { 
+        let displayInst = log.instrument;
+        if (!displayInst) {
+            let cList = student.class ? student.class.split(/[\/,]+/).map(c => c.trim()).filter(c => c.length > 0) : [];
+            displayInst = cList.length > 0 ? cList[0] : '';
+        }
+        let instrumentBadge = displayInst ? `<span style="background: #e0f2fe; color: #0284c7; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 5px;">${displayInst}</span>` : '';
         
         listHtml += `
             <div style="background: #f0fdf4; padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #10b981; display: flex; justify-content: space-between; align-items: center;">
@@ -6654,17 +6702,26 @@ window.renderPracticeLogTeacher = function(studentId) {
     const filterSelect = document.getElementById('teacherPracticeFilter');
     if (!container || !student) return;
 
-    // 🟢 Populate Teacher Filter Dropdown Based on Student's Classes
-    if (filterSelect && filterSelect.options.length <= 1) { // Only populate once per profile open
-        let classList = student.class ? student.class.split(/[\/,]+/).map(c => c.trim()).filter(c => c.length > 0) : [];
-        let filterHtml = '<option value="All">All Subjects</option>';
-        classList.forEach(c => {
-            filterHtml += `<option value="${c}">${c}</option>`;
-        });
-        filterSelect.innerHTML = filterHtml;
+    let classList = student.class ? student.class.split(/[\/,]+/).map(c => c.trim()).filter(c => c.length > 0) : [];
+
+    // 🟢 NEW: যদি একটাই সাবজেক্ট থাকে, তবে ড্রপডাউন হাইড হয়ে যাবে
+    if (filterSelect) {
+        if (classList.length <= 1) {
+            filterSelect.style.display = 'none'; // হাইড করা হলো
+        } else {
+            filterSelect.style.display = 'block'; // একাধিক থাকলে শো করবে
+            // ড্রপডাউনের অপশন তৈরি করা
+            if (filterSelect.options.length <= 1) { 
+                let filterHtml = '<option value="All">All Subjects</option>';
+                classList.forEach(c => {
+                    filterHtml += `<option value="${c}">${c}</option>`;
+                });
+                filterSelect.innerHTML = filterHtml;
+            }
+        }
     }
 
-    const selectedFilter = filterSelect ? filterSelect.value : 'All';
+    const selectedFilter = (filterSelect && filterSelect.style.display !== 'none') ? filterSelect.value : 'All';
 
     // 🟢 Insert Dynamic Stats Block for Teacher
     let statsContainer = document.getElementById('teacherPracticeStatsObj');
@@ -6674,7 +6731,8 @@ window.renderPracticeLogTeacher = function(studentId) {
         container.parentElement.parentElement.insertBefore(statsContainer, container.parentElement);
     }
 
-    const stats = getPracticeStats(student);
+    const stats = getPracticeStats(student, selectedFilter);
+    
     statsContainer.innerHTML = `
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px;">
             <div style="background: var(--bg-card); padding: 10px; border-radius: 8px; text-align: center; border: 1px solid var(--border-color); box-shadow: var(--shadow);">
@@ -6706,32 +6764,28 @@ window.renderPracticeLogTeacher = function(studentId) {
 
     container.innerHTML = '';
     
-    // 🟢 Filter Logs Based on Dropdown
     let filteredLogs = student.practice_log || [];
     
     if (selectedFilter !== 'All') {
         filteredLogs = filteredLogs.filter(log => {
             let logInstrument = log.instrument;
-            // 🟢 যদি পুরোনো লগ হয় যেটিতে সাবজেক্ট নেই, তবে স্টুডেন্টের প্রথম সাবজেক্টটিকে ধরে নেবে
             if (!logInstrument) {
                 let cList = student.class ? student.class.split(/[\/,]+/).map(c => c.trim()).filter(c => c.length > 0) : ['Music'];
                 logInstrument = cList.length > 0 ? cList[0] : 'Music';
             }
-            // স্পেস বা ছোট-বড় হাতের অক্ষরের সমস্যা এড়াতে সেফ ম্যাচিং
             return logInstrument.trim().toLowerCase() === selectedFilter.trim().toLowerCase();
         });
     }
 
     if (filteredLogs.length > 0) {
         filteredLogs.forEach(log => {
-            // 🟢 পুরোনো লগের ব্যাজ দেখানোর জন্যও সেফটি অ্যাড করা হলো
             let displayInstrument = log.instrument;
             if (!displayInstrument) {
                 let cList = student.class ? student.class.split(/[\/,]+/).map(c => c.trim()).filter(c => c.length > 0) : [];
                 displayInstrument = cList.length > 0 ? cList[0] : '';
             }
 
-            let instrumentBadge = displayInstrument ? `<span style="font-size: 9px; background: rgba(59, 130, 246, 0.1); color: var(--info); padding: 2px 5px; border-radius: 4px; border: 1px solid rgba(59, 130, 246, 0.2); margin-left: 5px;">${displayInstrument}</span>` : '';
+            let instrumentBadge = displayInstrument && classList.length > 1 ? `<span style="font-size: 9px; background: rgba(59, 130, 246, 0.1); color: var(--info); padding: 2px 5px; border-radius: 4px; border: 1px solid rgba(59, 130, 246, 0.2); margin-left: 5px;">${displayInstrument}</span>` : '';
             
             container.innerHTML += `
                 <li style="padding: 8px 10px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
