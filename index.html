@@ -6377,11 +6377,11 @@ function getPracticeStats(student, filter = 'All') {
     let rawLogs = student.practice_log || [];
     let logs = [];
     
-    // 🟢 ফিল্টার অনুযায়ী লগ আলাদা করা হচ্ছে
     if (filter !== 'All') {
         logs = rawLogs.filter(log => {
             let logInst = log.instrument;
             if (!logInst) {
+                // 🟢 যদি পুরোনো লগ হয়, তবে প্রোফাইলের প্রথম ক্লাসটিকে ডিফল্ট ধরবে
                 let cList = student.class ? student.class.split(/[\/,]+/).map(c => c.trim()).filter(c => c.length > 0) : ['Music'];
                 logInst = cList.length > 0 ? cList[0] : 'Music';
             }
@@ -6396,78 +6396,31 @@ function getPracticeStats(student, filter = 'All') {
 
     const now = new Date();
     now.setHours(0, 0, 0, 0);
-    
     const dayOfWeek = now.getDay();
     const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); 
     const weekStart = new Date(now);
     weekStart.setDate(diff);
-    weekStart.setHours(0, 0, 0, 0);
-    
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const yearStart = new Date(now.getFullYear(), 0, 1);
 
     logs.forEach(log => {
         const mins = parseInt(log.minutes) || 0;
         stats.lifetime += mins;
-        
         const logDate = parseINDate(log.date);
         logDate.setHours(0, 0, 0, 0);
-
         if (logDate.getTime() === now.getTime()) stats.today += mins;
         if (logDate >= weekStart && logDate <= now) stats.week += mins;
         if (logDate >= monthStart && logDate <= now) stats.month += mins;
         if (logDate >= yearStart && logDate <= now) stats.year += mins;
     });
 
-    let firstPracticeDate = new Date(now);
     let earliestTime = now.getTime();
     logs.forEach(log => {
         const logDateObj = parseINDate(log.date);
-        logDateObj.setHours(0, 0, 0, 0);
-        if (logDateObj.getTime() < earliestTime) {
-            earliestTime = logDateObj.getTime();
-        }
+        if (logDateObj.getTime() < earliestTime) earliestTime = logDateObj.getTime();
     });
-    firstPracticeDate = new Date(earliestTime);
-    firstPracticeDate.setHours(0, 0, 0, 0);
-
-    let totalDaysSinceStart = Math.floor((now - firstPracticeDate) / (1000 * 60 * 60 * 24)) + 1;
-
-    let totalInactiveDays = 0;
-    if (student.status && student.status.history && student.status.history.length > 0) {
-        const historyAsc = [...student.status.history].sort((a, b) => new Date(a.date) - new Date(b.date));
-        let inactiveStart = null;
-        
-        for (let i = 0; i < historyAsc.length; i++) {
-            const hDate = new Date(historyAsc[i].date);
-            hDate.setHours(0, 0, 0, 0);
-            
-            if (historyAsc[i].status === 'Inactive' && !inactiveStart) {
-                inactiveStart = hDate;
-            } else if (historyAsc[i].status === 'Active' && inactiveStart) {
-                let start = inactiveStart > firstPracticeDate ? inactiveStart : firstPracticeDate;
-                let end = hDate > now ? now : hDate;
-                
-                if (start < end) {
-                    totalInactiveDays += Math.floor((end - start) / (1000 * 60 * 60 * 24));
-                }
-                inactiveStart = null; 
-            }
-        }
-        
-        if (inactiveStart) {
-            let start = inactiveStart > firstPracticeDate ? inactiveStart : firstPracticeDate;
-            let end = now;
-            if (start < end) {
-                totalInactiveDays += Math.floor((end - start) / (1000 * 60 * 60 * 24));
-            }
-        }
-    }
-
-    let activeDaysSinceStart = totalDaysSinceStart - totalInactiveDays;
-    if (activeDaysSinceStart < 1) activeDaysSinceStart = 1;
-    
-    stats.avg = Math.round(stats.lifetime / activeDaysSinceStart);
+    let totalDays = Math.floor((now - new Date(earliestTime)) / (1000 * 60 * 60 * 24)) + 1;
+    stats.avg = Math.round(stats.lifetime / (totalDays < 1 ? 1 : totalDays));
     return stats;
 }
 // --- End of New Logic ---
@@ -6591,14 +6544,9 @@ window.showTodaysPracticingStudentsModal = function() {
     document.getElementById('classStudentsModal').style.display = 'flex'; 
 };
 window.renderPracticeHistoryPortal = function(student) {
-    const existingIdx = students.findIndex(s => String(s.id) === String(student.id));
-    if(existingIdx === -1) students.push(student);
-    else students[existingIdx] = student;
-
     const container = document.getElementById('practiceHistoryPortal');
     if (!container) return;
 
-    // 🟢 NEW: Class List for Dropdown Filter
     let classList = student.class ? student.class.split(/[\/,]+/).map(c => c.trim()).filter(c => c.length > 0) : [];
     const filterSelect = document.getElementById('studentPortalPracticeFilter');
     const selectedFilter = filterSelect ? filterSelect.value : 'All';
@@ -6609,87 +6557,45 @@ window.renderPracticeHistoryPortal = function(student) {
         classList.forEach(c => {
             options += `<option value="${c}" ${selectedFilter === c ? 'selected' : ''}>${c}</option>`;
         });
-        filterDropdownHtml = `
-            <div style="display:flex; justify-content:flex-end; margin-bottom:12px;">
-                <select id="studentPortalPracticeFilter" onchange="renderPracticeHistoryPortal(students.find(s => String(s.id) === String(${student.id})))" style="padding: 6px 12px; font-size: 12px; font-weight: 600; border-radius: 8px; border: 1px solid #cbd5e1; background: #f8fafc; color: #334155; outline: none; cursor:pointer;">
-                    ${options}
-                </select>
-            </div>
-        `;
+        filterDropdownHtml = `<div style="display:flex; justify-content:flex-end; margin-bottom:12px;">
+            <select id="studentPortalPracticeFilter" onchange="renderPracticeHistoryPortal(students.find(s => s.id === ${student.id}))" style="padding: 6px 12px; font-size: 12px; font-weight: 600; border-radius: 8px; border: 1px solid #cbd5e1; background: #f8fafc; color: #334155; outline: none; cursor:pointer;">${options}</select>
+        </div>`;
     }
 
     const stats = getPracticeStats(student, selectedFilter);
-
     let statsHtml = filterDropdownHtml + `
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px;">
-            <div style="background: #e0f2fe; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #bae6fd;">
-                <div style="font-size: 10px; color: #0369a1; font-weight: 600; text-transform: uppercase;">Today</div>
-                <div style="font-size: 14px; font-weight: 700; color: #0c4a6e;">${formatPracticeTime(stats.today)}</div>
-            </div>
-            <div style="background: #fef9c3; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #fef08a;">
-                <div style="font-size: 10px; color: #a16207; font-weight: 600; text-transform: uppercase;">This Week</div>
-                <div style="font-size: 14px; font-weight: 700; color: #713f12;">${formatPracticeTime(stats.week)}</div>
-            </div>
-            <div style="background: #ffedd5; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #fed7aa;">
-                <div style="font-size: 10px; color: #c2410c; font-weight: 600; text-transform: uppercase;">This Month</div>
-                <div style="font-size: 14px; font-weight: 700; color: #7c2d12;">${formatPracticeTime(stats.month)}</div>
-            </div>
-            <div style="background: #f3e8ff; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #e9d5ff;">
-                <div style="font-size: 10px; color: #7e22ce; font-weight: 600; text-transform: uppercase;">This Year</div>
-                <div style="font-size: 14px; font-weight: 700; color: #581c87;">${formatPracticeTime(stats.year)}</div>
-            </div>
-            <div style="background: #dcfce7; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #bbf7d0;">
-                <div style="font-size: 10px; color: #15803d; font-weight: 600; text-transform: uppercase;">Lifetime</div>
-                <div style="font-size: 14px; font-weight: 700; color: #14532d;">${formatPracticeTime(stats.lifetime)}</div>
-            </div>
-            <div style="background: #f1f5f9; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #e2e8f0;">
-                <div style="font-size: 10px; color: #475569; font-weight: 600; text-transform: uppercase;">Daily Avg</div>
-                <div style="font-size: 14px; font-weight: 700; color: #0f172a;">${formatPracticeTime(stats.avg)}</div>
-            </div>
-        </div>
-    `;
+            <div style="background: #e0f2fe; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #bae6fd;"><div style="font-size: 9px; color: #0369a1; font-weight: 600;">TODAY</div><div style="font-size: 14px; font-weight: 700;">${formatPracticeTime(stats.today)}</div></div>
+            <div style="background: #fef9c3; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #fef08a;"><div style="font-size: 9px; color: #a16207; font-weight: 600;">WEEK</div><div style="font-size: 14px; font-weight: 700;">${formatPracticeTime(stats.week)}</div></div>
+            <div style="background: #ffedd5; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #fed7aa;"><div style="font-size: 9px; color: #c2410c; font-weight: 600;">MONTH</div><div style="font-size: 14px; font-weight: 700;">${formatPracticeTime(stats.month)}</div></div>
+            <div style="background: #f3e8ff; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #e9d5ff;"><div style="font-size: 9px; color: #7e22ce; font-weight: 600;">YEAR</div><div style="font-size: 14px; font-weight: 700;">${formatPracticeTime(stats.year)}</div></div>
+            <div style="background: #dcfce7; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #bbf7d0;"><div style="font-size: 9px; color: #15803d; font-weight: 600;">TOTAL</div><div style="font-size: 14px; font-weight: 700;">${formatPracticeTime(stats.lifetime)}</div></div>
+            <div style="background: #f1f5f9; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #e2e8f0;"><div style="font-size: 9px; color: #475569; font-weight: 600;">AVG</div><div style="font-size: 14px; font-weight: 700;">${formatPracticeTime(stats.avg)}</div></div>
+        </div>`;
 
     let filteredLogs = student.practice_log || [];
     if (selectedFilter !== 'All') {
         filteredLogs = filteredLogs.filter(log => {
-            let logInst = log.instrument;
-            if (!logInst) {
-                let cList = student.class ? student.class.split(/[\/,]+/).map(c => c.trim()).filter(c => c.length > 0) : ['Music'];
-                logInst = cList.length > 0 ? cList[0] : 'Music';
-            }
+            let logInst = log.instrument || classList[0] || 'Music';
             return logInst.trim().toLowerCase() === selectedFilter.trim().toLowerCase();
         });
     }
 
+    // 🟢 স্ক্রল করার জন্য সুন্দর বক্স ডিজাইন
+    let listHtml = '<div style="max-height: 250px; overflow-y: auto; padding-right: 5px; scroll-behavior: smooth;">';
     if (filteredLogs.length === 0) {
-        container.innerHTML = statsHtml + '<div style="text-align:center; color:#94a3b8; font-size:12px; padding-top: 10px;">No practice logged for this selection.</div>';
-        return;
-    }
-
-    // 🟢 স্ক্রল করার জন্য max-height 250px করে দিলাম এবং .slice(0, 10) সরিয়ে দিলাম
-    let listHtml = '<div style="max-height: 250px; overflow-y: auto; padding-right: 5px;">';
-    filteredLogs.forEach(log => { 
-        let displayInst = log.instrument;
-        if (!displayInst) {
-            let cList = student.class ? student.class.split(/[\/,]+/).map(c => c.trim()).filter(c => c.length > 0) : [];
-            displayInst = cList.length > 0 ? cList[0] : '';
-        }
-        let instrumentBadge = displayInst && classList.length > 1 ? `<span style="background: #e0f2fe; color: #0284c7; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 5px;">${displayInst}</span>` : '';
-        
-        listHtml += `
-            <div style="background: #f0fdf4; padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #10b981; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-                <div>
-                    <strong style="color: #065f46; font-size: 13px;">${log.topic}</strong> ${instrumentBadge}<br>
-                    <span style="font-size: 11px; color: #166534;">📅 ${log.date} (${log.day}) 🕒 ${log.time}</span>
-                </div>
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <div style="background: #10b981; color: white; padding: 4px 8px; border-radius: 6px; font-weight: 600; font-size: 12px;">${log.minutes} mins</div>
-                    <button onclick="deletePracticeLog(${student.id}, ${log.id}, 'student')" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:14px; padding:4px;" title="Delete"><i class="fas fa-trash"></i></button>
-                </div>
+        listHtml += '<div style="text-align:center; color:gray; font-size:12px; padding:20px;">No records found.</div>';
+    } else {
+        filteredLogs.forEach(log => {
+            let inst = log.instrument || (classList.length > 0 ? classList[0] : '');
+            let badge = inst && classList.length > 1 ? `<span style="background:#e0f2fe; color:#0284c7; padding:2px 6px; border-radius:4px; font-size:10px; margin-left:5px;">${inst}</span>` : '';
+            listHtml += `<div style="background:#f8fafc; padding:10px; border-radius:10px; margin-bottom:8px; border-left:4px solid #10b981; display:flex; justify-content:space-between; align-items:center;">
+                <div><strong style="font-size:13px;">${log.topic}</strong>${badge}<br><span style="font-size:10px; color:gray;">📅 ${log.date} 🕒 ${log.time}</span></div>
+                <div style="background:#10b981; color:white; padding:4px 8px; border-radius:6px; font-weight:700; font-size:12px;">${log.minutes}m</div>
             </div>`;
-    });
+        });
+    }
     listHtml += '</div>';
-
     container.innerHTML = statsHtml + listHtml;
 };
 
@@ -6701,109 +6607,74 @@ window.renderPracticeLogTeacher = function(studentId) {
 
     let classList = student.class ? student.class.split(/[\/,]+/).map(c => c.trim()).filter(c => c.length > 0) : [];
 
+    // 🟢 স্মার্ট ফিল্টার: যদি ১টির বেশি ক্লাস থাকে তবেই ফিল্টার দেখাবে
     if (filterSelect) {
-        if (classList.length <= 1) {
-            filterSelect.style.display = 'none'; 
+        if (classList.length > 1) {
+            filterSelect.style.display = 'block';
+            let options = '<option value="All">All Subjects</option>';
+            classList.forEach(c => { options += `<option value="${c}">${c}</option>`; });
+            if (filterSelect.options.length <= 1) filterSelect.innerHTML = options;
         } else {
-            filterSelect.style.display = 'block'; 
-            if (filterSelect.options.length <= 1) { 
-                let filterHtml = '<option value="All">All Subjects</option>';
-                classList.forEach(c => {
-                    filterHtml += `<option value="${c}">${c}</option>`;
-                });
-                filterSelect.innerHTML = filterHtml;
-            }
+            filterSelect.style.display = 'none';
         }
     }
 
     const selectedFilter = (filterSelect && filterSelect.style.display !== 'none') ? filterSelect.value : 'All';
-
-    let statsContainer = document.getElementById('teacherPracticeStatsObj');
-    if (!statsContainer) {
-        statsContainer = document.createElement('div');
-        statsContainer.id = 'teacherPracticeStatsObj';
-        container.parentElement.parentElement.insertBefore(statsContainer, container.parentElement);
-    }
-
     const stats = getPracticeStats(student, selectedFilter);
     
+    let statsContainer = document.getElementById('teacherPracticeStatsObj') || document.createElement('div');
+    statsContainer.id = 'teacherPracticeStatsObj';
+    if (!statsContainer.parentNode) container.parentElement.parentElement.insertBefore(statsContainer, container.parentElement);
+
+    // 🟢 NEW: টিচার প্যানেলেও ৬টি টাইমের স্ট্যাটাস অ্যাড করা হলো
     statsContainer.innerHTML = `
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px;">
-            <div style="background: var(--bg-card); padding: 10px; border-radius: 8px; text-align: center; border: 1px solid var(--border-color); box-shadow: var(--shadow);">
-                <div style="font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Today</div>
-                <div style="font-size: 14px; font-weight: 700; color: var(--primary);">${formatPracticeTime(stats.today)}</div>
+            <div style="background:var(--bg-card); padding:8px; border-radius:8px; text-align:center; border:1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <div style="font-size:9px; color:var(--text-muted); font-weight:600;">TODAY</div>
+                <div style="font-size:14px; font-weight:700; color:var(--primary);">${formatPracticeTime(stats.today)}</div>
             </div>
-            <div style="background: var(--bg-card); padding: 10px; border-radius: 8px; text-align: center; border: 1px solid var(--border-color); box-shadow: var(--shadow);">
-                <div style="font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">This Week</div>
-                <div style="font-size: 14px; font-weight: 700; color: var(--warning);">${formatPracticeTime(stats.week)}</div>
+            <div style="background:var(--bg-card); padding:8px; border-radius:8px; text-align:center; border:1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <div style="font-size:9px; color:var(--text-muted); font-weight:600;">WEEK</div>
+                <div style="font-size:14px; font-weight:700; color:var(--warning);">${formatPracticeTime(stats.week)}</div>
             </div>
-            <div style="background: var(--bg-card); padding: 10px; border-radius: 8px; text-align: center; border: 1px solid var(--border-color); box-shadow: var(--shadow);">
-                <div style="font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">This Month</div>
-                <div style="font-size: 14px; font-weight: 700; color: var(--danger);">${formatPracticeTime(stats.month)}</div>
+            <div style="background:var(--bg-card); padding:8px; border-radius:8px; text-align:center; border:1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <div style="font-size:9px; color:var(--text-muted); font-weight:600;">MONTH</div>
+                <div style="font-size:14px; font-weight:700; color:var(--danger);">${formatPracticeTime(stats.month)}</div>
             </div>
-            <div style="background: var(--bg-card); padding: 10px; border-radius: 8px; text-align: center; border: 1px solid var(--border-color); box-shadow: var(--shadow);">
-                <div style="font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">This Year</div>
-                <div style="font-size: 14px; font-weight: 700; color: var(--info);">${formatPracticeTime(stats.year)}</div>
+            <div style="background:var(--bg-card); padding:8px; border-radius:8px; text-align:center; border:1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <div style="font-size:9px; color:var(--text-muted); font-weight:600;">YEAR</div>
+                <div style="font-size:14px; font-weight:700; color:var(--info);">${formatPracticeTime(stats.year)}</div>
             </div>
-            <div style="background: var(--bg-card); padding: 10px; border-radius: 8px; text-align: center; border: 1px solid var(--border-color); box-shadow: var(--shadow);">
-                <div style="font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Lifetime</div>
-                <div style="font-size: 14px; font-weight: 700; color: var(--success);">${formatPracticeTime(stats.lifetime)}</div>
+            <div style="background:var(--bg-card); padding:8px; border-radius:8px; text-align:center; border:1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <div style="font-size:9px; color:var(--text-muted); font-weight:600;">TOTAL</div>
+                <div style="font-size:14px; font-weight:700; color:var(--success);">${formatPracticeTime(stats.lifetime)}</div>
             </div>
-            <div style="background: var(--bg-card); padding: 10px; border-radius: 8px; text-align: center; border: 1px solid var(--border-color); box-shadow: var(--shadow);">
-                <div style="font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Daily Avg</div>
-                <div style="font-size: 14px; font-weight: 700; color: var(--pink);">${formatPracticeTime(stats.avg)}</div>
+            <div style="background:var(--bg-card); padding:8px; border-radius:8px; text-align:center; border:1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <div style="font-size:9px; color:var(--text-muted); font-weight:600;">AVG</div>
+                <div style="font-size:14px; font-weight:700; color:var(--pink);">${formatPracticeTime(stats.avg)}</div>
             </div>
-        </div>
-    `;
-
-    container.innerHTML = '';
-    
-    // 🟢 HTML কন্টেইনারের হাইট বাড়িয়ে দেওয়া হলো যাতে সহজে স্ক্রল করা যায়
-    if (container.parentElement) {
-        container.parentElement.style.maxHeight = '250px';
-        container.parentElement.style.paddingRight = '5px';
-    }
+        </div>`;
 
     let filteredLogs = student.practice_log || [];
-    
     if (selectedFilter !== 'All') {
         filteredLogs = filteredLogs.filter(log => {
-            let logInstrument = log.instrument;
-            if (!logInstrument) {
-                let cList = student.class ? student.class.split(/[\/,]+/).map(c => c.trim()).filter(c => c.length > 0) : ['Music'];
-                logInstrument = cList.length > 0 ? cList[0] : 'Music';
-            }
-            return logInstrument.trim().toLowerCase() === selectedFilter.trim().toLowerCase();
+            let inst = log.instrument || (classList.length > 0 ? classList[0] : 'Music');
+            return inst.trim().toLowerCase() === selectedFilter.trim().toLowerCase();
         });
     }
 
-    if (filteredLogs.length > 0) {
-        // 🟢 .slice(0, 10) সরিয়ে দিলাম, এখন সবগুলো লগই লোড হবে এবং স্ক্রল করা যাবে
-        filteredLogs.forEach(log => {
-            let displayInstrument = log.instrument;
-            if (!displayInstrument) {
-                let cList = student.class ? student.class.split(/[\/,]+/).map(c => c.trim()).filter(c => c.length > 0) : [];
-                displayInstrument = cList.length > 0 ? cList[0] : '';
-            }
+    container.innerHTML = '';
+    container.parentElement.style.maxHeight = '250px'; // 🟢 ছোট বক্সে সুন্দর স্ক্রল
+    container.parentElement.style.overflowY = 'auto';
 
-            let instrumentBadge = displayInstrument && classList.length > 1 ? `<span style="font-size: 9px; background: rgba(59, 130, 246, 0.1); color: var(--info); padding: 2px 5px; border-radius: 4px; border: 1px solid rgba(59, 130, 246, 0.2); margin-left: 5px;">${displayInstrument}</span>` : '';
-            
-            container.innerHTML += `
-                <li style="padding: 10px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; transition: background 0.2s;">
-                    <div>
-                        <strong style="color: var(--success); font-size: 13px;">${log.topic}</strong> ${instrumentBadge}<br>
-                        <span style="font-size: 11px; color: var(--text-muted);"><i class="fas fa-clock"></i> ${log.date} | ${log.day} | ${log.time}</span>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <div style="font-size: 12px; font-weight: bold; color: var(--text-main); background: var(--bg-body); padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border-color);">${log.minutes} mins</div>
-                        <button onclick="editPracticeLogTeacher(${student.id}, ${log.id})" style="background:none; border:none; color:var(--warning); cursor:pointer; font-size:14px; padding:4px;" title="Edit"><i class="fas fa-edit"></i></button>
-                        <button onclick="deletePracticeLog(${student.id}, ${log.id}, 'teacher')" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:14px; padding:4px;" title="Delete"><i class="fas fa-trash"></i></button>
-                    </div>
-                </li>`;
-        });
-    } else {
-        container.innerHTML = '<li style="padding: 15px; text-align: center; color: var(--text-muted); font-size: 12px;">No practice records found for this selection.</li>';
-    }
+    filteredLogs.forEach(log => {
+        let inst = log.instrument || (classList.length > 0 ? classList[0] : '');
+        let badge = inst && classList.length > 1 ? `<span style="font-size:9px; background:rgba(59,130,246,0.1); color:var(--info); padding:2px 5px; border-radius:4px; margin-left:5px;">${inst}</span>` : '';
+        container.innerHTML += `<li style="padding:10px; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+            <div><strong>${log.topic}</strong>${badge}<br><span style="font-size:10px; color:var(--text-muted);">📅 ${log.date} | ${log.time}</span></div>
+            <div style="display:flex; align-items:center; gap:8px;"><div style="font-size:12px; font-weight:700;">${log.minutes}m</div><button onclick="editPracticeLogTeacher(${student.id}, ${log.id})" style="background:none; border:none; color:var(--warning); cursor:pointer; font-size:14px; padding:4px;" title="Edit"><i class="fas fa-edit"></i></button><button onclick="deletePracticeLog(${student.id}, ${log.id}, 'teacher')" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:14px; padding:4px;" title="Delete"><i class="fas fa-trash"></i></button></div>
+        </li>`;
+    });
 };
 
 window.deletePracticeLog = function(studentId, logId, context) {
