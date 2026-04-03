@@ -6604,7 +6604,6 @@ window.renderPracticeHistoryPortal = function(student) {
     const selectedFilter = filterSelect ? filterSelect.value : 'All';
 
     let filterDropdownHtml = '';
-    // যদি একাধিক সাবজেক্ট থাকে, তবেই ফিল্টার অপশন আসবে
     if (classList.length > 1) {
         let options = '<option value="All">All Subjects</option>';
         classList.forEach(c => {
@@ -6619,10 +6618,8 @@ window.renderPracticeHistoryPortal = function(student) {
         `;
     }
 
-    // 🟢 ফিল্টার অনুযায়ী প্র্যাকটিস হিসেব করা হচ্ছে
     const stats = getPracticeStats(student, selectedFilter);
 
-    // স্ট্যাটাস গ্রিড তৈরি
     let statsHtml = filterDropdownHtml + `
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px;">
             <div style="background: #e0f2fe; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #bae6fd;">
@@ -6652,7 +6649,6 @@ window.renderPracticeHistoryPortal = function(student) {
         </div>
     `;
 
-    // ফিল্টার অনুযায়ী লিস্ট তৈরি
     let filteredLogs = student.practice_log || [];
     if (selectedFilter !== 'All') {
         filteredLogs = filteredLogs.filter(log => {
@@ -6670,24 +6666,25 @@ window.renderPracticeHistoryPortal = function(student) {
         return;
     }
 
-    let listHtml = '<div style="max-height: 150px; overflow-y: auto;">';
-    filteredLogs.slice(0, 10).forEach(log => { 
+    // 🟢 স্ক্রল করার জন্য max-height 250px করে দিলাম এবং .slice(0, 10) সরিয়ে দিলাম
+    let listHtml = '<div style="max-height: 250px; overflow-y: auto; padding-right: 5px;">';
+    filteredLogs.forEach(log => { 
         let displayInst = log.instrument;
         if (!displayInst) {
             let cList = student.class ? student.class.split(/[\/,]+/).map(c => c.trim()).filter(c => c.length > 0) : [];
             displayInst = cList.length > 0 ? cList[0] : '';
         }
-        let instrumentBadge = displayInst ? `<span style="background: #e0f2fe; color: #0284c7; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 5px;">${displayInst}</span>` : '';
+        let instrumentBadge = displayInst && classList.length > 1 ? `<span style="background: #e0f2fe; color: #0284c7; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 5px;">${displayInst}</span>` : '';
         
         listHtml += `
-            <div style="background: #f0fdf4; padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #10b981; display: flex; justify-content: space-between; align-items: center;">
+            <div style="background: #f0fdf4; padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #10b981; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
                 <div>
                     <strong style="color: #065f46; font-size: 13px;">${log.topic}</strong> ${instrumentBadge}<br>
                     <span style="font-size: 11px; color: #166534;">📅 ${log.date} (${log.day}) 🕒 ${log.time}</span>
                 </div>
                 <div style="display:flex; align-items:center; gap:10px;">
                     <div style="background: #10b981; color: white; padding: 4px 8px; border-radius: 6px; font-weight: 600; font-size: 12px;">${log.minutes} mins</div>
-                    <button onclick="deletePracticeLog(${student.id}, ${log.id}, 'student')" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:14px;"><i class="fas fa-trash"></i></button>
+                    <button onclick="deletePracticeLog(${student.id}, ${log.id}, 'student')" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:14px; padding:4px;" title="Delete"><i class="fas fa-trash"></i></button>
                 </div>
             </div>`;
     });
@@ -6704,13 +6701,11 @@ window.renderPracticeLogTeacher = function(studentId) {
 
     let classList = student.class ? student.class.split(/[\/,]+/).map(c => c.trim()).filter(c => c.length > 0) : [];
 
-    // 🟢 NEW: যদি একটাই সাবজেক্ট থাকে, তবে ড্রপডাউন হাইড হয়ে যাবে
     if (filterSelect) {
         if (classList.length <= 1) {
-            filterSelect.style.display = 'none'; // হাইড করা হলো
+            filterSelect.style.display = 'none'; 
         } else {
-            filterSelect.style.display = 'block'; // একাধিক থাকলে শো করবে
-            // ড্রপডাউনের অপশন তৈরি করা
+            filterSelect.style.display = 'block'; 
             if (filterSelect.options.length <= 1) { 
                 let filterHtml = '<option value="All">All Subjects</option>';
                 classList.forEach(c => {
@@ -6723,7 +6718,6 @@ window.renderPracticeLogTeacher = function(studentId) {
 
     const selectedFilter = (filterSelect && filterSelect.style.display !== 'none') ? filterSelect.value : 'All';
 
-    // 🟢 Insert Dynamic Stats Block for Teacher
     let statsContainer = document.getElementById('teacherPracticeStatsObj');
     if (!statsContainer) {
         statsContainer = document.createElement('div');
@@ -6764,6 +6758,12 @@ window.renderPracticeLogTeacher = function(studentId) {
 
     container.innerHTML = '';
     
+    // 🟢 HTML কন্টেইনারের হাইট বাড়িয়ে দেওয়া হলো যাতে সহজে স্ক্রল করা যায়
+    if (container.parentElement) {
+        container.parentElement.style.maxHeight = '250px';
+        container.parentElement.style.paddingRight = '5px';
+    }
+
     let filteredLogs = student.practice_log || [];
     
     if (selectedFilter !== 'All') {
@@ -6778,6 +6778,7 @@ window.renderPracticeLogTeacher = function(studentId) {
     }
 
     if (filteredLogs.length > 0) {
+        // 🟢 .slice(0, 10) সরিয়ে দিলাম, এখন সবগুলো লগই লোড হবে এবং স্ক্রল করা যাবে
         filteredLogs.forEach(log => {
             let displayInstrument = log.instrument;
             if (!displayInstrument) {
@@ -6788,20 +6789,20 @@ window.renderPracticeLogTeacher = function(studentId) {
             let instrumentBadge = displayInstrument && classList.length > 1 ? `<span style="font-size: 9px; background: rgba(59, 130, 246, 0.1); color: var(--info); padding: 2px 5px; border-radius: 4px; border: 1px solid rgba(59, 130, 246, 0.2); margin-left: 5px;">${displayInstrument}</span>` : '';
             
             container.innerHTML += `
-                <li style="padding: 8px 10px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                <li style="padding: 10px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; transition: background 0.2s;">
                     <div>
                         <strong style="color: var(--success); font-size: 13px;">${log.topic}</strong> ${instrumentBadge}<br>
-                        <span style="font-size: 10px; color: var(--text-muted);"><i class="fas fa-clock"></i> ${log.date} | ${log.day} | ${log.time}</span>
+                        <span style="font-size: 11px; color: var(--text-muted);"><i class="fas fa-clock"></i> ${log.date} | ${log.day} | ${log.time}</span>
                     </div>
-                    <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
                         <div style="font-size: 12px; font-weight: bold; color: var(--text-main); background: var(--bg-body); padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border-color);">${log.minutes} mins</div>
-                        <button onclick="editPracticeLogTeacher(${student.id}, ${log.id})" style="background:none; border:none; color:var(--warning); cursor:pointer; font-size:14px;"><i class="fas fa-edit"></i></button>
-                        <button onclick="deletePracticeLog(${student.id}, ${log.id}, 'teacher')" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:14px;"><i class="fas fa-trash"></i></button>
+                        <button onclick="editPracticeLogTeacher(${student.id}, ${log.id})" style="background:none; border:none; color:var(--warning); cursor:pointer; font-size:14px; padding:4px;" title="Edit"><i class="fas fa-edit"></i></button>
+                        <button onclick="deletePracticeLog(${student.id}, ${log.id}, 'teacher')" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:14px; padding:4px;" title="Delete"><i class="fas fa-trash"></i></button>
                     </div>
                 </li>`;
         });
     } else {
-        container.innerHTML = '<li style="padding: 10px; text-align: center; color: var(--text-muted); font-size: 12px;">No practice records found for this selection.</li>';
+        container.innerHTML = '<li style="padding: 15px; text-align: center; color: var(--text-muted); font-size: 12px;">No practice records found for this selection.</li>';
     }
 };
 
