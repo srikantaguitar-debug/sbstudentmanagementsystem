@@ -30,6 +30,7 @@
     <script src="https://unpkg.com/html5-qrcode" defer></script>
     
 <style>
+
 @media (max-width: 480px) {
     .practice-inputs { flex-direction: column !important; }
     .practice-inputs input { width: 100% !important; margin-bottom: 10px; }
@@ -1464,17 +1465,37 @@ if (isStudentActive) {
     // 🟢 অ্যাক্টিভ ব্যাজ (মাঝে থাকবে)
     badgeHtml = `<div style="margin-top: 8px;"><span style="background:#dcfce7; color:#166534; padding:6px 16px; border-radius:20px; font-size:13px; font-weight:700; border: 1px solid #bbf7d0; display:inline-block;">Active Student</span></div>`;
     
-    // 🟢 NEW: Class/Instrument Dropdown Logic (Split by / or ,)
+    // 🟢 NEW: Beautiful Class/Instrument Dropdown Logic (Guitar, Keyboard, Bass Guitar, Mandolin)
     let classList = s.class ? s.class.split(/[\/,]+/).map(c => c.trim()).filter(c => c.length > 0) : ['Music'];
-    let classOptionsHtml = classList.map(c => `<option value="${c}">${c}</option>`).join('');
-    // যদি একটাই সাবজেক্ট থাকে, তবে ড্রপডাউন ডিজেবল থাকবে
-    let classSelectDisabled = classList.length === 1 ? 'disabled style="background:#e2e8f0; color:#64748b;"' : 'style="background:white; cursor:pointer;"';
+    
+    // নামের সাথে ডায়নামিক ইমোজি বসানোর লজিক
+    const getInstrumentIcon = (name) => {
+        const n = name.toLowerCase();
+        if (n.includes('bass guitar') || n.includes('bass')) return '🎸';
+        if (n.includes('guitar')) return '🎸';
+        if (n.includes('keyboard') || n.includes('piano')) return '🎹';
+        if (n.includes('mandolin')) return '🪕';
+        return '🎵';
+    };
+
+    let classOptionsHtml = classList.map(c => `<option value="${c}">${getInstrumentIcon(c)} ${c}</option>`).join('');
+    
+    // যদি ক্লাস ১টি থাকে তাহলে লকড ডিজাইন, আর একাধিক থাকলে প্রিমিয়াম সিলেক্ট ডিজাইন
+    let classSelectDisabled = classList.length === 1 
+        ? 'disabled style="background: #f1f5f9; color: #64748b; font-weight: 600; border: 1px solid #e2e8f0; cursor: not-allowed;"' 
+        : 'style="background: #ffffff; color: #4f46e5; font-weight: 700; border: 2px solid #a5b4fc; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.15); cursor: pointer;"';
 
     practiceLogFormHtml = `
-    <div style="margin-bottom: 10px;">
-        <select id="practiceClassSelect" ${classSelectDisabled} style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; outline: none; box-sizing: border-box;">
+    <div style="margin-bottom: 15px; position: relative;">
+        <label style="font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 5px; display: block; text-align: left; text-transform: uppercase; letter-spacing: 0.5px;">
+            <i class="fas fa-music" style="color: #8b5cf6;"></i> Select Subject
+        </label>
+        
+        <select id="practiceClassSelect" ${classSelectDisabled} style="width: 100%; padding: 12px 15px; border-radius: 10px; font-size: 15px; outline: none; box-sizing: border-box; appearance: none; -webkit-appearance: none; transition: all 0.3s;">
             ${classOptionsHtml}
         </select>
+        
+        ${classList.length > 1 ? `<i class="fas fa-chevron-down" style="position: absolute; right: 15px; top: 38px; color: #6366f1; pointer-events: none; font-size: 14px;"></i>` : ''}
     </div>
 
     <div style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px dashed #cbd5e1;">
@@ -1485,15 +1506,14 @@ if (isStudentActive) {
 
     <div style="display: flex; gap: 10px; margin-bottom: 15px;">
         <input type="number" id="practiceMinutes" placeholder="Mins (e.g. 45)" style="width: 35%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; outline: none; box-sizing: border-box;">
-        <input type="text" id="practiceTopic" placeholder="Topic (e.g. C Major Scale)" style="width: 65%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; outline: none; box-sizing: border-box;">
+        <input type="text" id="practiceTopic" placeholder="Topic (Optional)" style="width: 65%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; outline: none; box-sizing: border-box;">
     </div>
     
-    <button onclick="submitPracticeLog(${studentViewId})" style="width: 100%; background: #10b981; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);">
-        <i class="fas fa-check-circle"></i> Log Practice
+    <button onclick="submitPracticeLog(${studentViewId})" style="width: 100%; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 12px; border-radius: 10px; font-weight: 700; font-size: 15px; cursor: pointer; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); transition: transform 0.2s;">
+        <i class="fas fa-check-circle" style="margin-right: 5px;"></i> Log Practice
     </button>`;
 } else {
-// ... বাকি কোড একই থাকবে
-    // 🟢 ইনঅ্যাক্টিভ ব্যাজ (ঠিক নামের নিচে মাঝে থাকবে) - এখানে display:block দিয়েছি যাতে এটা পুরো লাইন নিয়ে নেয়
+    // 🟢 ইনঅ্যাক্টিভ ব্যাজ (ঠিক নামের নিচে মাঝে থাকবে) - এখানে display:block দিয়েছি যাতে এটা পুরো লাইন নিয়ে নেয়
     badgeHtml = `<div style="margin-top: 8px; display: block;"><span style="background:#fee2e2; color:#991b1b; padding:6px 16px; border-radius:20px; font-size:13px; font-weight:700; border: 1px solid #fecaca; display:inline-block;">Inactive Student</span></div>`;
     
     let inactiveDateText = 'N/A';
@@ -1520,7 +1540,7 @@ if (isStudentActive) {
             durationText = `(Duration: ${dur.join(', ')})`;
         }
     }
-    // 🟢 ইনঅ্যাক্টিভ ডেট কলাম (ব্যাজের ঠিক নিচে মাঝে থাকবে) - এখানেও display:block দিয়েছি
+    // 🟢 ইনঅ্যাক্টিভ ডেট কলাম (ব্যাজের ঠিক নিচে মাঝে থাকবে) - এখানেও display:block দিয়েছি
     inactiveDetailsHtml = `<div style="margin-top: 12px; font-size: 13px; color: #ef4444; font-weight: 600; background: #fef2f2; padding: 10px 20px; border-radius: 12px; display: inline-block; border: 1px dashed #fca5a5;">Inactive Since: ${inactiveDateText} <br> <span style="font-size:12px; color:#b91c1c;">${durationText}</span></div>`;
     
     practiceLogFormHtml = `
@@ -6442,24 +6462,26 @@ function getPracticeStats(student) {
 }
 // --- End of New Logic ---
 
-window.submitPracticeLog = function(studentId) {const timeInput = document.getElementById('practiceTimeInput').value;
-    if (timeInput) {
+window.submitPracticeLog = function(studentId) {
+    const timeInputEl = document.getElementById('practiceTimeInput');
+    const timeInputVal = timeInputEl ? timeInputEl.value : '';
+
+    if (timeInputVal) {
         const now = new Date();
         const currentHours = now.getHours();
         const currentMinutes = now.getMinutes();
-        const [inputHours, inputMinutes] = timeInput.split(':').map(Number);
+        const [inputHours, inputMinutes] = timeInputVal.split(':').map(Number);
         
         if (inputHours > currentHours || (inputHours === currentHours && inputMinutes > currentMinutes)) {
             Swal.fire('Error', 'Future time cannot be selected!', 'error');
             return; 
         }
     }
+    
     const minutes = document.getElementById('practiceMinutes').value;
     let topic = document.getElementById('practiceTopic').value.trim();
-    const timeInputEl = document.getElementById('practiceTimeInput');
-    const timeInputVal = timeInputEl ? timeInputEl.value : '';
 
-// 🟢 Topic অপশনাল করা হলো (না দিলে 'Regular Practice' সেভ হবে)
+    // 🟢 Topic অপশনাল করা হলো (না দিলে 'Regular Practice' সেভ হবে)
     if (!topic) {
         topic = "Regular Practice"; 
     }
@@ -6473,10 +6495,33 @@ window.submitPracticeLog = function(studentId) {const timeInput = document.getEl
         return;
     }
 
-    // ... (time logic same) ...
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-IN'); 
+    const dayStr = now.toLocaleDateString('en-IN', { weekday: 'short' }); 
+    
+    let timeStr = '';
+    if (timeInputVal) {
+        const [h, m] = timeInputVal.split(':');
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const h12 = h % 12 || 12;
+        timeStr = `${h12.toString().padStart(2, '0')}:${m} ${ampm}`;
+    } else {
+        timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }); 
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const managerUid = urlParams.get('manager');
+    const isStudentPortal = !!managerUid;
+    const targetUid = managerUid ? managerUid : DOC_ID;
+
+    // 🟢 স্টুডেন্টকে খুঁজে বের করা হচ্ছে
+    let studentIndex = students.findIndex(s => String(s.id) === String(studentId));
+    if (studentIndex === -1) return;
+    let studentData = students[studentIndex];
 
     if (!studentData.practice_log) studentData.practice_log = [];
 
+    // 🟢 লগ ডেটাবেসে পুশ করা হচ্ছে
     studentData.practice_log.unshift({
         id: Date.now(),
         minutes: parseInt(minutes),
@@ -6487,7 +6532,7 @@ window.submitPracticeLog = function(studentId) {const timeInput = document.getEl
         time: timeStr
     });
 
-    // 🟢 1. Instant UI Update (সাথে সাথে সেভ দেখাবে)
+    // 🟢 Instant UI Update (সাথে সাথে সেভ দেখাবে)
     document.getElementById('practiceMinutes').value = '';
     document.getElementById('practiceTopic').value = '';
     if(timeInputEl) timeInputEl.value = '';
@@ -6495,10 +6540,9 @@ window.submitPracticeLog = function(studentId) {const timeInput = document.getEl
     Swal.fire({ title: 'Great Job! 🌟', text: `Logged ${minutes} minutes!`, icon: 'success', timer: 2000, showConfirmButton: false });
     renderPracticeHistoryPortal(studentData); 
 
-    // 🟢 2. Background Database Save (নীরবে সেভ হবে)
+    // 🟢 Background Database Save (নীরবে সেভ হবে)
     if (!isStudentPortal) {
         students[studentIndex] = studentData;
-        //dbSet('students', students).catch(e => {}); 
     }
     
     db.collection(COLLECTION_NAME).doc(targetUid).collection('students').doc(String(studentId)).update({
@@ -6664,13 +6708,30 @@ window.renderPracticeLogTeacher = function(studentId) {
     
     // 🟢 Filter Logs Based on Dropdown
     let filteredLogs = student.practice_log || [];
+    
     if (selectedFilter !== 'All') {
-        filteredLogs = filteredLogs.filter(log => log.instrument === selectedFilter);
+        filteredLogs = filteredLogs.filter(log => {
+            let logInstrument = log.instrument;
+            // 🟢 যদি পুরোনো লগ হয় যেটিতে সাবজেক্ট নেই, তবে স্টুডেন্টের প্রথম সাবজেক্টটিকে ধরে নেবে
+            if (!logInstrument) {
+                let cList = student.class ? student.class.split(/[\/,]+/).map(c => c.trim()).filter(c => c.length > 0) : ['Music'];
+                logInstrument = cList.length > 0 ? cList[0] : 'Music';
+            }
+            // স্পেস বা ছোট-বড় হাতের অক্ষরের সমস্যা এড়াতে সেফ ম্যাচিং
+            return logInstrument.trim().toLowerCase() === selectedFilter.trim().toLowerCase();
+        });
     }
 
     if (filteredLogs.length > 0) {
         filteredLogs.forEach(log => {
-            let instrumentBadge = log.instrument ? `<span style="font-size: 9px; background: rgba(59, 130, 246, 0.1); color: var(--info); padding: 2px 5px; border-radius: 4px; border: 1px solid rgba(59, 130, 246, 0.2); margin-left: 5px;">${log.instrument}</span>` : '';
+            // 🟢 পুরোনো লগের ব্যাজ দেখানোর জন্যও সেফটি অ্যাড করা হলো
+            let displayInstrument = log.instrument;
+            if (!displayInstrument) {
+                let cList = student.class ? student.class.split(/[\/,]+/).map(c => c.trim()).filter(c => c.length > 0) : [];
+                displayInstrument = cList.length > 0 ? cList[0] : '';
+            }
+
+            let instrumentBadge = displayInstrument ? `<span style="font-size: 9px; background: rgba(59, 130, 246, 0.1); color: var(--info); padding: 2px 5px; border-radius: 4px; border: 1px solid rgba(59, 130, 246, 0.2); margin-left: 5px;">${displayInstrument}</span>` : '';
             
             container.innerHTML += `
                 <li style="padding: 8px 10px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
