@@ -1909,12 +1909,12 @@ if (isStudentActive) {
     </div>`;
 }
 
-// 🟢 স্টুডেন্ট পোর্টালে মেডেল ব্যাজ ডিজাইন (এটি HTML এর ঠিক আগে থাকবে)
+// 🟢 স্টুডেন্ট পোর্টালে মেডেল ব্যাজ ডিজাইন (উন্নত ও সুন্দর)
 const rank = window.calculateWeeklyRank ? window.calculateWeeklyRank(s.id) : null;
 let badgeOverlay = '';
-if (rank === 1) badgeOverlay = `<div style="position:absolute; bottom:-5px; right:-10px; font-size:35px; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3)); z-index:10;">🥇</div>`;
-else if (rank === 2) badgeOverlay = `<div style="position:absolute; bottom:-5px; right:-10px; font-size:35px; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3)); z-index:10;">🥈</div>`;
-else if (rank === 3) badgeOverlay = `<div style="position:absolute; bottom:-5px; right:-10px; font-size:35px; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3)); z-index:10;">🥉</div>`;
+if (rank === 1) badgeOverlay = `<div style="position:absolute; bottom:0px; right:-8px; font-size:30px; background:#ffffff; border-radius:50%; width:42px; height:42px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(0,0,0,0.25); border: 2px solid #facc15; z-index:10;" title="Weekly Rank 1">🥇</div>`;
+else if (rank === 2) badgeOverlay = `<div style="position:absolute; bottom:0px; right:-8px; font-size:30px; background:#ffffff; border-radius:50%; width:42px; height:42px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(0,0,0,0.25); border: 2px solid #cbd5e1; z-index:10;" title="Weekly Rank 2">🥈</div>`;
+else if (rank === 3) badgeOverlay = `<div style="position:absolute; bottom:0px; right:-8px; font-size:30px; background:#ffffff; border-radius:50%; width:42px; height:42px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(0,0,0,0.25); border: 2px solid #fdba74; z-index:10;" title="Weekly Rank 3">🥉</div>`;
 // ৬. HTML Structure (Themed)
 document.body.innerHTML = `
     <style>
