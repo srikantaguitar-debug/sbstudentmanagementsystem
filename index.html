@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="color-scheme" content="light">
     <title>Music Classes Manager (Pro)</title>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
@@ -30,6 +31,9 @@
     <script src="https://unpkg.com/html5-qrcode" defer></script>
     
 <style>
+html, body {
+        color-scheme: light dark;
+    }
 
 @media (max-width: 480px) {
     .practice-inputs { flex-direction: column !important; }
@@ -46,6 +50,75 @@
     .d-rem-btn { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; width: 38px; height: 38px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; transition: all 0.3s; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); flex-shrink: 0; margin-left: 10px; }
     .d-rem-btn:hover { transform: scale(1.1) rotate(10deg); box-shadow: 0 6px 15px rgba(16, 185, 129, 0.4); }
     [data-theme="dark"] .d-rem-icon { background: rgba(251, 191, 36, 0.2); }
+/* =========================================
+       🎨 APP THEMES CSS (ALL COLORS)
+       ========================================= */
+
+    /* 🌊 Ocean Blue Theme */
+    [data-theme="blue"] {
+        --primary: #0ea5e9; --primary-dark: #0284c7; --secondary: #94a3b8;
+        --bg-body: #f0f9ff; --bg-card: #ffffff; --bg-input: #e0f2fe;
+        --text-main: #0f172a; --text-muted: #475569; --border-color: #bae6fd;
+    }
+
+    /* 🍃 Nature Green Theme */
+    [data-theme="green"] {
+        --primary: #10b981; --primary-dark: #059669; --secondary: #9ca3af;
+        --bg-body: #f0fdf4; --bg-card: #ffffff; --bg-input: #dcfce7;
+        --text-main: #064e3b; --text-muted: #166534; --border-color: #bbf7d0;
+    }
+
+    /* 🌌 Purple Night Theme */
+    [data-theme="purple-dark"] {
+        --primary: #a855f7; --primary-dark: #9333ea; --secondary: #a1a1aa;
+        --bg-body: #2e1065; --bg-card: #3b0764; --bg-input: #4c1d95;
+        --text-main: #f3e8ff; --text-muted: #d8b4fe; --border-color: #5b21b6;
+    }
+
+/* Yellow-এর পরিবর্তে নতুন Magenta থিম */
+[data-theme="magenta"] {
+    --primary: #d946ef; 
+    --primary-dark: #c026d3; 
+    --secondary: #e879f9;
+    --bg-body: #fdf4ff; 
+    --bg-card: #ffffff; 
+    --bg-input: #fae8ff;
+    --text-main: #701a75; 
+    --text-muted: #86198f; 
+    --border-color: #f5d0fe;
+}
+
+/* Red-এর পরিবর্তে নতুন Orange Red থিম */
+[data-theme="orange-red"] {
+    --primary: #ff4500; 
+    --primary-dark: #cc3700; 
+    --secondary: #ff7340;
+    --bg-body: #fff5f2; 
+    --bg-card: #ffffff; 
+    --bg-input: #ffe8e0;
+    --text-main: #802300; 
+    --text-muted: #a62d00; 
+    --border-color: #ffc3b3;
+}
+
+    /* ☀️ Default Light Theme (Root) */
+    :root {
+        --primary: #4f46e5; --primary-dark: #4338ca; --secondary: #64748b;
+        --success: #10b981; --danger: #ef4444; --warning: #f59e0b;
+        --info: #3b82f6; --pink: #ec4899; 
+        --bg-body: #f3f4f6; --bg-card: #ffffff; --bg-input: #f9fafb;
+        --text-main: #1f2937; --text-muted: #6b7280; --border-color: #e2e8f0;
+        --radius: 12px; --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        --nav-height: 70px;
+    }
+
+    /* 🌙 Dark Mode Theme */
+    [data-theme="dark"] {
+        --primary: #6366f1; --primary-dark: #4f46e5; --secondary: #94a3b8;
+        --bg-body: #0f172a; --bg-card: #1e293b; --bg-input: #334155;
+        --text-main: #f1f5f9; --text-muted: #cbd5e1; --border-color: #334155;
+        --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    }
     
     :root {
         --primary: #4f46e5; --primary-dark: #4338ca; --secondary: #64748b;
@@ -98,19 +171,82 @@ html, body {
 
     .container { width: 98%; max-width: 100%; margin: 15px auto; }
 
+    /* --- Bottom Nav Slider CSS --- */
     .bottom-nav {
         position: fixed; bottom: 0; 
         background: var(--bg-card); height: var(--nav-height); width: 100%;
-        display: flex; justify-content: space-around; align-items: center;
+        display: flex; align-items: center;
         box-shadow: 0 -2px 15px rgba(0,0,0,0.08);
         z-index: 990; border-top-left-radius: 15px; border-top-right-radius: 15px;
         transition: background 0.3s ease;
-        width: 100%; max-width: 100%; left: 0; transform: none;
+        left: 0; 
+        
+        /* Slider Properties */
+        overflow-x: auto;
+        overflow-y: hidden;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        scroll-snap-type: x mandatory;
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
     }
-    .nav-item { border: none; background: none; display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 8px; font-weight: 500; padding: 5px; flex-grow: 1; transition: 0.2s; cursor: pointer; }
-    .nav-item i { font-size: 16px; margin-bottom: 4px; }
+
+    /* Scrollbar লুকানোর জন্য */
+    .bottom-nav::-webkit-scrollbar {
+        display: none;
+    }
+
+    .nav-item { 
+        border: none; background: none; display: flex; flex-direction: column; align-items: center; 
+        color: var(--text-muted); font-size: 9px; font-weight: 500; padding: 5px 0; 
+        transition: 0.2s; cursor: pointer; 
+        
+       /*ঠিক ৬টি বাটন একসাথে দেখানোর জন্য (100% / 6 = 16.66%) */
+        flex: 0 0 16.66%; 
+        max-width: 16.66%;
+        scroll-snap-align: start;
+        box-sizing: border-box;
+    }
+    /* --- Bottom Nav Arrows CSS --- */
+    .nav-arrow-container {
+        position: fixed;
+        bottom: 0;
+        height: var(--nav-height);
+        width: 100%;
+        left: 0;
+        z-index: 995;
+        pointer-events: none;
+    }
+    .nav-arrow {
+        position: absolute; /* 🟢 এটি অ্যারোকে জায়গা মতো লক করে রাখবে */
+        top: 0;
+        height: 100%;
+        width: 40px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        color: var(--primary);
+        cursor: pointer;
+        pointer-events: auto;
+        transition: opacity 0.3s ease, transform 0.2s ease;
+    }
+    .nav-arrow-left {
+        left: 0; /* 🟢 একদম বাঁ-দিকে ফিক্সড */
+        background: linear-gradient(to right, var(--bg-card) 50%, transparent);
+        border-top-left-radius: 15px;
+    }
+    .nav-arrow-right {
+        right: 0; /* 🟢 একদম ডানদিকে ফিক্সড */
+        background: linear-gradient(to left, var(--bg-card) 50%, transparent);
+        border-top-right-radius: 15px;
+    }
+    .nav-arrow:active {
+        transform: scale(1.1);
+    }
+    
+    .nav-item i { font-size: 18px; margin-bottom: 4px; }
     .nav-item.active { color: var(--primary); }
-    .nav-item.active i { transform: translateY(-2px); }
+    .nav-item.active i { transform: translateY(-3px); }
     .tab-buttons { display: none; } 
     .tab-content { display: none; animation: fadeIn 0.3s ease; overflow-x: auto; }
     .tab-content.active { display: block; }
@@ -280,11 +416,15 @@ html, body {
     #qr-reader-box span, #qr-reader-box a { color: var(--text-main) !important; }
     #qr-reader-box button { background-color: var(--primary) !important; color: white !important; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; margin: 5px; }
     #qr-reader-box select { background: var(--bg-input) !important; color: var(--text-main) !important; border: 1px solid var(--border-color) !important; padding: 5px; border-radius: 5px; }
-    
+
     </style>
 </head>
 <body>
-<div id="loginOverlay" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-body); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; color: var(--text-main);">
+<div id="initialLoader" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-body); z-index: 999999; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+    <i class="fas fa-spinner fa-spin fa-3x" style="color: var(--primary); margin-bottom: 15px;"></i>
+    <h3 style="color: var(--text-main); font-family: 'Poppins', sans-serif;">Starting App...</h3>
+</div>
+<div id="loginOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-body); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; color: var(--text-main);">
     <div style="background: var(--bg-card); padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 85%; max-width: 350px; text-align: center; border: 1px solid var(--border-color);">
         <h2 style="color: var(--primary); margin-bottom: 20px;">Manager Login</h2>
         <input type="email" id="loginEmail" placeholder="Email Address" style="width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-main); box-sizing: border-box;">
@@ -399,10 +539,22 @@ html, body {
     </header>
 
     <div class="container">
+        
+        <div class="nav-arrow-container">
+            <div class="nav-arrow nav-arrow-left" id="scrollArrowLeft" onclick="scrollBottomNav('left')">
+                <b style="font-size: 22px; font-family: monospace;">&lt;</b>
+            </div>
+            
+            <div class="nav-arrow nav-arrow-right" id="scrollArrowRight" onclick="scrollBottomNav('right')">
+                <b style="font-size: 22px; font-family: monospace;">&gt;</b>
+            </div>
+        </div>
+        
         <div class="bottom-nav">
             <button class="nav-item active" onclick="openTab('attendance')"><i class="fas fa-calendar-check"></i><span>Attend</span></button>
             <button class="nav-item" onclick="openTab('fees')"><i class="fas fa-rupee-sign"></i><span>Fees</span></button>
             <button class="nav-item" onclick="openTab('dashboard')"><i class="fas fa-chart-pie"></i><span>Dash</span></button>
+             <button class="nav-item" onclick="openTab('sales')"><i class="fas fa-shopping-cart"></i><span>Sales</span></button>
             <button class="nav-item" onclick="openTab('reminders')"><i class="fas fa-bell"></i><span>Remind</span></button>
             <button class="nav-item" onclick="openTab('studentMgmt')"><i class="fas fa-users"></i><span>Students</span></button>
             <button class="nav-item" onclick="openTab('reports')"><i class="fas fa-file-invoice"></i><span>Report</span></button>
@@ -546,8 +698,13 @@ html, body {
 
         <div id="studentMgmt" class="tab-content">
             
-            <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
-    <button class="btn-info" onclick="openBulkMessageModal()" style="height: 36px; padding: 0 15px; font-size: 13px; border-radius: 6px;"><i class="fas fa-bullhorn"></i> Send Notice</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+<button class="btn-primary" onclick="exportAllStudentsPDF()" style="height: 36px; padding: 0 15px; font-size: 13px; border-radius: 6px; background-color: #3b82f6; color: white; border: none; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);">
+        <i class="fas fa-file-pdf"></i> Student PDF
+    </button>
+    <button class="btn-info" onclick="openBulkMessageModal()" style="height: 36px; padding: 0 15px; font-size: 13px; border-radius: 6px;">
+        <i class="fas fa-bullhorn"></i> Send Notice
+    </button>
 </div>
 
             <div class="dashboard-card" style="border-color: var(--info);">
@@ -592,14 +749,14 @@ html, body {
 
             <div id="activeStudentsContainer">
                 <table id="activeStudentsTable">
-                    <thead><tr><th>ID</th><th>Details</th><th>Class</th><th>Fee</th><th>Contact</th><th>Status</th><th>Actions</th></tr></thead>
+                    <thead><tr><th>Details</th><th>Class</th><th>Fee</th><th>Contact</th><th>Status</th><th>Actions</th></tr></thead>
                     <tbody id="activeStudentsList"></tbody>
                 </table>
             </div>
 
             <div id="inactiveStudentsContainer" style="display: none;">
                 <table id="inactiveStudentsTable" style="opacity: 0.9;">
-                    <thead><tr><th>ID</th><th>Details</th><th>Class</th><th>Fee</th><th>Contact</th><th>Status</th><th>Actions</th></tr></thead>
+                    <thead><tr><th>Details</th><th>Class</th><th>Fee</th><th>Contact</th><th>Status</th><th>Actions</th></tr></thead>
                     <tbody id="inactiveStudentsList"></tbody>
                 </table>
             </div>
@@ -630,7 +787,18 @@ html, body {
 </h3>
                 <div id="todaysPracticeList" style="max-height: 180px; overflow-y: auto; padding-right: 5px;"></div>
             </div>
-
+            
+<div class="dashboard-card" style="padding: 0; overflow: hidden; margin-bottom: 15px; border: 1px solid var(--primary); border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                <button onclick="window.openLeaderboardModal()" style="width: 100%; background: var(--bg-input); border: none; padding: 15px 20px; color: var(--primary); font-size: 15px; font-weight: 800; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.3s;">
+                    <span style="display:flex; align-items:center; gap:10px;">
+                        <span style="background: var(--primary); color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                            <i class="fas fa-trophy"></i>
+                        </span>
+                        Top Practice Leaderboard
+                    </span>
+                    <i class="fas fa-chevron-right" style="color: var(--primary);"></i>
+                </button>
+            </div>
             <div class="dashboard-grid">
                 <div class="dashboard-card">
                     <h3>Financials</h3>
@@ -736,15 +904,110 @@ html, body {
             </div>
         </div>
 
+<div id="sales" class="tab-content">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px; gap: 5px;">
+        <h3 style="border-left: 4px solid var(--info); padding-left:8px; margin:0; font-size: 14px; white-space: nowrap;">Accessories</h3>
+        <div style="display: flex; gap: 4px; flex-wrap: nowrap;">
+            <button class="btn-info" onclick="window.openStockModal()" style="font-size:10px; padding: 6px 8px; background: #3b82f6; border: none; border-radius: 5px; white-space: nowrap;"><i class="fas fa-boxes"></i> Stock</button>
+            
+            <button class="btn-warning" onclick="document.getElementById('importSalesFile').click()" style="font-size:10px; padding: 6px 8px; background: #f59e0b; border: none; border-radius: 5px; color: white; white-space: nowrap;"><i class="fas fa-upload"></i> Restore</button>
+            <input type="file" id="importSalesFile" accept=".json" style="display:none;" onchange="window.restoreSalesData(event)">
+            
+            <button class="btn-success" onclick="backupSalesData()" style="font-size:10px; padding: 6px 8px; background: #10b981; border: none; border-radius: 5px; white-space: nowrap;"><i class="fas fa-download"></i> Backup</button>
+        </div>
+    </div>
+
+<div class="dashboard-card" style="margin-bottom: 15px;">
+    <div class="form-group" style="margin-bottom: 0;">
+        <label style="font-size: 12px; color: var(--text-muted); margin-bottom: 5px; display: block;">Select Student</label>
+        <div style="display: flex; align-items: center; gap: 15px; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-input); cursor: pointer;" onclick="window.openSaleStudentSelector()">
+            <img id="saleSelectedPhoto" src="https://via.placeholder.com/35?text=S" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; display: none;">
+            <span id="saleSelectedName" style="font-weight: 600; color: var(--text-muted); font-size: 14px;">🔍 Click here to search student...</span>
+        </div>
+        <input type="hidden" id="saleStudentId" value="">
+    </div>
+</div>
+    <div class="dashboard-card">
+        <div class="form-group">
+            <label style="font-size: 12px; color: var(--text-muted); margin-bottom: 5px; display: block;">Add Items to Cart</label>
+            <div style="display: flex; gap: 10px; margin-bottom:10px;">
+                <div style="flex: 2;">
+                    <input type="text" id="itemName" list="stockDataList" placeholder="Item name..." oninput="window.autoFillItemPrice()" style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-input); color:var(--text-main); box-sizing:border-box;">
+                    <datalist id="stockDataList"></datalist>
+                </div>
+                <div style="flex: 0.8;">
+                    <input type="number" id="saleQty" value="1" min="1" oninput="window.updateSalePriceCalc()" style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-input); color:var(--text-main); box-sizing:border-box; font-weight: bold; text-align: center;" placeholder="Qty">
+                </div>
+                <div style="flex: 1;">
+                    <input type="number" id="itemPrice" placeholder="Total ₹" style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-input); color:var(--text-main); box-sizing:border-box;">
+                </div>
+            </div>
+            
+            <button class="btn-info" onclick="window.addToCart()" style="width:100%; margin-bottom: 15px; padding: 10px; border-radius: 8px; font-weight: bold;"><i class="fas fa-cart-plus"></i> Add to Cart</button>
+
+            <div id="saleCartContainer" style="background: var(--bg-card); border: 1px dashed var(--border-color); border-radius: 8px; padding: 12px; margin-bottom: 15px; display: none;">
+                <h4 style="margin: 0 0 10px 0; font-size: 13px; color: var(--primary);"><i class="fas fa-shopping-cart"></i> Shopping Cart</h4>
+                <ul id="saleCartList" style="list-style: none; padding: 0; margin: 0; font-size: 12px; max-height: 120px; overflow-y: auto;"></ul>
+                <div style="border-top: 1px solid var(--border-color); margin-top: 10px; padding-top: 10px; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 600;">Cart Total:</span>
+                    <span style="font-weight: bold; font-size: 16px; color: var(--text-main);">₹<span id="cartTotalPrice">0</span></span>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-bottom:15px;">
+                <div style="flex: 1;">
+                    <label style="font-size:11px; color: var(--text-muted);">Amount Paid (₹)</label>
+                    <input type="number" id="amountPaid" placeholder="0" oninput="window.calculateSaleDue()" style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-input); color:var(--text-main); box-sizing:border-box;">
+                </div>
+                <div style="flex: 1; display:flex; flex-direction:column; justify-content:flex-end;">
+                     <div id="saleDueDisplay" style="font-weight:bold; color:var(--success); font-size:14px; background: rgba(16, 185, 129, 0.1); padding: 12px; border-radius: 8px; text-align:center; height: 43px; box-sizing:border-box; display:flex; align-items:center; justify-content:center;">Due: ₹0</div>
+                </div>
+            </div>
+            
+            <input type="hidden" id="editSaleId" value="">
+            <button id="saleProcessBtn" class="btn-primary" onclick="processSale()" style="width:100%; font-size: 14px; padding: 12px; border-radius:8px; border:none; font-weight: bold;">
+                <i class="fas fa-check-circle"></i> Checkout & Send Receipt
+            </button>
+            <button id="saleCancelEditBtn" class="btn-danger" onclick="cancelSaleEdit()" style="width:100%; font-size: 14px; padding: 12px; border-radius:8px; border:none; margin-top: 8px; display: none;">
+                Cancel
+            </button>
+        </div>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 20px; margin-bottom: 10px;">
+        <h4 style="margin:0; font-size: 14px;">Sales History</h4>
+        <div style="display: flex; align-items: center; gap: 5px;">
+            <label style="font-size:11px; color:var(--text-muted);">Year:</label>
+            <input type="number" id="salesYearFilter" style="width:70px; padding:5px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-input); color:var(--text-main); font-size:12px; text-align:center;" onchange="fetchSalesData()">
+        </div>
+    </div>
+
+    <div class="search-bar" style="margin-bottom: 10px;">
+        <input type="search" id="searchSalesHistoryInput" onkeyup="renderSalesUI()" placeholder="🔍 Search student name or item..." style="width:100%; padding:10px 10px 10px 40px; border-radius:50px; border:1px solid var(--border-color); background:var(--bg-input); color:var(--text-main); font-size:13px; box-sizing:border-box;">
+    </div>
+
+    <table id="salesTable" style="width:100%; border-collapse: collapse;">
+        <thead>
+            <tr>
+                <th style="text-align:left; padding:8px; border-bottom: 2px solid var(--border-color);">Details</th>
+                <th style="text-align:left; padding:8px; border-bottom: 2px solid var(--border-color);">Price</th>
+                <th style="text-align:left; padding:8px; border-bottom: 2px solid var(--border-color);">Status</th>
+                <th style="text-align:center; padding:8px; border-bottom: 2px solid var(--border-color);">Action</th>
+            </tr>
+        </thead>
+        <tbody id="salesList"></tbody>
+    </table>
+</div>
+
         <div id="settings" class="tab-content">
              <h3>App Settings</h3>
             <div class="dashboard-grid">
                 <div class="dashboard-card">
-                    <label>App Theme</label>
-                    <button class="btn-secondary" onclick="toggleTheme()" id="themeToggleBtn" style="width:100%;">
-                        <i class="fas fa-moon"></i> Switch to Dark Mode
-                    </button>
-                </div>
+    <label>App Theme</label>
+    <button class="btn-secondary" onclick="openThemeSelector()" id="themeToggleBtn" style="width:100%; background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); color: white; border: none; font-weight: bold; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);">
+        <i class="fas fa-palette"></i> Choose Theme
+    </button>
+</div>
                 
                 <div class="dashboard-card">
                     <label>Institute Logo</label>
@@ -1070,6 +1333,71 @@ html, body {
             <button class="btn-success" onclick="saveFee()" style="width:100%; font-size: 15px; padding: 12px; margin-top: 5px; border-radius: 8px;">Confirm Payment</button>
         </div>
     </div>
+<div id="stockModal" class="modal" style="z-index: 2500;">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal('stockModal')">&times;</span>
+            <h2 style="margin-bottom: 15px;"><i class="fas fa-boxes" style="color:var(--primary);"></i> Manage Stock</h2>
+            
+            <div style="background: var(--bg-input); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid var(--border-color);">
+                <div class="form-grid" style="grid-template-columns: 2fr 1fr 1fr; gap: 8px;">
+                    <div>
+                        <label style="font-size: 10px;">Item Name</label>
+                        <input type="text" id="newStockName" placeholder="e.g. Pick" style="padding: 8px; font-size: 13px;">
+                    </div>
+                    <div>
+                        <label style="font-size: 10px;">Price (₹)</label>
+                        <input type="number" id="newStockPrice" placeholder="0" style="padding: 8px; font-size: 13px;">
+                    </div>
+                    <div>
+                        <label style="font-size: 10px;">Qty</label>
+                        <input type="number" id="newStockQty" placeholder="0" style="padding: 8px; font-size: 13px;">
+                    </div>
+                    <input type="hidden" id="editStockId" value="">
+                </div>
+                <button class="btn-primary" onclick="window.addStockItem()" style="width: 100%; margin-top: 10px; padding: 10px; font-size: 13px;"><i class="fas fa-plus"></i> Add / Update Stock</button>
+            </div>
+
+            <div class="search-bar" style="margin-bottom: 10px;">
+                <input type="search" id="searchStockInput" onkeyup="window.renderStockTable()" placeholder="🔍 Search stock item..." style="width:100%; padding:10px 10px 10px 40px; border-radius:50px; border:1px solid var(--border-color); background:var(--bg-input); color:var(--text-main); font-size:13px; box-sizing:border-box;">
+            </div>
+
+            <div style="max-height: 300px; overflow-y: auto;">
+                <table style="width: 100%; font-size: 13px; text-align: left;">
+                    <thead>
+                        <tr style="background: var(--bg-input);">
+                            <th style="padding: 8px; border-radius: 8px 0 0 8px;">Item</th>
+                            <th style="padding: 8px;">Price</th>
+                            <th style="padding: 8px;">Stock</th>
+                            <th style="padding: 8px; text-align: center; border-radius: 0 8px 8px 0;">Act</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stockTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div id="leaderboardModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <span class="close-button" onclick="closeModal('leaderboardModal')">&times;</span>
+            
+            <h2 style="margin: 0 0 15px 0; color: #d97706; border-bottom: 2px solid #fde68a; padding-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-trophy" style="color: #f59e0b;"></i> Practice Leaderboard
+            </h2>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: var(--bg-input); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+                <span style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Select Time Range:</span>
+                <select id="leaderboardFilter" onchange="window.renderPracticeLeaderboard()" style="padding: 6px 10px; font-size: 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); font-weight: bold; outline: none; cursor: pointer;">
+                    <option value="weekly">This Week</option>
+                    <option value="monthly" selected>This Month</option>
+                    <option value="yearly">This Year</option>
+                    <option value="all">Lifetime</option>
+                </select>
+            </div>
+            
+            <div id="practiceLeaderboardList" style="max-height: 60vh; overflow-y: auto; padding-right: 5px;">
+                </div>
+        </div>
+    </div>
 
     <script>
         // --- 2. Firebase Config ---
@@ -1086,10 +1414,8 @@ html, body {
         const db = firebase.firestore();
 
         // --- 3. ENABLE OFFLINE PERSISTENCE (Fast & Offline) ---
-        // WhatsApp বা In-app ব্রাউজারের সমস্যার জন্য স্টুডেন্ট পোর্টালে অফলাইন ক্যাশে বন্ধ রাখা হলো
-        if (!window.location.search.includes('student=')) {
-            db.enablePersistence({ synchronizeTabs: true }).catch((err) => console.log(err));
-        }
+        // 🟢 স্টুডেন্ট পোর্টাল সহ পুরো অ্যাপে অফলাইন সাপোর্ট চালু করা হলো
+        db.enablePersistence({ synchronizeTabs: true }).catch((err) => console.log("Offline Persistence Error:", err));
 
         const COLLECTION_NAME = 'music_classes';
         let DOC_ID = 'main_data';
@@ -1236,9 +1562,8 @@ function getPastInactivePeriodsHtml(student) {
 // 🟢 নতুন ফাংশন: স্টুডেন্ট পোর্টাল থেকে সঠিকভাবে লগআউট করার জন্য
 window.studentPortalLogout = function(sId) {
     localStorage.removeItem('verified_student_' + sId);
-    localStorage.removeItem('saved_student_id');
-    localStorage.removeItem('saved_manager_id');
-    window.location.href = window.location.pathname; // লিংক ক্লিয়ার করে মেইন পেজে পাঠাবে
+    // saved_student_id এবং saved_manager_id মুছব না, যাতে শর্টকাট মনে রাখে এটি স্টুডেন্ট পোর্টাল
+    window.location.reload(); // পেজটি রিলোড করবে, ফলে স্টুডেন্ট লগইন পপআপ আসবে
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -1252,10 +1577,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!studentViewId || !managerUid) {
         const savedStudent = localStorage.getItem('saved_student_id');
         const savedManager = localStorage.getItem('saved_manager_id');
-        // ব্রাউজারের মেমোরিতে স্টুডেন্ট আইডি থাকলে স্বয়ংক্রিয়ভাবে পোর্টালে নিয়ে যাবে
+        // ব্রাউজারের মেমোরিতে স্টুডেন্ট আইডি থাকলে রিলোড না করে সরাসরি ভেরিয়েবলে সেট করা হলো
         if (savedStudent && savedManager) {
-            window.location.replace(`?student=${savedStudent}&manager=${savedManager}`);
-            return;
+            studentViewId = savedStudent;
+            managerUid = savedManager;
+            // URL-টি সাইলেন্টলি আপডেট করা হলো যাতে পেজ রিলোড না নেয়
+            window.history.replaceState(null, '', `?student=${studentViewId}&manager=${managerUid}`);
         }
     } else {
         // প্রথমবার লিংকে ক্লিক করলে ডেটা সেভ করে রাখবে
@@ -1274,13 +1601,41 @@ document.addEventListener('DOMContentLoaded', async () => {
                     
                     try {
                         const docRef = db.collection('music_classes').doc(managerUid);
-                        const [studentDoc, mainDoc] = await Promise.all([
+                        const currentYear = new Date().getFullYear();
+                        const [studentDoc, mainDoc, pLogDoc] = await Promise.all([
                             docRef.collection('students').doc(studentViewId).get(),
-                            docRef.get()
+                            docRef.get(),
+                            docRef.collection('practice_logs').doc(String(currentYear)).get()
                         ]);
 
                         if(studentDoc.exists && mainDoc.exists) {
                             const s = studentDoc.data();
+                            
+                            const pLogs = pLogDoc.exists ? pLogDoc.data().records : [];
+const legacyLogs = s.practice_log || [];
+s.combined_practice_logs = [...legacyLogs, ...pLogs.filter(l => l.studentId == s.id)];
+s.combined_practice_logs = s.combined_practice_logs.filter((v,i,a)=>a.findIndex(t=>(t.id === v.id))===i).sort((a,b)=>b.id-a.id);
+
+// 🟢 UI রেন্ডারিং ফিক্স করার জন্য ডাটা মেইন অবজেক্টে সেট করা হলো
+s.practice_log = s.combined_practice_logs;
+                            
+                            // 🟢 Calculate Accessory Dues HTML
+                            let accessoryDuesHtml = '';
+                            if (s.unpaid_accessories && s.unpaid_accessories.length > 0) {
+                                const totalAccDue = s.unpaid_accessories.reduce((sum, item) => sum + item.due, 0);
+                                const itemsList = s.unpaid_accessories.map(item => item.item).join(', ');
+                                
+                                accessoryDuesHtml = `
+                                <style>@keyframes pulseAccWarning { 0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); } 70% { box-shadow: 0 0 0 15px rgba(245, 158, 11, 0); } 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); } }</style>
+                                <div style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border-radius:16px; padding:20px; margin-bottom:25px; border: 2px solid #f59e0b; text-align: center; animation: pulseAccWarning 2s infinite;">
+                                    <div style="background: #f59e0b; color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; margin: 0 auto 10px auto;">
+                                        <i class="fas fa-shopping-bag"></i>
+                                    </div>
+                                    <h4 style="margin:0; color:#b45309; font-size:16px; font-weight: 800; text-transform:uppercase; letter-spacing: 1px;">Accessories Due</h4>
+                                    <p style="margin:8px 0; font-size:32px; font-weight:900; color:#d97706;">₹${totalAccDue}</p>
+                                    <p style="margin:0; font-size:13px; color:#92400e; font-weight: 600;">Pending for: ${itemsList}</p>
+                                </div>`;
+                            }
                             const globalData = mainDoc.data();
                             const globalAtt = globalData.attendance || {};
                             const globalFees = globalData.fees || {};
@@ -1315,11 +1670,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                                     let status = typeof rec.data === 'object' && rec.data !== null && rec.data.status ? rec.data.status : (typeof rec.data === 'string' ? rec.data : 'Not Marked');
                                     let note = typeof rec.data === 'object' && rec.data !== null && rec.data.note ? rec.data.note : '';
                                     let time = typeof rec.data === 'object' && rec.data !== null && rec.data.time ? rec.data.time : '';
+                                    let inst = typeof rec.data === 'object' && rec.data !== null && rec.data.instrument ? rec.data.instrument : ''; 
 
-                                    // কালার লজিক
                                     let clr = status === 'present' ? '#16a34a' : (status === 'absent' ? '#dc2626' : '#f59e0b');
 
-                                    // Date & Time ফরম্যাট
                                     const d = new Date(rec.date);
                                     const dayName = d.toLocaleDateString('en-IN', { weekday: 'short' });
                                     const formattedDate = d.toLocaleDateString('en-IN');
@@ -1327,11 +1681,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                                     let timeDisplay = time ? formatTime12H(time) : '';
                                     let timeBadge = timeDisplay ? `<span style="font-size:11px; color:#3b82f6; background:#eff6ff; padding:2px 6px; border-radius:4px; margin-left:5px;">🕒 ${timeDisplay}</span>` : '';
                                     
+                                    let instBadge = inst ? `<span style="font-size:10px; color:#0ea5e9; background:#e0f2fe; padding:2px 6px; border-radius:4px; margin-left:5px; border:1px solid #bae6fd; font-weight:bold;">${inst}</span>` : '';
+                                    
                                     let noteDisplay = note ? `<br><span style="font-size:11px; color:#64748b;">📝 ${note}</span>` : '';
 
                                     return `<div style="margin-bottom:10px; padding:12px; background:#f8fafc; border-radius:10px; border:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
                                         <div>
-                                            <strong style="color:#1e293b;">${formattedDate} (${dayName})</strong>${timeBadge}
+                                            <strong style="color:#1e293b;">${formattedDate} (${dayName})</strong>${timeBadge}${instBadge}
                                             ${noteDisplay}
                                         </div>
                                         <div style="color:${clr}; font-weight:bold; text-transform:uppercase;">${status}</div>
@@ -1504,8 +1860,11 @@ if (isStudentActive) {
     </div>
 
     <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-        <input type="number" id="practiceMinutes" placeholder="Mins (e.g. 45)" style="width: 35%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; outline: none; box-sizing: border-box;">
-        <input type="text" id="practiceTopic" placeholder="Topic (Optional)" style="width: 65%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; outline: none; box-sizing: border-box;">
+        <div style="width: 40%; display: flex; gap: 5px;">
+            <input type="number" id="practiceHours" placeholder="Hrs" min="0" style="width: 50%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; outline: none; box-sizing: border-box; text-align: center;">
+            <input type="number" id="practiceMinutes" placeholder="Mins" min="0" max="59" style="width: 50%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; outline: none; box-sizing: border-box; text-align: center;">
+        </div>
+        <input type="text" id="practiceTopic" placeholder="Topic (Optional)" style="width: 60%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; outline: none; box-sizing: border-box;">
     </div>
     
     <button onclick="submitPracticeLog(${studentViewId})" style="width: 100%; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 12px; border-radius: 10px; font-weight: 700; font-size: 15px; cursor: pointer; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); transition: transform 0.2s;">
@@ -1550,107 +1909,128 @@ if (isStudentActive) {
     </div>`;
 }
 
-// ৬. HTML Structure
+// 🟢 স্টুডেন্ট পোর্টালে মেডেল ব্যাজ ডিজাইন (এটি HTML এর ঠিক আগে থাকবে)
+const rank = window.calculateWeeklyRank ? window.calculateWeeklyRank(s.id) : null;
+let badgeOverlay = '';
+if (rank === 1) badgeOverlay = `<div style="position:absolute; bottom:-5px; right:-10px; font-size:35px; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3)); z-index:10;">🥇</div>`;
+else if (rank === 2) badgeOverlay = `<div style="position:absolute; bottom:-5px; right:-10px; font-size:35px; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3)); z-index:10;">🥈</div>`;
+else if (rank === 3) badgeOverlay = `<div style="position:absolute; bottom:-5px; right:-10px; font-size:35px; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3)); z-index:10;">🥉</div>`;
+// ৬. HTML Structure (Themed)
 document.body.innerHTML = `
     <style>
         .modal-portal { display:none; position:fixed; z-index:20000; left:0; top:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.7); align-items:center; justify-content:center; backdrop-filter: blur(4px); }
-        .modal-content-portal { background:#fff; width:90%; max-width:400px; padding:25px; border-radius:24px; max-height:80vh; overflow-y:auto; position:relative; animation: slideUp 0.3s ease; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .modal-content-portal { background:var(--bg-card); width:90%; max-width:400px; padding:25px; border-radius:24px; max-height:80vh; overflow-y:auto; position:relative; animation: slideUp 0.3s ease; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 1px solid var(--border-color); color: var(--text-main); }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .scroller-box { max-height: 350px; overflow-y: auto; padding-right: 5px; }
         .scroller-box::-webkit-scrollbar { width: 4px; }
-        .scroller-box::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        .close-btn { position:absolute; top:15px; right:20px; font-size:24px; cursor:pointer; color:#94a3b8; background: #f1f5f9; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+        .scroller-box::-webkit-scrollbar-thumb { background: var(--secondary); border-radius: 4px; }
+        .close-btn { position:absolute; top:15px; right:20px; font-size:24px; cursor:pointer; color:var(--text-muted); background: var(--bg-input); width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
     </style>
     
-    <div style="background: #f4f7f6; min-height: 100vh; font-family: 'Poppins', sans-serif; padding-bottom: 100px;">
-        <div style="background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); padding: 40px 20px 90px 20px; text-align:center; color:#fff; border-radius: 0 0 35px 35px; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);">
+    <div style="background: var(--bg-body); min-height: 100vh; font-family: 'Poppins', sans-serif; padding-bottom: 100px; color: var(--text-main); transition: background 0.3s, color 0.3s;">
+        <div style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); padding: 40px 20px 90px 20px; text-align:center; color:#fff; border-radius: 0 0 35px 35px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); position: relative;">
+            
+            <button onclick="openThemeSelector()" style="position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.2); border: none; color: white; width: 38px; height: 38px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <i class="fas fa-palette"></i>
+            </button>
+
             <h3 style="margin:0; font-size:12px; font-weight:400; opacity:0.9; letter-spacing: 1px;">STUDENT PORTAL</h3>
             <h2 style="margin:5px 0 0 0; font-size:24px; font-weight:700;">Welcome, ${s.name.split(' ')[0]}!</h2>
         </div>
 
-        <div style="margin-top:-60px; padding:0 20px;">
+        <div style="margin-top:-60px; padding:0 20px; position: relative; z-index: 10;">
             <div style="text-align: center; margin-bottom: 25px;">
-                <img src="${s.photo || 'https://via.placeholder.com/150'}" style="width:110px; height:110px; border-radius:50%; border:5px solid #fff; object-fit:cover; background:#eee; box-shadow:0 8px 16px rgba(0,0,0,0.1);">
-                <h2 style="margin:10px 0 5px 0; color:#1e293b; font-size:20px; font-weight: 700;">${s.name}</h2>
+                <div style="position:relative; display:inline-block;">
+                    <img src="${s.photo || 'https://via.placeholder.com/150'}" style="width:110px; height:110px; border-radius:50%; border:5px solid var(--bg-card); object-fit:cover; background:var(--bg-input); box-shadow:0 8px 16px rgba(0,0,0,0.1);">
+                    ${badgeOverlay}
+                </div>
+                <h2 style="margin:10px 0 5px 0; color:var(--text-main); font-size:20px; font-weight: 700;">${s.name}</h2>
                 ${badgeHtml}
                 ${inactiveDetailsHtml}
             </div>
 
             ${noticeHtml}
-            <div style="margin-top: 25px; background: #fff; border-radius: 16px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); border-top: 4px solid #10b981;">
-                <h4 style="margin:0 0 15px 0; color:#334155; font-size:16px;">
-                    <i class="fas fa-stopwatch" style="color:#10b981; margin-right:5px;"></i> Daily Practice Log
+            <div style="margin-top: 25px; background: var(--bg-card); border-radius: 16px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); border-top: 4px solid var(--success);">
+                <h4 style="margin:0 0 15px 0; color:var(--text-main); font-size:16px;">
+                    <i class="fas fa-stopwatch" style="color:var(--success); margin-right:5px;"></i> Daily Practice Log
                 </h4>
                 
                 ${practiceLogFormHtml}
                 
-                <div id="practiceHistoryPortal" style="margin-top: 15px; max-height: 150px; overflow-y: auto;"></div>
+                <div style="margin-top: 20px; border-top: 1px dashed var(--border-color); padding-top: 15px;">
+            <h4 style="margin:0 0 10px 0; color:var(--text-main); font-size:14px; font-weight:600;">
+                <i class="fas fa-history" style="color:var(--primary); margin-right:5px;"></i> Practice Log
+            </h4>
+            <div id="practiceHistoryPortal" class="scroller-box" style="max-height: 250px; overflow-y: auto; background: var(--bg-input); padding: 12px; border-radius: 12px; border: 1px solid var(--border-color);">
+                </div>
+        </div>
             </div>
 
-            <div style="display:flex; flex-direction:column; gap:12px; margin-bottom: 25px;">
-                <button onclick="document.getElementById('m-profile').style.display='flex'" style="width:100%; background:#fff; padding:16px 20px; border-radius:16px; border:none; box-shadow:0 4px 15px rgba(0,0,0,0.04); display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+            <div style="display:flex; flex-direction:column; gap:12px; margin-bottom: 25px; margin-top: 25px;">
+                <button onclick="document.getElementById('m-profile').style.display='flex'" style="width:100%; background:var(--bg-card); padding:16px 20px; border-radius:16px; border:1px solid var(--border-color); box-shadow:0 4px 15px rgba(0,0,0,0.04); display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
                     <div style="display:flex; align-items:center; gap:15px;">
-                        <div style="background:#eff6ff; width:45px; height:45px; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#3b82f6; font-size:18px;"><i class="fas fa-user"></i></div>
-                        <span style="font-size:15px; font-weight:600; color:#334155;">Profile Details</span>
+                        <div style="background:rgba(59, 130, 246, 0.1); width:45px; height:45px; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#3b82f6; font-size:18px;"><i class="fas fa-user"></i></div>
+                        <span style="font-size:15px; font-weight:600; color:var(--text-main);">Profile Details</span>
                     </div>
-                    <i class="fas fa-chevron-right" style="color:#cbd5e1;"></i>
+                    <i class="fas fa-chevron-right" style="color:var(--text-muted);"></i>
                 </button>
                 
-                <button onclick="document.getElementById('m-att').style.display='flex'" style="width:100%; background:#fff; padding:16px 20px; border-radius:16px; border:none; box-shadow:0 4px 15px rgba(0,0,0,0.04); display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+                <button onclick="document.getElementById('m-att').style.display='flex'" style="width:100%; background:var(--bg-card); padding:16px 20px; border-radius:16px; border:1px solid var(--border-color); box-shadow:0 4px 15px rgba(0,0,0,0.04); display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
                     <div style="display:flex; align-items:center; gap:15px;">
-                        <div style="background:#f3e8ff; width:45px; height:45px; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#a855f7; font-size:18px;"><i class="fas fa-calendar-check"></i></div>
-                        <span style="font-size:15px; font-weight:600; color:#334155;">Attendance History</span>
+                        <div style="background:rgba(168, 85, 247, 0.1); width:45px; height:45px; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#a855f7; font-size:18px;"><i class="fas fa-calendar-check"></i></div>
+                        <span style="font-size:15px; font-weight:600; color:var(--text-main);">Attendance History</span>
                     </div>
-                    <i class="fas fa-chevron-right" style="color:#cbd5e1;"></i>
+                    <i class="fas fa-chevron-right" style="color:var(--text-muted);"></i>
                 </button>
                 
-                <button onclick="document.getElementById('m-pay').style.display='flex'" style="width:100%; background:#fff; padding:16px 20px; border-radius:16px; border:none; box-shadow:0 4px 15px rgba(0,0,0,0.04); display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+                <button onclick="document.getElementById('m-pay').style.display='flex'" style="width:100%; background:var(--bg-card); padding:16px 20px; border-radius:16px; border:1px solid var(--border-color); box-shadow:0 4px 15px rgba(0,0,0,0.04); display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
                     <div style="display:flex; align-items:center; gap:15px;">
-                        <div style="background:#dcfce7; width:45px; height:45px; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#22c55e; font-size:18px;"><i class="fas fa-receipt"></i></div>
-                        <span style="font-size:15px; font-weight:600; color:#334155;">Payment History</span>
+                        <div style="background:rgba(34, 197, 94, 0.1); width:45px; height:45px; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#22c55e; font-size:18px;"><i class="fas fa-receipt"></i></div>
+                        <span style="font-size:15px; font-weight:600; color:var(--text-main);">Payment History</span>
                     </div>
-                    <i class="fas fa-chevron-right" style="color:#cbd5e1;"></i>
+                    <i class="fas fa-chevron-right" style="color:var(--text-muted);"></i>
                 </button>
             </div>
 
             ${dueHtml}
+            ${accessoryDuesHtml}
 
             <div style="margin-top: 10px;">
-                <h4 style="margin:0 0 15px 5px; color:#334155; font-size:16px;"><i class="fas fa-book-open" style="color:#6366f1; margin-right:5px;"></i> My Study Materials</h4>
-                <div class="scroller-box" style="background:#fff; border-radius:16px; padding:15px; box-shadow:0 4px 15px rgba(0,0,0,0.04);">${materialsHtml}</div>
+                <h4 style="margin:0 0 15px 5px; color:var(--text-main); font-size:16px;"><i class="fas fa-book-open" style="color:var(--primary); margin-right:5px;"></i> My Study Materials</h4>
+                <div class="scroller-box" style="background:var(--bg-card); border-radius:16px; padding:15px; border:1px solid var(--border-color); box-shadow:0 4px 15px rgba(0,0,0,0.04);">${materialsHtml}</div>
             </div>
         </div>
 
         <div id="m-teacher" class="modal-portal"><div class="modal-content-portal">
             <div class="close-btn" onclick="document.getElementById('m-teacher').style.display='none'">&times;</div>
-            <h3 style="margin-top:5px; color:#334155; font-size:18px; border-bottom:2px solid #f1f5f9; padding-bottom:10px;">Teacher Details</h3>
+            <h3 style="margin-top:5px; color:var(--text-main); font-size:18px; border-bottom:2px solid var(--border-color); padding-bottom:10px;">Teacher Details</h3>
             <div style="text-align: center; padding: 15px 0;">
-                <div style="background:#eff6ff; width:70px; height:70px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#3b82f6; font-size:30px; margin: 0 auto 15px auto; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);">
+                <div style="background:rgba(59, 130, 246, 0.1); width:70px; height:70px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--primary); font-size:30px; margin: 0 auto 15px auto;">
                     <i class="fas fa-user-tie"></i>
                 </div>
-                <h2 style="margin: 0 0 5px 0; color: #1e293b;">Srikanta Banerjee</h2>
-                <p style="margin: 0; color: #64748b; font-size: 13px; font-weight: 600;">Owner & Instructor</p>
+                <h2 style="margin: 0 0 5px 0; color: var(--text-main);">Srikanta Banerjee</h2>
+                <p style="margin: 0; color: var(--text-muted); font-size: 13px; font-weight: 600;">Owner & Instructor</p>
                 
-                <div style="margin-top: 20px; text-align: left; font-size: 14px; color: #334155; background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px dashed #cbd5e1; line-height: 1.6;">
+                <div style="margin-top: 20px; text-align: left; font-size: 14px; color: var(--text-main); background: var(--bg-input); padding: 15px; border-radius: 12px; border: 1px dashed var(--border-color); line-height: 1.6;">
                     <div style="margin-bottom: 12px; display: flex; align-items: flex-start; gap: 10px;">
                         <i class="fas fa-map-marker-alt" style="color: #ef4444; font-size: 16px; margin-top: 3px;"></i> 
                         <div>
                             <strong>Address:</strong><br>
-                            <span style="color: #475569;">Moyna, Nabagram,<br>Purba Bardhaman</span>
+                            <span style="color: var(--text-muted);">Moyna, Nabagram,<br>Purba Bardhaman</span>
                         </div>
                     </div>
                     <div style="margin-bottom: 12px; display: flex; align-items: flex-start; gap: 10px;">
                         <i class="fas fa-phone-alt" style="color: #10b981; font-size: 16px; margin-top: 3px;"></i> 
                         <div>
                             <strong>Contact:</strong><br>
-                            <span style="color: #475569;">7001471235 / 9475311199</span>
+                            <span style="color: var(--text-muted);">7001471235 / 9475311199</span>
                         </div>
                     </div>
                     <div style="display: flex; align-items: flex-start; gap: 10px;">
-                        <i class="fas fa-music" style="color: #8b5cf6; font-size: 16px; margin-top: 3px;"></i> 
+                        <i class="fas fa-music" style="color: var(--primary); font-size: 16px; margin-top: 3px;"></i> 
                         <div>
                             <strong>Classes:</strong><br>
-                            <span style="color: #475569;">Guitar, Bass Guitar, Piano, Keyboard, Mandolin</span>
+                            <span style="color: var(--text-muted);">Guitar, Bass Guitar, Piano, Keyboard, Mandolin</span>
                         </div>
                     </div>
                 </div>
@@ -1659,70 +2039,60 @@ document.body.innerHTML = `
         
         <div id="m-profile" class="modal-portal"><div class="modal-content-portal">
             <div class="close-btn" onclick="document.getElementById('m-profile').style.display='none'">&times;</div>
-            <h3 style="margin-top:5px; color:#334155; font-size:18px; border-bottom:2px solid #f1f5f9; padding-bottom:10px;">Profile Details</h3>
-            <div class="scroller-box" style="font-size: 14px; color: #475569;">
-                <div style="display:flex; justify-content:space-between; padding: 10px 0; border-bottom: 1px dashed #e2e8f0;">
-                    <span style="font-weight:600;">Joining Date:</span> <span style="color:#1e293b;">${s.joining_date ? new Date(s.joining_date).toLocaleDateString('en-IN') : 'N/A'}</span>
+            <h3 style="margin-top:5px; color:var(--text-main); font-size:18px; border-bottom:2px solid var(--border-color); padding-bottom:10px;">Profile Details</h3>
+            <div class="scroller-box" style="font-size: 14px; color: var(--text-muted);">
+                <div style="display:flex; justify-content:space-between; padding: 10px 0; border-bottom: 1px dashed var(--border-color);">
+                    <span style="font-weight:600;">Joining Date:</span> <span style="color:var(--text-main);">${s.joining_date ? new Date(s.joining_date).toLocaleDateString('en-IN') : 'N/A'}</span>
                 </div>
-                <div style="display:flex; justify-content:space-between; padding: 10px 0; border-bottom: 1px dashed #e2e8f0;">
-                    <span style="font-weight:600;">ID No:</span> <span style="color:#1e40af; font-weight:700;">#${s.serial_no}</span>
+                <div style="display:flex; justify-content:space-between; padding: 10px 0; border-bottom: 1px dashed var(--border-color);">
+                    <span style="font-weight:600;">ID No:</span> <span style="color:var(--primary); font-weight:700;">#${s.serial_no}</span>
                 </div>
-                <div style="display:flex; justify-content:space-between; padding: 10px 0; border-bottom: 1px dashed #e2e8f0;">
-                    <span style="font-weight:600;">Class:</span> <span style="color:#1e293b;">${s.class || 'N/A'}</span>
+                <div style="display:flex; justify-content:space-between; padding: 10px 0; border-bottom: 1px dashed var(--border-color);">
+                    <span style="font-weight:600;">Class:</span> <span style="color:var(--text-main);">${s.class || 'N/A'}</span>
                 </div>
-                <div style="display:flex; justify-content:space-between; padding: 10px 0; border-bottom: 1px dashed #e2e8f0;">
-                    <span style="font-weight:600;">Fee Amount:</span> <span style="color:#10b981; font-weight:700;">₹${s.fee_amount || 500}</span>
+                <div style="display:flex; justify-content:space-between; padding: 10px 0; border-bottom: 1px dashed var(--border-color);">
+                    <span style="font-weight:600;">Fee Amount:</span> <span style="color:var(--success); font-weight:700;">₹${s.fee_amount || 500}</span>
                 </div>
-                <div style="display:flex; justify-content:space-between; padding: 10px 0; border-bottom: 1px dashed #e2e8f0;">
-                    <span style="font-weight:600;">Phone:</span> <span style="color:#1e293b;">${s.phone || 'N/A'}</span>
+                <div style="display:flex; justify-content:space-between; padding: 10px 0; border-bottom: 1px dashed var(--border-color);">
+                    <span style="font-weight:600;">Phone:</span> <span style="color:var(--text-main);">${s.phone || 'N/A'}</span>
                 </div>
-                <div style="display:flex; justify-content:space-between; padding: 10px 0; border-bottom: 1px dashed #e2e8f0;">
-                    <span style="font-weight:600;">DOB:</span> <span style="color:#1e293b;">${s.dob ? new Date(s.dob).toLocaleDateString('en-IN') : 'N/A'}</span>
+                <div style="display:flex; justify-content:space-between; padding: 10px 0; border-bottom: 1px dashed var(--border-color);">
+                    <span style="font-weight:600;">DOB:</span> <span style="color:var(--text-main);">${s.dob ? new Date(s.dob).toLocaleDateString('en-IN') : 'N/A'}</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; padding: 10px 0;">
-                    <span style="font-weight:600;">Address:</span> <span style="text-align: right; max-width: 60%; color:#1e293b;">${s.address || 'N/A'}</span>
+                    <span style="font-weight:600;">Address:</span> <span style="text-align: right; max-width: 60%; color:var(--text-main);">${s.address || 'N/A'}</span>
                 </div>
             </div>
         </div></div>
 
         <div id="m-att" class="modal-portal"><div class="modal-content-portal">
             <div class="close-btn" onclick="document.getElementById('m-att').style.display='none'">&times;</div>
-            <h3 style="margin-top:5px; color:#334155; font-size:18px; border-bottom:2px solid #f1f5f9; padding-bottom:10px;">Attendance History</h3>
-            
-            <div style="margin-bottom: 15px;">
-                ${getPastInactivePeriodsHtml(s)}
-            </div>
-            
+            <h3 style="margin-top:5px; color:var(--text-main); font-size:18px; border-bottom:2px solid var(--border-color); padding-bottom:10px;">Attendance History</h3>
+            <div style="margin-bottom: 15px;">${getPastInactivePeriodsHtml(s)}</div>
             <div class="scroller-box">${attHtml}</div>
         </div></div>
 
         <div id="m-pay" class="modal-portal"><div class="modal-content-portal">
             <div class="close-btn" onclick="document.getElementById('m-pay').style.display='none'">&times;</div>
-            <h3 style="margin-top:5px; color:#334155; font-size:18px; border-bottom:2px solid #f1f5f9; padding-bottom:10px;">Payment History</h3>
+            <h3 style="margin-top:5px; color:var(--text-main); font-size:18px; border-bottom:2px solid var(--border-color); padding-bottom:10px;">Payment History</h3>
             <div class="scroller-box">${paidHtml}</div>
         </div></div>
 
-        <div style="position:fixed; bottom:0; left:0; width:100%; background:#fff; padding:12px 15px; display:flex; justify-content: space-between; gap:8px; box-shadow:0 -10px 30px rgba(0,0,0,0.06); border-radius:24px 24px 0 0; box-sizing:border-box;">
-            
-            <button onclick="document.getElementById('m-teacher').style.display='flex'" style="flex:1; height: 45px; background: #f1f5f9; border: none; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-                <i class="fas fa-user-tie" style="font-size: 24px; color: #000000;"></i>
+        <div style="position:fixed; bottom:0; left:0; width:100%; background:var(--bg-card); padding:12px 15px; display:flex; justify-content: space-between; gap:8px; box-shadow:0 -10px 30px rgba(0,0,0,0.1); border-radius:24px 24px 0 0; box-sizing:border-box; z-index: 99999;">
+            <button onclick="document.getElementById('m-teacher').style.display='flex'" style="flex:1; height: 45px; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                <i class="fas fa-user-tie" style="font-size: 24px; color: var(--text-main);"></i>
             </button>
-            
-            <button onclick="showStudentPortalQR('${studentViewId}')" style="flex: 1.2; height: 45px; background: #3b82f6; color: #fff; border: none; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-weight: 700; font-size: 13px; box-shadow: 0 4px 10px rgba(59,130,246,0.3); cursor: pointer;">
+            <button onclick="showStudentPortalQR('${studentViewId}')" style="flex: 1.2; height: 45px; background: var(--primary); color: #fff; border: none; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-weight: 700; font-size: 13px; box-shadow: 0 4px 10px rgba(99,102,241,0.3); cursor: pointer;">
                 QR Code
             </button>
-            
-            <button onclick="showHelpOptions()" style="flex: 1.2; height: 45px; background: #6366f1; color: #fff; border: none; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-weight: 700; font-size: 13px; box-shadow: 0 4px 10px rgba(99,102,241,0.3); cursor: pointer;">
+            <button onclick="showHelpOptions()" style="flex: 1.2; height: 45px; background: var(--info); color: #fff; border: none; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-weight: 700; font-size: 13px; box-shadow: 0 4px 10px rgba(59,130,246,0.3); cursor: pointer;">
                 Help
             </button>
-            
-            <button onclick="studentPortalLogout('${studentViewId}')" style="flex:1; height: 45px; background: #fff; color: #ef4444; border: 2px solid #fecaca; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-weight: 700; font-size: 13px; cursor: pointer;">
+            <button onclick="studentPortalLogout('${studentViewId}')" style="flex:1; height: 45px; background: var(--bg-card); color: var(--danger); border: 2px solid var(--danger); display: flex; align-items: center; justify-content: center; border-radius: 12px; font-weight: 700; font-size: 13px; cursor: pointer;">
                 Log Out
             </button>
-
         </div>
     </div>
-</div>
 `;
 
 setTimeout(() => { renderPracticeHistoryPortal(s); }, 500);
@@ -1820,43 +2190,47 @@ setTimeout(() => { renderPracticeHistoryPortal(s); }, 500);
                 return; 
             }
             auth.onAuthStateChanged(async (user) => {
-    const loginOverlay = document.getElementById('loginOverlay');
-    const userDisplay = document.getElementById('currentUserDisplay');
+            const loginOverlay = document.getElementById('loginOverlay');
+            const userDisplay = document.getElementById('currentUserDisplay');
 
-    // 🟢 NEW: চেক করা হচ্ছে এটি স্টুডেন্ট পোর্টাল কিনা
-    const urlParams = new URLSearchParams(window.location.search);
-    const isStudentPortal = urlParams.get('student') && urlParams.get('manager');
+            // 🟢 NEW: চেক করা হচ্ছে এটি স্টুডেন্ট পোর্টাল কিনা (URL বা LocalStorage থেকে)
+            const urlParams = new URLSearchParams(window.location.search);
+            const isStudentPortal = urlParams.get('student') && urlParams.get('manager');
+            const savedStudent = localStorage.getItem('saved_student_id');
+            const savedManager = localStorage.getItem('saved_manager_id');
 
-    // যদি স্টুডেন্ট পোর্টাল হয়, তবে লগইন স্ক্রিন লুকিয়ে ফেলবে এবং নিচের কোড রান করবে না
-    if (isStudentPortal) {
-        if(loginOverlay) loginOverlay.style.display = 'none';
-        return; 
-    }
+            // যদি স্টুডেন্ট পোর্টাল হয় (বা ব্রাউজারে স্টুডেন্ট সেভ থাকে), তবে ম্যানেজার লগইন স্ক্রিন লুকিয়ে ফেলবে
+            if (isStudentPortal || (savedStudent && savedManager)) {
+                if(loginOverlay) loginOverlay.style.display = 'none';
+                return; 
+            }
 
-    if (user) {
-        console.log("Logged in:", user.email);
-        if(userDisplay) userDisplay.textContent = `User: ${user.email}`;
-        
-        loginOverlay.style.display = 'none';
-        DOC_ID = user.uid; 
+            // ম্যানেজার লগইন চেক
+            if (user) {
+                console.log("Logged in:", user.email);
+                if(userDisplay) userDisplay.textContent = `User: ${user.email}`;
+                
+                loginOverlay.style.display = 'none';
+                if(document.getElementById('initialLoader')) document.getElementById('initialLoader').style.display = 'none';
+                DOC_ID = user.uid; 
 
-        await syncOldDataToFirebase();
-        await loadInstituteLogo();
-        await loadAuthSignature();
+                await syncOldDataToFirebase();
+                await loadInstituteLogo();
+                await loadAuthSignature();
 
-        secureAction(() => { 
-            initApp(); 
-            startClock(); 
-        }, true);
+                secureAction(() => { 
+                    initApp(); 
+                    startClock(); 
+                }, true);
 
-    } else {
-        console.log("No user.");
-        loginOverlay.style.display = 'flex';
-        document.getElementById('securityOverlay').style.display = 'none';
-    }
-});
+            } else {
+                console.log("No user.");
+                if(document.getElementById('initialLoader')) document.getElementById('initialLoader').style.display = 'none';
+                loginOverlay.style.display = 'flex';
+                document.getElementById('securityOverlay').style.display = 'none';
+            }
         });
-
+        });
 
 window.showHelpOptions = function() {
             Swal.fire({
@@ -1921,23 +2295,35 @@ window.showHelpOptions = function() {
             });
         }
 
-        function toggleTheme() {
-            const body = document.body;
-            const newTheme = body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-            body.setAttribute('data-theme', newTheme);
-            localStorage.setItem('app_theme', newTheme);
-            updateThemeButton(newTheme);
-        }
+window.loadTheme = function() {
+            // অটো থিম চালু আছে কিনা চেক করা (ডিফল্ট: true)
+            let isAutoTheme = localStorage.getItem('auto_theme_enabled');
+            if (isAutoTheme === null) {
+                isAutoTheme = 'true';
+                localStorage.setItem('auto_theme_enabled', 'true');
+            }
 
-        function loadTheme() {
-            const t = localStorage.getItem('app_theme') || 'light';
-            document.body.setAttribute('data-theme', t);
-            updateThemeButton(t);
-        }
+            let themeToApply = 'light';
 
-        function updateThemeButton(theme) {
+            if (isAutoTheme === 'true') {
+                // 🟢 অটো থিম: সপ্তাহের ৭ দিনের জন্য ৭টি আলাদা থিম!
+                const themes = ['dark', 'magenta', 'light', 'blue', 'orange-red', 'green', 'purple-dark'];
+                const today = new Date().getDay(); // রবিবার(0) থেকে শনিবার(6)
+                themeToApply = themes[today];
+            } else {
+                // 🔴 ম্যানুয়াল থিম: যদি অটো থিম অফ থাকে
+                themeToApply = localStorage.getItem('app_theme') || 'light';
+            }
+
+            // থিম অ্যাপ্লাই করা
+            document.body.setAttribute('data-theme', themeToApply);
+            
+            // ম্যানেজার অ্যাপের সেটিংস বাটনের টেক্সট আপডেট
             const btn = document.getElementById('themeToggleBtn');
-            if(btn) btn.innerHTML = theme === 'dark' ? '<i class="fas fa-sun"></i> Switch to Light Mode' : '<i class="fas fa-moon"></i> Switch to Dark Mode';
+            if (btn) {
+                let themeNameDisplay = themeToApply.charAt(0).toUpperCase() + themeToApply.slice(1);
+                btn.innerHTML = `<i class="fas fa-palette"></i> ${isAutoTheme === 'true' ? 'Auto Theme ('+themeNameDisplay+')' : 'Choose Theme'}`;
+            }
         }
 
         let isPhotoDeletedInEdit = false;
@@ -1959,8 +2345,22 @@ window.showHelpOptions = function() {
             }
         }
 
-        async function initApp() { 
-            const now = new Date();
+        window.globalPracticeLogs = [];
+window.fetchPracticeLogs = async function() {
+    const year = new Date().getFullYear();
+    const user = firebase.auth().currentUser;
+    if(user) {
+        try {
+            const doc = await db.collection(COLLECTION_NAME).doc(user.uid).collection('practice_logs').doc(String(year)).get();
+            window.globalPracticeLogs = doc.exists ? (doc.data().records || []) : [];
+        } catch(e) { console.error(e); }
+    }
+};
+
+async function initApp() { 
+    await window.fetchPracticeLogs();
+    await window.fetchSalesData();
+    const now = new Date();
             document.getElementById('attendanceDate').valueAsDate = now;
             document.getElementById('attendanceTime').value = now.toLocaleTimeString('en-GB', {hour: '2-digit', minute:'2-digit'});
             
@@ -1998,18 +2398,36 @@ window.showHelpOptions = function() {
                     }
                 }
 
-                const [aData, fData, rData, scData, gmData] = await Promise.all([
+                const [aData, fData, rData, scData, gmData, sData] = await Promise.all([
                     dbGet('attendance'),
                     dbGet('fees'),
                     dbGet('reminders'),
                     dbGet('studentSerialCounter'),
-                    dbGet('globalMaterials')
+                    dbGet('globalMaterials'),
+                    dbGet('stockData') // 🟢 এটি নতুন যোগ হলো
                 ]);
 
                 students = loadedStudents || []; 
+                // 🟢 Manager-এর জন্য গ্লোবাল প্র্যাকটিস লগগুলো স্টুডেন্টদের ডেটায় মার্জ করা হচ্ছে
+if (window.globalPracticeLogs && window.globalPracticeLogs.length > 0) {
+    window.globalPracticeLogs.forEach(log => {
+        let s = students.find(st => st.id == log.studentId);
+        if (s) {
+            if (!s.practice_log) s.practice_log = [];
+            if (!s.practice_log.some(l => l.id === log.id)) {
+                s.practice_log.push(log);
+            }
+        }
+    });
+    students.forEach(s => {
+        if (s.practice_log) s.practice_log.sort((a,b) => b.id - a.id);
+    });
+}
                 attendance = aData || {}; 
                 fees = fData || {}; 
                 reminders = rData || []; 
+                window.stockInventory = sData || [];
+                window.renderInventoryDropdown();
                 globalMaterials = gmData || [];
                 studentSerialCounter = parseInt(scData) || (students.length > 0 ? students.length + 1 : 1); 
                 
@@ -2631,6 +3049,9 @@ async function addStudent() {
         ? `<div style="margin-top:5px;"><img src="${currentStudentSignature}" style="max-height: 40px; border:1px solid #ddd; padding:2px;"></div>` 
         : '<span style="color:red;">No</span>';
 
+// Date of Birth একটু সুন্দর করে দেখানোর জন্য (DD/MM/YYYY)
+    const dobDisplay = dob ? new Date(dob).toLocaleDateString('en-IN') : '-';
+
     const detailsHtml = `
         <div style="text-align: center;">${photoDisplay}</div>
         <div style="text-align: left; font-size: 14px; line-height: 1.6; background: var(--bg-input); padding: 15px; border-radius: 8px;">
@@ -2641,7 +3062,7 @@ async function addStudent() {
             <div><strong>Phone:</strong> ${phone || '-'}</div>
             <div><strong>Guardian:</strong> ${guardian || '-'}</div>
             <div><strong>Address:</strong> ${address || '-'}</div>
-            <div><strong>Signature:</strong> ${sigDisplay}</div>
+            <div><strong>Email:</strong> ${email || '-'}</div> <div><strong>DOB:</strong> ${dobDisplay}</div> <div><strong>Signature:</strong> ${sigDisplay}</div>
         </div>
         <div style="margin-top: 10px; font-size: 12px; color: var(--danger);">
             * Please check carefully before saving.
@@ -2748,7 +3169,9 @@ async function exportData() {
         attendance: attendance || {}, 
         fees: fees || {}, 
         reminders: reminders || [], 
-        globalMaterials: globalMaterials || [], /* 🟢 এটি নতুন অ্যাড করা হলো */
+        globalMaterials: globalMaterials || [], 
+        salesDataArray: salesDataArray || [], // 🟢 Sales Data যুক্ত করা হলো
+        stockInventory: window.stockInventory || [], // 🟢 Stock Data যুক্ত করা হলো
         studentSerialCounter: studentSerialCounter || 1,
         instituteLogo: instituteLogo || null, 
         authorizedSignature: authorizedSignature || null,
@@ -2784,7 +3207,7 @@ async function exportData() {
 
         Swal.fire({ 
             title: 'Full Backup Successful!', 
-            text: 'All data (Students, Photos, Fees, Materials, Signature & PIN) saved offline.', 
+            text: 'All data (Students, Fees, Sales, Stock, Signature & PIN) saved offline.', 
             icon: 'success' 
         }); 
     } catch (err) { 
@@ -2842,7 +3265,9 @@ async function importData(event) {
             attendance = importedData.attendance || {};
             fees = importedData.fees || {};
             reminders = importedData.reminders || [];
-            globalMaterials = importedData.globalMaterials || []; /* 🟢 এটি নতুন অ্যাড করা হলো */
+            globalMaterials = importedData.globalMaterials || []; 
+            salesDataArray = importedData.salesDataArray || []; // 🟢 Sales রিস্টোর
+            window.stockInventory = importedData.stockInventory || []; // 🟢 Stock রিস্টোর
             studentSerialCounter = importedData.studentSerialCounter || 1;
             
             if(importedData.instituteLogo) instituteLogo = importedData.instituteLogo;
@@ -2856,7 +3281,12 @@ async function importData(event) {
                 dbSet('attendance', attendance).catch(console.error);
                 dbSet('fees', fees).catch(console.error);
                 dbSet('reminders', reminders).catch(console.error);
-                dbSet('globalMaterials', globalMaterials).catch(console.error); /* 🟢 এটি নতুন অ্যাড করা হলো */
+                dbSet('globalMaterials', globalMaterials).catch(console.error); 
+                dbSet('stockData', window.stockInventory).catch(console.error); // 🟢 Stock ফায়ারবেসে সেভ
+                
+                const currentYear = document.getElementById('salesYearFilter')?.value || new Date().getFullYear();
+                window.syncSalesToFirebase(currentYear); // 🟢 Sales ফায়ারবেসে সেভ
+                
                 dbSet('studentSerialCounter', studentSerialCounter).catch(console.error);
                 if(instituteLogo) dbSet('instituteLogo', instituteLogo).catch(console.error);
                 if(authorizedSignature) dbSet('authorizedSignature', authorizedSignature).catch(console.error);
@@ -2898,6 +3328,9 @@ async function importData(event) {
             }
 
             loadAllData();
+            window.renderSalesUI(); // 🟢 Sales UI আপডেট
+            window.renderStockTable(); // 🟢 Stock UI আপডেট
+            window.renderInventoryDropdown(); // 🟢 Dropdown আপডেট
             
             if(authorizedSignature) {
                 const sigPreview = document.getElementById('authSigPreview');
@@ -2910,7 +3343,7 @@ async function importData(event) {
 
             Swal.fire({
                 title: 'Restore Complete!',
-                html: `Successfully restored <b>${loadedCount}</b> students.<br>You can now use the app.`,
+                html: `Successfully restored <b>${loadedCount}</b> students.<br>All Fees, Sales, and Stocks are recovered.`,
                 icon: 'success',
                 confirmButtonColor: 'var(--primary)'
             });
@@ -2935,6 +3368,9 @@ function openTab(tabName) {
         loadStudentsList();
         currentStudentSignature = null;
         document.getElementById('signatureStatus').style.display = 'none';
+    }
+if(tabName === 'sales') {
+        window.renderSalesUI(); // 🟢 এখানে UI কথাটি যুক্ত করতে হবে
     }
     if(tabName === 'attendance') {
         const now = new Date();
@@ -3292,6 +3728,14 @@ function renderReminders() {
 }
 
 function renderDashboard() { 
+    // 🟢 Open Leaderboard Modal Function
+window.openLeaderboardModal = function() {
+    document.getElementById('leaderboardModal').style.display = 'flex';
+    window.renderPracticeLeaderboard(); // পপআপ খোলার সাথে সাথে লিস্ট লোড হবে
+};
+    if (typeof window.renderPracticeLeaderboard === 'function') {
+        window.renderPracticeLeaderboard();
+    }
     const activeStudents = students.filter(s => isStudentCurrentlyActive(s)); 
     document.getElementById('studentStatsSummary').innerHTML = `<div class="clickable-stat" onclick="showCategoryList('active')"><h4>Active</h4><p class="summary-collected">${activeStudents.length}</p></div><div class="clickable-stat" onclick="showCategoryList('inactive')"><h4>Inactive</h4><p class="summary-due">${students.length - activeStudents.length}</p></div><div><h4>Total</h4><p class="summary-total" style="color:var(--text-main);">${students.length}</p></div>`; 
     
@@ -3302,7 +3746,7 @@ function renderDashboard() {
         !dismissedBirthdays.includes(`${s.id}_${currentYearForCheck}`)
     ); 
     if (birthdayStudents.length > 0) { birthdayList.innerHTML = ''; birthdayStudents.forEach(s => { birthdayList.innerHTML += `<div style="display:flex; align-items:center; justify-content:space-between; background:var(--bg-input); padding:10px; border-radius:8px; margin-bottom:5px; border:1px solid #ffe4e6; color:var(--text-main);"><div style="display:flex; align-items:center;"><img src="${s.photo || 'https://via.placeholder.com/40?text=S'}" style="width:40px; height:40px; border-radius:50%; margin-right:10px; object-fit:cover; border: 2px solid #000 !important;"><div><strong>${s.name}</strong><br><span style="font-size:11px; color:var(--text-muted);">${s.class || 'Student'}</span></div></div><div style="display:flex; gap:5px;"><button class="btn-whatsapp btn-like" onclick="sendBirthdayWish('wa', ${s.id})"><i class="fab fa-whatsapp"></i></button><button class="btn-sms btn-like" onclick="sendBirthdayWish('sms', ${s.id})"><i class="fas fa-sms"></i></button><button class="btn-success btn-like" onclick="dismissBirthday(${s.id})" title="Dismiss"><i class="fas fa-check"></i></button></div></div>`; }); birthdayBox.style.display = 'block'; } else { birthdayBox.style.display = 'none'; }
-    // 🟢 NEW: Today's Practice Logs Logic (Updated)
+// 🟢 NEW: Today's Practice Logs Logic (Updated)
     const pracBox = document.getElementById('todaysPracticeBox');
     const pracList = document.getElementById('todaysPracticeList');
     const pracCountEl = document.getElementById('todaysPracticeCount');
@@ -3324,6 +3768,23 @@ function renderDashboard() {
                 }
             });
         }
+    });
+
+    // 🟢 NEW: লেটেস্ট লগ (Latest Update) সবার উপরে দেখানোর লজিক
+    todaysLogs.sort((a, b) => {
+        const parseTime = (t) => {
+            if (!t) return 0;
+            const match = t.match(/(\d+):(\d+)\s*(AM|PM)/i);
+            if (!match) return 0;
+            let h = parseInt(match[1]);
+            let m = parseInt(match[2]);
+            let ampm = match[3].toUpperCase();
+            if (h === 12) h = 0;
+            if (ampm === 'PM') h += 12;
+            return h * 60 + m;
+        };
+        // b.time থেকে a.time বিয়োগ করা হচ্ছে, যাতে নতুন সময় সবার উপরে থাকে
+        return parseTime(b.time) - parseTime(a.time); 
     });
 
     // কতজন ইউনিক স্টুডেন্ট আজ প্র্যাকটিস করেছে তা গোনা
@@ -3565,6 +4026,7 @@ function exportStudentDetailsAsPDF(studentId) {
     addInfo("Class:", student.class);
     addInfo("Fees:", `Rs. ${student.fee_amount || DEFAULT_FEE}/-`);
     addInfo("Joined:", new Date(student.joining_date).toLocaleDateString('en-IN'));
+    
     // 🟢 PDF Inactive Details Logic Start
     if (student.status && student.status.history && student.status.history.length > 0) {
         const sortedHistory = [...student.status.history].sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -3586,12 +4048,12 @@ function exportStudentDetailsAsPDF(studentId) {
             if (d > 0) dur.push(d + ' Days');
             if (dur.length === 0) dur.push('Today');
             
-            doc.setTextColor(220, 38, 38); // লাল রঙ
+            doc.setTextColor(220, 38, 38); 
             doc.setFont("helvetica", "bold");
             doc.text("Status:", leftMargin, y);
             doc.setFont("helvetica", "normal");
             doc.text(`Inactive From ${inactiveDate.toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'2-digit'})} (Duration: ${dur.join(', ')})`, leftMargin + 35, y);
-            doc.setTextColor(0); // আবার কালো রঙে ফেরত
+            doc.setTextColor(0); 
             y += lineHeight;
         } 
         // ২. যদি অতীতে Inactive ছিল কিন্তু এখন Active
@@ -3614,16 +4076,15 @@ function exportStudentDetailsAsPDF(studentId) {
             const startStr = inactiveDate.toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'2-digit'});
             const endStr = reactivatedDate.toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'2-digit'});
 
-            doc.setTextColor(180, 83, 9); // হলুদ/কমলা রঙ
+            doc.setTextColor(180, 83, 9); 
             doc.setFont("helvetica", "bold");
             doc.text("Past Inactive:", leftMargin, y);
             doc.setFont("helvetica", "normal");
             doc.text(`${startStr} to ${endStr} (${dur.join(', ')})`, leftMargin + 35, y);
-            doc.setTextColor(0); // আবার কালো রঙে ফেরত
+            doc.setTextColor(0); 
             y += lineHeight;
         }
     }
-    // 🟢 PDF Inactive Details Logic End
     y += 5;
 
     doc.setFontSize(12);
@@ -3703,7 +4164,6 @@ function exportStudentDetailsAsPDF(studentId) {
     doc.setFillColor(230);
     doc.rect(leftMargin, y, pageWidth - (leftMargin*2), 8, 'F');
     doc.setFontSize(10);
-    // Modified Date column text to Date & Time
     doc.text("Date & Time", leftMargin + 5, y + 5);
     doc.text("Status", leftMargin + 50, y + 5);
     doc.text("Topic / Note", leftMargin + 80, y + 5);
@@ -3757,6 +4217,132 @@ function exportStudentDetailsAsPDF(studentId) {
     if (!hasAttendance) {
         doc.setTextColor(0);
         doc.text("No attendance records found.", leftMargin + 5, y);
+        y += 10;
+    } else {
+        y += 10; 
+    }
+
+    // --- 🟢 NEW: Practice Statistics (Grid & Class-wise) Section Start ---
+    if (student.practice_log && student.practice_log.length > 0) {
+        if (y > 230) { addPageFooter(doc, currentDate); doc.addPage(); y = 20; }
+
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(0);
+        doc.text("Practice History Statistics", leftMargin, y);
+        y += 8;
+
+        let classesToReport = ['All'];
+        let classList = student.class ? student.class.split(/[\/,]+/).map(c => c.trim()).filter(c => c.length > 0) : [];
+        
+        // একের বেশি সাবজেক্ট থাকলে 'All' এর পর বাকিগুলো লিস্টে ঢুকবে
+        if (classList.length > 1) {
+            classesToReport = ['All', ...classList];
+        }
+
+        classesToReport.forEach(subject => {
+            if (y > 240) { addPageFooter(doc, currentDate); doc.addPage(); y = 20; }
+
+            const stats = getPracticeStats(student, subject);
+            const title = subject === 'All' ? (classList.length > 1 ? "Overall Practice (All Subjects)" : "Practice Stats") : `Subject: ${subject}`;
+
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(0, 102, 204); 
+            doc.text(title, leftMargin, y);
+            y += 6;
+
+            const boxW = 55;
+            const boxH = 15;
+            const gap = 5;
+            let startX = leftMargin;
+
+            const statBoxes = [
+                { label: "TODAY", val: formatPracticeTime(stats.today), color: [99, 102, 241] },
+                { label: "THIS WEEK", val: formatPracticeTime(stats.week), color: [217, 119, 6] },
+                { label: "THIS MONTH", val: formatPracticeTime(stats.month), color: [225, 29, 72] },
+                { label: "THIS YEAR", val: formatPracticeTime(stats.year), color: [37, 99, 235] },
+                { label: "LIFETIME", val: formatPracticeTime(stats.lifetime), color: [16, 185, 129] },
+                { label: "DAILY AVG", val: formatPracticeTime(stats.avg), color: [219, 39, 119] }
+            ];
+
+            statBoxes.forEach((box, i) => {
+                const row = Math.floor(i / 3);
+                const col = i % 3;
+                const bx = startX + (col * (boxW + gap));
+                const by = y + (row * (boxH + gap));
+
+                doc.setFillColor(245, 247, 250);
+                doc.setDrawColor(220, 220, 220);
+                doc.rect(bx, by, boxW, boxH, 'FD');
+
+                doc.setFontSize(8);
+                doc.setTextColor(100, 116, 139);
+                doc.setFont("helvetica", "bold");
+                doc.text(box.label, bx + (boxW / 2), by + 5, { align: 'center' });
+
+                doc.setFontSize(12);
+                doc.setTextColor(box.color[0], box.color[1], box.color[2]);
+                doc.text(box.val, bx + (boxW / 2), by + 12, { align: 'center' });
+            });
+
+            y += (2 * boxH) + gap + 8; 
+        });
+
+        doc.setDrawColor(200);
+        doc.setLineWidth(0.5);
+        doc.line(leftMargin, y, pageWidth - leftMargin, y);
+        y += 8;
+
+        // --- Practice Log Table (Recent) ---
+        if (y > 250) { addPageFooter(doc, currentDate); doc.addPage(); y = 20; }
+
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(0);
+        doc.text("Practice Log Details (Recent 20)", leftMargin, y);
+        y += 8;
+
+        doc.setFillColor(230);
+        doc.rect(leftMargin, y, pageWidth - (leftMargin * 2), 8, 'F');
+        doc.setFontSize(10);
+        
+        doc.text("Date & Time", leftMargin + 5, y + 5);
+        doc.text("Subject", leftMargin + 45, y + 5);
+        doc.text("Topic", leftMargin + 85, y + 5);
+        doc.text("Duration", leftMargin + 150, y + 5);
+        y += 12;
+
+        doc.setFont("helvetica", "normal");
+        
+        // লেটেস্ট ২০টি লগ দেখানো
+        const recentLogs = [...student.practice_log].sort((a, b) => b.id - a.id).slice(0, 20);
+
+        recentLogs.forEach(log => {
+            doc.setTextColor(0);
+            const dateTimeText = `${log.date} ${log.time}`;
+            doc.text(dateTimeText, leftMargin + 5, y);
+
+            let displayInst = log.instrument || (student.class ? student.class.split(',')[0].trim() : 'Music');
+            doc.setTextColor(0, 102, 204); 
+            const instLines = doc.splitTextToSize(displayInst, 35);
+            doc.text(instLines, leftMargin + 45, y);
+
+            doc.setTextColor(80);
+            const topicText = log.topic || 'Regular Practice';
+            const topicLines = doc.splitTextToSize(topicText, 60);
+            doc.text(topicLines, leftMargin + 85, y);
+
+            doc.setTextColor(0, 128, 0); 
+            doc.setFont("helvetica", "bold");
+            doc.text(`${log.minutes} mins`, leftMargin + 150, y);
+            doc.setFont("helvetica", "normal");
+
+            const rowHeight = Math.max(7, Math.max(topicLines.length, instLines.length) * 5);
+            y += rowHeight;
+
+            if (y > 270) { addPageFooter(doc, currentDate); doc.addPage(); y = 20; }
+        });
     }
 
     addPageFooter(doc, currentDate);
@@ -4155,7 +4741,6 @@ function loadStudentsList(showAll = false) {
         // 🟢 নতুন: সরাসরি DOM এ append না করে String-এ row তৈরি করা হচ্ছে
         const rowString = `
             <tr class="${rowClass}">
-                <td>${student.serial_no}</td>
                 <td>${getStudentHtml(student)}</td>
                 <td>${student.class || 'N/A'}${dayTimeStr}</td>
                 <td>₹${student.fee_amount || DEFAULT_FEE}</td>
@@ -4563,7 +5148,6 @@ function renderAttendance() {
         return getScore(b) - getScore(a); 
     });
 
-    // 🟢 নতুন লজিক: Table Row গুলো String-এ জমানো হচ্ছে
     let tableHtml = '';
 
     activeStudents.forEach(student => { 
@@ -4579,6 +5163,9 @@ function renderAttendance() {
         const statusText = status === 'present' ? 'Present' : (status === 'absent' ? 'Absent' : 'Not Marked');
         const statusClass = status === 'present' ? 'status-present' : (status === 'absent' ? 'status-absent' : ''); 
         
+        const inst = (typeof entry === 'object' && entry !== null && entry.instrument) ? entry.instrument : '';
+        const instBadge = inst ? `<br><span style="font-size:10px; color:var(--info); background:rgba(59, 130, 246, 0.1); padding:2px 6px; border-radius:4px; border:1px solid rgba(59, 130, 246, 0.2); display:inline-block; margin-top:3px;">${inst}</span>` : '';
+
         const isToday = student.class_day === currentDayName;
         const highlightStyle = isToday ? 'border: 1px solid var(--primary); background: rgba(79, 70, 229, 0.05);' : '';
 
@@ -4593,7 +5180,7 @@ function renderAttendance() {
                         ${note ? '📝 ' + note : ''}
                     </div>
                 </td>
-                <td class="${statusClass}">${statusText}</td>
+                <td class="${statusClass}">${statusText}${instBadge}</td>
                 <td class="action-buttons">
                     <button class="btn-success" onclick="markAttendance(${student.id}, 'present')">P</button>
                     <button class="btn-danger" onclick="markAttendance(${student.id}, 'absent')">A</button>
@@ -4603,7 +5190,6 @@ function renderAttendance() {
             </tr>`;
     }); 
 
-    // 🟢 লুপ শেষ, এবার একবারে স্ক্রিনে দেখানো হলো
     tableBody.innerHTML = tableHtml;
 
     if(document.getElementById('attTotalCount')) document.getElementById('attTotalCount').textContent = totalActive;
@@ -4613,22 +5199,28 @@ function renderAttendance() {
     searchTable('searchAttendance', 'attendanceTable'); 
 }
 
-function markAttendance(studentId, status) {
+// 🟢 আপডেটেড অ্যাটেন্ডেন্স মার্কিং লজিক (With Multi-Class Selection Checkboxes)
+window.markAttendance = async function(studentId, status) {
     const date = document.getElementById('attendanceDate').value; 
     if (!date) { Swal.fire('Alert','Please select a date.', 'warning'); return; } 
     
+    const student = students.find(s => s.id === studentId);
+    if (!student) return;
+
     if (!attendance[date]) attendance[date] = {}; 
     
     const currentEntry = attendance[date][studentId];
     let existingNote = '';
+    let existingInst = '';
     
-    if (typeof currentEntry === 'object' && currentEntry !== null && currentEntry.note) {
-        existingNote = currentEntry.note;
+    if (typeof currentEntry === 'object' && currentEntry !== null) {
+        existingNote = currentEntry.note || '';
+        existingInst = currentEntry.instrument || '';
     }
 
     if (status === 'clear') { 
         if (existingNote) {
-            attendance[date][studentId] = { status: null, time: '', note: existingNote };
+            attendance[date][studentId] = { status: null, time: '', note: existingNote, instrument: existingInst };
         } else {
             delete attendance[date][studentId]; 
 
@@ -4646,17 +5238,71 @@ function markAttendance(studentId, status) {
             const now = new Date(); 
             timeToSave = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`; 
         }
+
+        let selectedInstrument = existingInst;
+
+        // 🟢 NEW: একাধিক ক্লাস থাকলে Checkbox এর মাধ্যমে সিলেক্ট করার অপশন
+        if (status === 'present' || status === 'absent') {
+            let classList = student.class ? student.class.split(/[\/,]+/).map(c => c.trim()).filter(c => c.length > 0) : ['Music'];
+
+            if (classList.length > 1) {
+                let checkboxesHtml = '<div style="display:flex; flex-direction:column; gap:8px; text-align:left; margin-top:15px;">';
+                classList.forEach(c => {
+                    // আগে থেকে সেভ করা থাকলে অটোমেটিক টিক (✓) দেওয়া থাকবে
+                    let isChecked = existingInst.includes(c) ? 'checked' : '';
+                    checkboxesHtml += `
+                        <label style="display:flex; align-items:center; background:var(--bg-input); padding:10px 15px; border-radius:8px; border:1px solid var(--border-color); cursor:pointer; transition:0.2s;">
+                            <input type="checkbox" class="swal-att-inst-cb" value="${c}" ${isChecked} style="width:18px; height:18px; margin:0 12px 0 0; accent-color:var(--primary); cursor:pointer;">
+                            <span style="font-size:14px; font-weight:600; color:var(--text-main);">${c}</span>
+                        </label>
+                    `;
+                });
+                checkboxesHtml += '</div>';
+
+                const { value: formValues, isConfirmed } = await Swal.fire({
+                    title: 'Select Classes',
+                    html: `
+                        <p style="font-size:13px; color:var(--text-muted); margin:0;">Which classes is <b>${student.name.split(' ')[0]}</b> attending today?</p>
+                        ${checkboxesHtml}
+                    `,
+                    showCancelButton: true,
+                    confirmButtonText: 'Save Attendance',
+                    confirmButtonColor: 'var(--success)',
+                    preConfirm: () => {
+                        const cbs = document.querySelectorAll('.swal-att-inst-cb:checked');
+                        let selected = [];
+                        cbs.forEach(cb => selected.push(cb.value));
+                        
+                        if(selected.length === 0) {
+                            Swal.showValidationMessage('Please select at least one class!');
+                            return false;
+                        }
+                        // একাধিক ক্লাস কমা (,) দিয়ে যুক্ত করা হচ্ছে
+                        return selected.join(', '); 
+                    }
+                });
+
+                if (isConfirmed && formValues) {
+                    selectedInstrument = formValues;
+                } else {
+                    return; // User cancelled
+                }
+            } else if (classList.length === 1) {
+                selectedInstrument = classList[0];
+            }
+        }
         
         attendance[date][studentId] = { 
             status: status, 
             time: timeToSave,
-            note: existingNote 
+            note: existingNote,
+            instrument: selectedInstrument
         }; 
     }
     
     renderAttendance(); 
     saveData().catch(err => console.log("Background Sync Pending...")); 
-}
+};
 
 // 🟢 রিয়েল-টাইম ডুপ্লিকেট নোট চেকার
 window.checkNoteRealtime = function(studentId, inputVal, currentDate) {
@@ -5364,12 +6010,13 @@ function renderStudentDetailsHistory() {
             const entry = attendance[date]?.[student.id];
             if(entry) {
                 const dayName = d.toLocaleDateString('en-IN', { weekday: 'short' });
-                let timeStr = ''; let status = entry;
+                let timeStr = ''; let status = entry; let instStr = '';
                 if(typeof entry === 'object' && entry !== null) {
                     status = entry.status;
-                    if(entry.time) { timeStr = ` (${formatTime12H(entry.time)})`; }
+                    if(entry.time) { timeStr = ` <span style="color:var(--text-muted);">(${formatTime12H(entry.time)})</span>`; }
+                    if(entry.instrument) { instStr = ` <span style="font-size:10px; color:#0ea5e9; font-weight:600;">[${entry.instrument}]</span>`; }
                 }
-                const formattedDate = `${d.toLocaleDateString('en-IN')} (${dayName})${timeStr}`;
+                const formattedDate = `${d.toLocaleDateString('en-IN')} (${dayName})${timeStr}${instStr}`;
                 if (status === 'present') { presentList.innerHTML += `<li style="padding:2px 0; border-bottom:1px solid #f9f9f9;">${formattedDate}</li>`; } 
                 else if (status === 'absent') { absentList.innerHTML += `<li style="padding:2px 0; border-bottom:1px solid #f9f9f9;">${formattedDate}</li>`; }
             }
@@ -5860,17 +6507,15 @@ function closeQRScanner() {
     }
 }
 
-function onScanSuccess(decodedText, decodedResult) {
+async function onScanSuccess(decodedText, decodedResult) {
     let studentId = null;
     
-    // Check if it's a new Web URL QR Code
     if(decodedText.includes("student=")) {
         try {
             const url = new URL(decodedText);
             studentId = parseInt(url.searchParams.get("student"));
         } catch(e) {}
     } 
-    // Check if it's an old Text QR Code
     else if(decodedText.includes("[APP_ID:")) {
         const match = decodedText.match(/\[APP_ID:(\d+)\]/);
         if(match && match[1]) studentId = parseInt(match[1]);
@@ -5880,25 +6525,19 @@ function onScanSuccess(decodedText, decodedResult) {
         const student = students.find(s => s.id === studentId);
         if(student) {
             closeQRScanner();
-            markAttendance(studentId, 'present');
+            
+            await markAttendance(studentId, 'present');
+            
             Swal.fire({
                 toast: true, position: 'top-end',
                 icon: 'success', title: `${student.name} Marked Present!`,
                 showConfirmButton: false, timer: 2500
             });
         } else {
-            Swal.fire({
-                toast: true, position: 'top',
-                icon: 'error', title: 'Student not found.',
-                showConfirmButton: false, timer: 2000
-            });
+            Swal.fire({ toast: true, position: 'top', icon: 'error', title: 'Student not found.', showConfirmButton: false, timer: 2000 });
         }
     } else {
-         Swal.fire({
-             toast: true, position: 'bottom',
-             icon: 'warning', title: 'Invalid QR Code.',
-             showConfirmButton: false, timer: 1500
-         });
+         Swal.fire({ toast: true, position: 'bottom', icon: 'warning', title: 'Invalid QR Code.', showConfirmButton: false, timer: 1500 });
     }
 }
 
@@ -6481,83 +7120,91 @@ window.submitPracticeLog = function(studentId) {
         const currentHours = now.getHours();
         const currentMinutes = now.getMinutes();
         const [inputHours, inputMinutes] = timeInputVal.split(':').map(Number);
-        
         if (inputHours > currentHours || (inputHours === currentHours && inputMinutes > currentMinutes)) {
             Swal.fire('Error', 'Future time cannot be selected!', 'error');
             return; 
         }
     }
     
-    const minutes = document.getElementById('practiceMinutes').value;
+    // 🟢 NEW: Hours এবং Minutes হিসাব করা হচ্ছে
+    const hrsInput = document.getElementById('practiceHours');
+    const minsInput = document.getElementById('practiceMinutes');
+    
+    const hrs = hrsInput ? (parseInt(hrsInput.value) || 0) : 0;
+    const rawMins = minsInput ? (parseInt(minsInput.value) || 0) : 0;
+    
+    const totalMinutes = (hrs * 60) + rawMins;
+
     let topic = document.getElementById('practiceTopic').value.trim();
+    if (!topic) topic = "Regular Practice"; 
 
-    // 🟢 Topic অপশনাল করা হলো (না দিলে 'Regular Practice' সেভ হবে)
-    if (!topic) {
-        topic = "Regular Practice"; 
-    }
-
-    // 🟢 NEW: Get the selected class/instrument
     const classSelectEl = document.getElementById('practiceClassSelect');
     const selectedInstrument = classSelectEl ? classSelectEl.value : 'Music';
 
-    if (!minutes || minutes <= 0) {
-        Swal.fire({ toast: true, position: 'top-end', icon: 'warning', title: 'Enter valid minutes!', showConfirmButton: false, timer: 2000 });
+    if (totalMinutes <= 0) {
+        Swal.fire({ toast: true, position: 'top-end', icon: 'warning', title: 'Enter valid practice time!', showConfirmButton: false, timer: 2000 });
         return;
     }
 
     const now = new Date();
     const dateStr = now.toLocaleDateString('en-IN'); 
     const dayStr = now.toLocaleDateString('en-IN', { weekday: 'short' }); 
-    
-    let timeStr = '';
-    if (timeInputVal) {
-        const [h, m] = timeInputVal.split(':');
-        const ampm = h >= 12 ? 'PM' : 'AM';
-        const h12 = h % 12 || 12;
-        timeStr = `${h12.toString().padStart(2, '0')}:${m} ${ampm}`;
-    } else {
-        timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }); 
-    }
+    let timeStr = timeInputVal ? formatTime12H(timeInputVal) : now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }); 
 
     const urlParams = new URLSearchParams(window.location.search);
     const managerUid = urlParams.get('manager');
     const isStudentPortal = !!managerUid;
     const targetUid = managerUid ? managerUid : DOC_ID;
 
-    // 🟢 স্টুডেন্টকে খুঁজে বের করা হচ্ছে
     let studentIndex = students.findIndex(s => String(s.id) === String(studentId));
     if (studentIndex === -1) return;
     let studentData = students[studentIndex];
 
-    if (!studentData.practice_log) studentData.practice_log = [];
-
-    // 🟢 লগ ডেটাবেসে পুশ করা হচ্ছে
-    studentData.practice_log.unshift({
+    const currentYear = new Date().getFullYear();
+    const newLog = {
         id: Date.now(),
-        minutes: parseInt(minutes),
+        studentId: studentId,
+        studentName: studentData.name,
+        studentPhoto: studentData.photo || '',
+        minutes: totalMinutes, // 🟢 এখানে totalMinutes সেভ হচ্ছে
         topic: topic,
-        instrument: selectedInstrument, // 🟢 NEW FIELD ADDED
+        instrument: selectedInstrument,
         date: dateStr,
         day: dayStr,
         time: timeStr
-    });
+    };
 
-    // 🟢 Instant UI Update (সাথে সাথে সেভ দেখাবে)
-    document.getElementById('practiceMinutes').value = '';
+    // 🟢 Firebase ArrayUnion (অফলাইনে থাকলেও এটি অটোমেটিক ক্যাশে সেভ হবে)
+    db.collection(COLLECTION_NAME).doc(targetUid).collection('practice_logs').doc(String(currentYear)).set({
+        records: firebase.firestore.FieldValue.arrayUnion(newLog)
+    }, { merge: true }).catch(e => console.log("Background sync queued"));
+
+    // 🟢 Local Array update for Instant UI
+    if (typeof window.globalPracticeLogs !== 'undefined') window.globalPracticeLogs.unshift(newLog);
+    if (!studentData.practice_log) studentData.practice_log = [];
+    studentData.practice_log.unshift(newLog);
+
+    if (!isStudentPortal) {
+        db.collection(COLLECTION_NAME).doc(targetUid).collection('students').doc(String(studentId)).update({
+            practice_log: studentData.practice_log
+        }).catch(e => console.log(e));
+    }
+
+    // ইনপুট ফিল্ড ফাঁকা করা
+    if (hrsInput) hrsInput.value = '';
+    if (minsInput) minsInput.value = '';
     document.getElementById('practiceTopic').value = '';
     if(timeInputEl) timeInputEl.value = '';
     
-    Swal.fire({ title: 'Great Job! 🌟', text: `Logged ${minutes} minutes!`, icon: 'success', timer: 2000, showConfirmButton: false });
-    renderPracticeHistoryPortal(studentData); 
-
-    // 🟢 Background Database Save (নীরবে সেভ হবে)
-    if (!isStudentPortal) {
-        students[studentIndex] = studentData;
-    }
+    let displayTime = hrs > 0 ? `${hrs}h ${rawMins}m` : `${rawMins} mins`;
+    Swal.fire({ title: 'Great Job! 🌟', text: `Logged ${displayTime}!`, icon: 'success', timer: 2000, showConfirmButton: false });
     
-    db.collection(COLLECTION_NAME).doc(targetUid).collection('students').doc(String(studentId)).update({
-        practice_log: studentData.practice_log
-    }).catch(e => console.log("Sync error:", e));
+    if (isStudentPortal) {
+        window.renderPracticeHistoryPortal(studentData); 
+    } else {
+        window.renderPracticeLogTeacher(studentId);
+        window.renderDashboard();
+    }
 };
 
 window.showTodaysPracticingStudentsModal = function() {
@@ -6806,56 +7453,87 @@ window.renderPracticeLogTeacher = function(studentId) {
     }
 };
 
-window.deletePracticeLog = function(studentId, logId, context) {
-    Swal.fire({
+window.deletePracticeLog = async function(studentId, logId, context) {
+    const result = await Swal.fire({
         title: 'Delete Practice Log?',
         text: "Are you sure?",
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#ef4444',
         confirmButtonText: 'Yes, Delete'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            const urlParams = new URLSearchParams(window.location.search);
-            const managerUid = urlParams.get('manager');
-            const isStudentPortal = !!managerUid;
-            const targetUid = managerUid ? managerUid : DOC_ID;
-
-            let studentIndex = students.findIndex(s => String(s.id) === String(studentId));
-            if (studentIndex === -1) return;
-            let studentData = students[studentIndex];
-
-            studentData.practice_log = studentData.practice_log.filter(log => log.id !== logId);
-
-            // 🟢 1. Instant UI Update
-            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Deleted successfully!', showConfirmButton: false, timer: 1500 });
-            if (context === 'student') renderPracticeHistoryPortal(studentData);
-            else renderPracticeLogTeacher(studentId);
-
-            // 🟢 2. Background Save
-            if (!isStudentPortal) {
-                students[studentIndex] = studentData;
-                //dbSet('students', students).catch(e => {});
-            }
-            db.collection(COLLECTION_NAME).doc(targetUid).collection('students').doc(String(studentId)).update({
-                practice_log: studentData.practice_log
-            }).catch(e => console.log("Delete sync failed.", e));
-        }
     });
+
+    if (result.isConfirmed) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const managerUid = urlParams.get('manager');
+        const targetUid = managerUid ? managerUid : DOC_ID;
+
+        let studentIndex = students.findIndex(s => String(s.id) === String(studentId));
+        if (studentIndex === -1) return;
+        let studentData = students[studentIndex];
+
+        // ১. যে লগটি মুছতে হবে সেটি বের করা
+        const logToDelete = studentData.practice_log.find(log => String(log.id) === String(logId));
+        if (!logToDelete) return;
+
+        // ২. Local Array থেকে মুছে ফেলা (যাতে সাথে সাথে UI থেকে গায়েব হয়ে যায়)
+        studentData.practice_log = studentData.practice_log.filter(log => String(log.id) !== String(logId));
+        if (typeof window.globalPracticeLogs !== 'undefined') {
+            window.globalPracticeLogs = window.globalPracticeLogs.filter(log => String(log.id) !== String(logId));
+        }
+
+        // ৩. Instant UI Update
+        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Deleted successfully!', showConfirmButton: false, timer: 1500 });
+        
+        if (context === 'student') {
+            renderPracticeHistoryPortal(studentData);
+        } else {
+            renderPracticeLogTeacher(studentId);
+            if(typeof renderDashboard === 'function') renderDashboard(); // ড্যাশবোর্ড কাউন্ট আপডেট
+        }
+
+        // ৪. Firebase Update (Main Student Doc)
+        db.collection(COLLECTION_NAME).doc(targetUid).collection('students').doc(String(studentId)).update({
+            practice_log: studentData.practice_log
+        }).catch(e => console.log(e));
+
+        // ৫. Firebase Update (Yearly Subcollection) - 🟢 100% Reliable Deletion
+        let logYear = new Date().getFullYear(); 
+        if(logToDelete.date) {
+            const parts = logToDelete.date.split('/');
+            if (parts.length === 3) logYear = parts[2];
+        }
+
+        const yearRef = db.collection(COLLECTION_NAME).doc(targetUid).collection('practice_logs').doc(String(logYear));
+        
+        try {
+            const yearDoc = await yearRef.get();
+            if (yearDoc.exists) {
+                let records = yearDoc.data().records || [];
+                // ফায়ারবেসের ডেটা থেকে লগটি ফিল্টার করে বাদ দেওয়া হচ্ছে
+                records = records.filter(r => String(r.id) !== String(logId));
+                await yearRef.update({ records: records });
+            }
+        } catch (error) {
+            console.log("Background delete sync failed", error);
+        }
+    }
 };
 
 window.editPracticeLogTeacher = async function(studentId, logId) {
-    const student = students.find(s => s.id === studentId);
+    const student = students.find(s => String(s.id) === String(studentId));
     if (!student) return;
 
-    const log = student.practice_log.find(l => l.id === logId);
-    if (!log) return;
+    const logIndex = student.practice_log.findIndex(l => String(l.id) === String(logId));
+    if (logIndex === -1) return;
+    
+    const oldLog = student.practice_log[logIndex]; 
 
     const { value: formValues } = await Swal.fire({
         title: 'Edit Practice Log',
         html: `
-            <input id="edit-prac-mins" type="number" class="swal2-input" value="${log.minutes}" placeholder="Minutes" style="width: 85%;">
-            <input id="edit-prac-topic" type="text" class="swal2-input" value="${log.topic}" placeholder="Topic (Optional)" style="width: 85%; margin-top: 10px;">
+            <input id="edit-prac-mins" type="number" class="swal2-input" value="${oldLog.minutes}" placeholder="Minutes" style="width: 85%;">
+            <input id="edit-prac-topic" type="text" class="swal2-input" value="${oldLog.topic}" placeholder="Topic (Optional)" style="width: 85%; margin-top: 10px;">
         `,
         focusConfirm: false,
         showCancelButton: true,
@@ -6871,18 +7549,48 @@ window.editPracticeLogTeacher = async function(studentId, logId) {
     });
 
     if (formValues) {
-        log.minutes = formValues.minutes;
-        log.topic = formValues.topic;
+        const newLog = { ...oldLog, minutes: formValues.minutes, topic: formValues.topic };
+        student.practice_log[logIndex] = newLog;
 
-        try {
-            //await dbSet('students', students);
-            await db.collection(COLLECTION_NAME).doc(DOC_ID).collection('students').doc(String(studentId)).update({
-                practice_log: student.practice_log
-            });
-        } catch(e) { console.log("Will sync later."); }
+        if (typeof window.globalPracticeLogs !== 'undefined') {
+            const gIndex = window.globalPracticeLogs.findIndex(l => String(l.id) === String(logId));
+            if (gIndex > -1) window.globalPracticeLogs[gIndex] = newLog;
+        }
 
+        // ১. Instant UI Update
         Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Updated successfully!', showConfirmButton: false, timer: 1500 });
         renderPracticeLogTeacher(studentId);
+        if(typeof renderDashboard === 'function') renderDashboard();
+
+        // ২. Firebase Update
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetUid = urlParams.get('manager') || DOC_ID;
+
+        db.collection(COLLECTION_NAME).doc(targetUid).collection('students').doc(String(studentId)).update({
+            practice_log: student.practice_log
+        }).catch(e => console.log(e));
+
+        // ৩. Firebase Yearly Subcollection Edit - 🟢 100% Reliable Edit
+        let logYear = new Date().getFullYear(); 
+        if(oldLog.date) {
+            const parts = oldLog.date.split('/');
+            if (parts.length === 3) logYear = parts[2];
+        }
+
+        const yearRef = db.collection(COLLECTION_NAME).doc(targetUid).collection('practice_logs').doc(String(logYear));
+        try {
+            const yearDoc = await yearRef.get();
+            if (yearDoc.exists) {
+                let records = yearDoc.data().records || [];
+                const recIndex = records.findIndex(r => String(r.id) === String(logId));
+                if (recIndex > -1) {
+                    records[recIndex] = newLog;
+                    await yearRef.update({ records: records });
+                }
+            }
+        } catch (error) {
+            console.log("Background edit sync failed", error);
+        }
     }
 };
 // ==========================================
@@ -7401,6 +8109,107 @@ window.executeSingleRestore = async function(backupData) {
         Swal.fire('Error', 'Failed to restore student completely. Check internet connection.', 'error');
     }
 };
+// --- 🟢 MISSING FUNCTIONS RECOVERED ---
+function sendGeneralMsg(type, studentId) {
+    const student = students.find(s => s.id === studentId);
+    if (!student) return;
+
+    // স্টুডেন্টের নিজস্ব পোর্টাল লিঙ্ক তৈরি করা হচ্ছে
+    const baseUrl = window.location.origin + window.location.pathname;
+    const portalLink = `${baseUrl}?student=${student.id}&manager=${DOC_ID}`;
+
+    // 🟢 সুন্দর এবং প্রফেশনাল মেসেজ টেমপ্লেট (ইমোজি সহ)
+    let msgBody = `Hello ${student.name},\n\nHope you are doing well and enjoying your ${student.class || 'Music'} classes! 🎵\n\nYou can check your Attendance, Fees, and Study Materials anytime from your Student Portal here:\n${portalLink}\n\nKeep practicing regularly!\n\nRegards,\nSrikanta Banerjee\n(Guitar, Bass Guitar, Piano, Keyboard, Mandolin Classes)`;
+    
+    if(type === 'wa') {
+        let cleanPhone = student.phone.replace(/[^0-9]/g, '');
+        if(cleanPhone.length === 10) cleanPhone = '91' + cleanPhone;
+        window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msgBody)}`, '_blank');
+    } else if (type === 'sms') {
+        window.open(`sms:${student.phone}?body=${encodeURIComponent(msgBody)}`, '_self');
+    } else if (type === 'mail') {
+        window.open(`mailto:${student.email}?subject=${encodeURIComponent("Update from Music Class")}&body=${encodeURIComponent(msgBody)}`, '_self');
+    }
+}
+
+function openEditStudentModal(id) {
+    const student = students.find(s => s.id === id);
+    if (!student) return;
+    
+    document.getElementById('editStudentId').value = student.id;
+    document.getElementById('editStudentName').value = student.name;
+    document.getElementById('editStudentClass').value = student.class || '';
+    document.getElementById('editStudentDay').value = student.class_day || '';
+    document.getElementById('editStudentTime').value = student.class_time || '';
+    document.getElementById('editStudentFee').value = student.fee_amount || DEFAULT_FEE;
+    document.getElementById('editPhone').value = student.phone || '';
+    document.getElementById('editGuardianName').value = student.guardian || '';
+    document.getElementById('editStudentEmail').value = student.email || '';
+    document.getElementById('editAddress').value = student.address || '';
+    document.getElementById('editStudentDOB').value = student.dob || '';
+    document.getElementById('editAllowProfile').checked = student.allow_profile_view !== false; // Default true
+    
+    const photoPreview = document.getElementById('editPhotoPreview');
+    if (student.photo) {
+        photoPreview.src = student.photo;
+        currentEditPhotoBase64 = student.photo;
+    } else {
+        photoPreview.src = 'https://via.placeholder.com/100?text=No+Photo';
+        currentEditPhotoBase64 = null;
+    }
+    isPhotoDeletedInEdit = false;
+
+    document.getElementById('editStudentModal').style.display = 'flex';
+}
+
+async function saveStudentChanges() {
+    const id = parseInt(document.getElementById('editStudentId').value);
+    const studentIndex = students.findIndex(s => s.id === id);
+    if (studentIndex === -1) return;
+
+    const name = document.getElementById('editStudentName').value;
+    const className = document.getElementById('editStudentClass').value;
+    const day = document.getElementById('editStudentDay').value;
+    const time = document.getElementById('editStudentTime').value;
+    const fee = parseFloat(document.getElementById('editStudentFee').value) || DEFAULT_FEE;
+    const phone = document.getElementById('editPhone').value;
+    const guardian = document.getElementById('editGuardianName').value;
+    const email = document.getElementById('editStudentEmail').value;
+    const address = document.getElementById('editAddress').value;
+    const dob = document.getElementById('editStudentDOB').value;
+    const allowProfile = document.getElementById('editAllowProfile').checked;
+
+    if (name.trim() === '') {
+        Swal.fire('Error', 'Name is required.', 'error');
+        return;
+    }
+
+    let finalPhoto = students[studentIndex].photo;
+    if (isPhotoDeletedInEdit) {
+        finalPhoto = null;
+    } else if (currentEditPhotoBase64) {
+        finalPhoto = currentEditPhotoBase64;
+    }
+
+    students[studentIndex] = {
+        ...students[studentIndex],
+        name, class: className, class_day: day, class_time: time,
+        fee_amount: fee, phone, guardian, email, address, dob,
+        photo: finalPhoto,
+        allow_profile_view: allowProfile
+    };
+
+    closeModal('editStudentModal');
+    loadAllData();
+    Swal.fire('Success', 'Student updated successfully!', 'success');
+
+    const user = firebase.auth().currentUser;
+    if (user) {
+        db.collection(COLLECTION_NAME).doc(user.uid).collection('students').doc(String(id)).set(students[studentIndex], { merge: true })
+        .catch(e => console.log("Offline sync pending"));
+    }
+}
+// ------------------------------------------
 // 🟢 NEW: Student Portal QR Code Viewer Function
 window.showStudentPortalQR = function(studentId) {
     const urlParams = new URLSearchParams(window.location.search);
@@ -7425,8 +8234,1628 @@ window.showStudentPortalQR = function(studentId) {
         showCloseButton: true,
         showConfirmButton: true,
         confirmButtonText: 'Close',
-        confirmButtonColor: '#ef4444', // Red Color for Close Button
+        confirmButtonColor: '#ef4444' // 🟢 Fixed Syntax Error Here
     });
+};
+// ==========================================
+// 🟢 ACCESSORIES SALES FINAL LOGIC
+// ==========================================
+
+let salesDataArray = [];
+let tempSalesActiveStudents = [];
+
+window.fetchSalesData = async function() {
+    const yearInput = document.getElementById('salesYearFilter');
+    if (!yearInput.value) yearInput.value = new Date().getFullYear();
+    const year = yearInput.value;
+
+    const user = firebase.auth().currentUser;
+    if (user) {
+        try {
+            const doc = await db.collection(COLLECTION_NAME).doc(user.uid).collection('accessory_sales').doc(String(year)).get();
+            if (doc.exists) {
+                salesDataArray = doc.data().records || [];
+            } else {
+                salesDataArray = [];
+            }
+        } catch(e) { console.error("Error fetching sales:", e); }
+    }
+    window.renderSalesUI();
+};
+
+window.syncSalesToFirebase = function(year) {
+    const user = firebase.auth().currentUser;
+    if (user) {
+        db.collection(COLLECTION_NAME).doc(user.uid).collection('accessory_sales').doc(String(year)).set({
+            records: salesDataArray
+        }).catch(e => console.error("Sales Sync failed", e));
+    }
+};
+
+window.openSaleStudentSelector = function() {
+    tempSalesActiveStudents = students.filter(s => window.isStudentCurrentlyActive(s)).sort((a,b) => a.name.localeCompare(b.name));
+    let listHtml = window.generateSaleStudentListHtml(tempSalesActiveStudents);
+
+    Swal.fire({
+        title: 'Select Student',
+        html: `
+            <input type="text" id="swal-search-sale-student" class="swal2-input" placeholder="🔍 Search by name or ID..." style="width: 100%; margin: 0 0 10px 0; font-size: 14px; box-sizing: border-box;" onkeyup="window.filterSaleStudentList()">
+            <div id="sale-student-list" style="width:100%; max-height: 280px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-card); text-align:left;">
+                ${listHtml}
+            </div>
+        `,
+        showConfirmButton: false,
+        showCancelButton: true,
+        cancelButtonText: 'Close',
+        cancelButtonColor: '#ef4444'
+    });
+};
+
+window.generateSaleStudentListHtml = function(studentsList) {
+    let html = '';
+    studentsList.forEach(s => {
+        const photoSrc = s.photo ? s.photo : 'https://via.placeholder.com/40?text=S';
+        const safeName = s.name.replace(/'/g, "\\'");
+        html += `
+            <div onclick="window.selectStudentForSale(${s.id}, '${safeName}', '${photoSrc}')" style="display:flex; align-items:center; padding: 12px; border-bottom: 1px solid var(--border-color); cursor:pointer; transition: background 0.2s; background: var(--bg-card);">
+                <img src="${photoSrc}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #e2e8f0; margin-right: 15px; flex-shrink: 0;">
+                <div style="flex-grow: 1;">
+                    <div style="font-weight: 700; font-size: 14px; color: var(--text-main);">${s.name}</div>
+                    <div style="font-size: 11px; color: var(--text-muted);">${s.class || 'N/A'} | ID: ${s.serial_no}</div>
+                </div>
+            </div>
+        `;
+    });
+    if(studentsList.length === 0) html = `<div style="padding: 15px; text-align: center; color: var(--text-muted); font-size: 13px;">No student found</div>`;
+    return html;
+};
+
+window.filterSaleStudentList = function() {
+    const input = document.getElementById('swal-search-sale-student');
+    if(!input) return;
+    const filter = input.value.toUpperCase();
+    const listContainer = document.getElementById('sale-student-list');
+    
+    const filtered = tempSalesActiveStudents.filter(s => {
+        const text = `${s.name} ${s.serial_no} ${s.class || ''}`.toUpperCase();
+        return text.indexOf(filter) > -1;
+    });
+    listContainer.innerHTML = window.generateSaleStudentListHtml(filtered);
+};
+
+window.selectStudentForSale = function(id, name, photoUrl) {
+    document.getElementById('saleStudentId').value = id;
+    
+    const nameEl = document.getElementById('saleSelectedName');
+    nameEl.textContent = name;
+    nameEl.style.color = "var(--text-main)";
+    
+    const imgEl = document.getElementById('saleSelectedPhoto');
+    imgEl.src = photoUrl;
+    imgEl.style.display = 'block';
+
+    Swal.close();
+};
+
+window.calculateSaleDue = function() {
+    let cartTotal = 0;
+    window.saleCart.forEach(item => cartTotal += item.price);
+    
+    const paid = parseFloat(document.getElementById('amountPaid').value) || 0;
+    const due = cartTotal - paid;
+    
+    const display = document.getElementById('saleDueDisplay');
+    if(display) {
+        if (due > 0) {
+            display.innerHTML = `Current Due: <span style="color:var(--danger);">₹${due}</span>`;
+            display.style.background = 'rgba(239, 68, 68, 0.1)';
+        } else {
+            display.innerHTML = `Current Due: <span style="color:var(--success);">₹0 (Fully Paid)</span>`;
+            display.style.background = 'rgba(16, 185, 129, 0.1)';
+        }
+    }
+};
+
+window.addAccessoryDueToStudent = function(studentId, saleId, item, due) {
+    let student = students.find(s => s.id == studentId);
+    if(!student) return;
+    if(!student.unpaid_accessories) student.unpaid_accessories = [];
+    student.unpaid_accessories = student.unpaid_accessories.filter(a => a.saleId !== saleId);
+    if (due > 0) student.unpaid_accessories.push({ saleId, item, due });
+    const user = firebase.auth().currentUser;
+    if(user) {
+        db.collection(COLLECTION_NAME).doc(user.uid).collection('students').doc(String(studentId)).update({
+            unpaid_accessories: student.unpaid_accessories
+        }).catch(e=>{});
+    }
+};
+
+window.removeAccessoryDueFromStudent = function(studentId, saleId) {
+    let student = students.find(s => s.id == studentId);
+    if(!student || !student.unpaid_accessories) return;
+    student.unpaid_accessories = student.unpaid_accessories.filter(a => a.saleId !== saleId);
+    const user = firebase.auth().currentUser;
+    if(user) {
+        db.collection(COLLECTION_NAME).doc(user.uid).collection('students').doc(String(studentId)).update({
+            unpaid_accessories: student.unpaid_accessories
+        }).catch(e=>{});
+    }
+};
+
+window.deleteSaleRecord = function(saleId) {
+    Swal.fire({
+        title: 'Delete Record?',
+        text: "This will permanently remove the sales and due record.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        confirmButtonText: 'Yes, delete it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const sale = salesDataArray.find(s => s.id === saleId);
+            if (sale) window.removeAccessoryDueFromStudent(sale.studentId, saleId); 
+            
+            salesDataArray = salesDataArray.filter(s => s.id !== saleId);
+            window.renderSalesUI();
+            const currentYear = document.getElementById('salesYearFilter').value;
+            window.syncSalesToFirebase(currentYear);
+            Swal.fire({toast: true, position: 'top-end', icon: 'success', title: 'Deleted!', showConfirmButton: false, timer: 1500});
+        }
+    });
+};
+
+window.renderSalesUI = function() {
+    const list = document.getElementById('salesList');
+    if(!list) return;
+    list.innerHTML = '';
+    
+    const searchInput = document.getElementById('searchSalesHistoryInput');
+    const filterText = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+    // --- 🟢 NEW: মোট Due এবং Due থাকা রেকর্ডগুলো গোনা হচ্ছে ---
+    let totalDueAmount = 0;
+    let dueRecords = [];
+    
+    salesDataArray.forEach(s => {
+        if (s.due > 0) {
+            totalDueAmount += s.due;
+            dueRecords.push(s);
+        }
+    });
+
+    // 🟢 NEW: Sales ট্যাবের ঠিক উপরে লাল বাটনটি (Due Button) তৈরি করা হচ্ছে
+    let dueAlertContainer = document.getElementById('salesDueAlertContainer');
+    if (!dueAlertContainer) {
+        const searchBar = document.querySelector('.search-bar input#searchSalesHistoryInput').parentElement;
+        dueAlertContainer = document.createElement('div');
+        dueAlertContainer.id = 'salesDueAlertContainer';
+        dueAlertContainer.style.marginBottom = '15px';
+        searchBar.parentNode.insertBefore(dueAlertContainer, searchBar);
+    }
+
+    if (dueRecords.length > 0) {
+        dueAlertContainer.innerHTML = `
+            <button onclick="window.showSalesDuesPopup()" style="width: 100%; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: bold; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; box-shadow: 0 4px 10px rgba(239,68,68,0.3); cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                <span style="display:flex; align-items:center; gap:8px;"><i class="fas fa-exclamation-triangle" style="font-size:18px;"></i> Unpaid Accessories</span>
+                <span style="background: white; color: #ef4444; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 900; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);">
+                    ${dueRecords.length} Dues (₹${totalDueAmount})
+                </span>
+            </button>
+        `;
+        dueAlertContainer.style.display = 'block';
+    } else {
+        dueAlertContainer.style.display = 'none';
+    }
+    // -------------------------------------
+
+    const filteredSales = salesDataArray.filter(s => {
+        if (!filterText) return true;
+        const searchContent = `${s.studentName} ${s.item}`.toLowerCase();
+        return searchContent.includes(filterText);
+    });
+
+    if (filteredSales.length === 0) {
+        list.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-muted); font-size:13px;">No sales found.</td></tr>';
+        return;
+    }
+    
+    filteredSales.forEach(s => {
+        const statusClr = s.due > 0 ? 'var(--danger)' : 'var(--success)';
+        const dateStr = new Date(s.date).toLocaleDateString('en-IN');
+        
+        // 🟢 বাটনগুলোর সাইজ (width, height, font-size) বড় করা হয়েছে
+        list.innerHTML += `
+            <tr style="border-bottom: 1px solid var(--border-color); background: var(--bg-card);">
+                <td style="padding:12px 6px; font-size:13px; vertical-align: middle;"><strong>${s.studentName}</strong><br><span style="font-size:11px; color:var(--text-muted); line-height:1.4; display:block; margin-top:3px;">${s.item} <br>📅 ${dateStr}</span></td>
+                <td style="font-weight:bold; padding:12px 6px; font-size:13px; vertical-align: middle;">₹${s.price}</td>
+                <td style="padding:12px 6px; font-size:12px; vertical-align: middle;">
+                    <span style="color:var(--success);">Paid: ₹${s.paid}</span><br>
+                    <span style="color:${statusClr}; font-weight:bold; margin-top:2px; display:inline-block;">Due: ₹${s.due}</span>
+                </td>
+                <td class="action-buttons" style="padding:12px 6px; vertical-align: middle;">
+                    <div style="display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;">
+                       <button class="btn-info" onclick="window.resendSaleReceipt(${s.id})" title="Receipt" style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center; background:#8b5cf6; color:#fff; border:none; border-radius:6px; font-size:14px;"><i class="fas fa-file-pdf"></i></button>
+                       <button class="btn-warning" onclick="window.editSaleRecord(${s.id})" title="Edit" style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center; background:#f59e0b; color:#fff; border:none; border-radius:6px; font-size:14px;"><i class="fas fa-edit"></i></button>
+                       <button class="btn-danger" onclick="window.deleteSaleRecord(${s.id})" title="Delete" style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center; background:#ef4444; color:#fff; border:none; border-radius:6px; font-size:14px;"><i class="fas fa-trash"></i></button>
+                       <button class="btn-whatsapp" onclick="window.sendSaleWhatsApp(${s.id})" title="WA" style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center; background:#25D366; color:#fff; border:none; border-radius:6px; font-size:16px;"><i class="fab fa-whatsapp"></i></button>
+                       <button class="btn-sms" onclick="window.sendSaleSMS(${s.id})" title="SMS" style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center; background:#f59e0b; color:#fff; border:none; border-radius:6px; font-size:14px;"><i class="fas fa-sms"></i></button>
+                    </div>
+                </td>
+            </tr>`;
+    });
+};
+
+window.backupSalesData = async function() {
+    if(salesDataArray.length === 0) {
+        Swal.fire('Info', 'No sales data to backup for this year.', 'info');
+        return;
+    }
+    
+    const year = document.getElementById('salesYearFilter').value;
+    const jsonStr = JSON.stringify({ year: year, records: salesDataArray }, null, 2);
+    const fileName = `MusicClass_Sales_Backup_${year}.json`;
+
+    try {
+        if (window.showSaveFilePicker) {
+            const handle = await window.showSaveFilePicker({
+                suggestedName: fileName,
+                types: [{ description: 'JSON Backup File', accept: { 'application/json': ['.json'] } }],
+            });
+            const writable = await handle.createWritable();
+            await writable.write(jsonStr);
+            await writable.close();
+            Swal.fire({toast: true, position: 'top-end', icon: 'success', title: 'Backup Saved Successfully!', showConfirmButton: false, timer: 2000});
+        } else {
+            const blob = new Blob([jsonStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            Swal.fire({toast: true, position: 'top-end', icon: 'success', title: 'Backup Downloaded!', showConfirmButton: false, timer: 2000});
+        }
+    } catch (err) {
+        if (err.name !== 'AbortError') {
+            console.error(err);
+            Swal.fire('Error', 'Failed to save backup file.', 'error');
+        }
+    }
+};
+
+window.exportSalesBackup = window.backupSalesData;
+
+window.restoreSalesData = function(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    event.target.value = ''; 
+
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            const json = e.target.result;
+            const importedData = JSON.parse(json);
+
+            let salesRecordsToRestore = [];
+            let restoreYear = document.getElementById('salesYearFilter').value || new Date().getFullYear();
+
+            if (importedData.salesDataArray !== undefined) {
+                salesRecordsToRestore = importedData.salesDataArray; 
+                Swal.fire({ toast: true, position: 'top-end', icon: 'info', title: 'Extracting Sales from Full Backup...', showConfirmButton: false, timer: 1500 });
+            } 
+            else if (importedData.records && Array.isArray(importedData.records)) {
+                salesRecordsToRestore = importedData.records;
+                if (importedData.year) restoreYear = importedData.year;
+            } 
+            else {
+                Swal.fire('Error', 'এই ফাইলে কোনো সেলস রেকর্ড পাওয়া যায়নি!', 'error');
+                return;
+            }
+
+            Swal.fire({
+                title: `Restore Sales Data?`,
+                text: `This will replace your current sales records with the backup data.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#ef4444',
+                confirmButtonText: 'Yes, Restore Only Sales'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({ title: 'Restoring...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+
+                    const yearInput = document.getElementById('salesYearFilter');
+                    if(yearInput) yearInput.value = restoreYear;
+                    
+                    salesDataArray = salesRecordsToRestore;
+                    window.syncSalesToFirebase(restoreYear);
+                    window.renderSalesUI();
+
+                    Swal.close();
+                    setTimeout(() => {
+                        Swal.fire({
+                            title: 'Restored!',
+                            text: `Sales data has been restored successfully.`,
+                            icon: 'success',
+                            showConfirmButton: true,
+                            confirmButtonText: 'Close',
+                            confirmButtonColor: '#ef4444', 
+                            allowOutsideClick: false
+                        });
+                    }, 300);
+                }
+            });
+
+        } catch (err) {
+            console.error("Sales Restore Error:", err);
+            Swal.fire('Error', 'Failed to read the backup file. File might be corrupted.', 'error');
+        }
+    };
+    reader.readAsText(file);
+};
+
+// ==========================================
+// 🟢 BOTTOM NAV SCROLL ARROW LOGIC
+// ==========================================
+
+window.scrollBottomNav = function(direction) {
+    const nav = document.querySelector('.bottom-nav');
+    if (!nav) return;
+    
+    const scrollAmount = nav.clientWidth * 0.5; 
+    if (direction === 'left') {
+        nav.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+    } else {
+        nav.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+    
+    window.flashNavArrows(); 
+};
+
+window.arrowTimeout = null;
+
+window.flashNavArrows = function() {
+    const nav = document.querySelector('.bottom-nav');
+    const leftArrow = document.getElementById('scrollArrowLeft');
+    const rightArrow = document.getElementById('scrollArrowRight');
+    
+    if (!nav || !leftArrow || !rightArrow) return;
+
+    if (nav.scrollLeft > 5) {
+        leftArrow.style.display = 'flex';
+        leftArrow.style.opacity = '0.9';
+    } else {
+        leftArrow.style.display = 'none';
+    }
+
+    if (Math.ceil(nav.scrollLeft + nav.clientWidth) < nav.scrollWidth - 5) {
+        rightArrow.style.display = 'flex';
+        rightArrow.style.opacity = '0.9';
+    } else {
+        rightArrow.style.display = 'none';
+    }
+
+    clearTimeout(window.arrowTimeout);
+    window.arrowTimeout = setTimeout(() => {
+        if(leftArrow) leftArrow.style.display = 'none';
+        if(rightArrow) rightArrow.style.display = 'none';
+    }, 2000); 
+};
+
+setTimeout(() => {
+    const nav = document.querySelector('.bottom-nav');
+    if (nav) {
+        nav.addEventListener('click', window.flashNavArrows);
+        nav.addEventListener('touchstart', window.flashNavArrows, {passive: true});
+        nav.addEventListener('scroll', window.flashNavArrows, {passive: true}); 
+    }
+}, 500);
+
+// ==========================================
+// 🟢 STOCK MANAGEMENT LOGIC (ADD, EDIT, DELETE)
+// ==========================================
+
+window.stockInventory = [];
+
+window.openStockModal = function() {
+    window.renderStockTable();
+    document.getElementById('stockModal').style.display = 'flex';
+};
+
+window.addStockItem = async function() {
+    const name = document.getElementById('newStockName').value.trim();
+    const price = parseFloat(document.getElementById('newStockPrice').value) || 0;
+    const qty = parseInt(document.getElementById('newStockQty').value) || 0;
+    
+    const editIdInput = document.getElementById('editStockId');
+    const editId = editIdInput ? editIdInput.value : '';
+
+    if (!name) { Swal.fire('Error', 'Item name is required', 'error'); return; }
+
+    if (editId) {
+        const index = window.stockInventory.findIndex(i => i.id == editId);
+        if (index > -1) {
+            window.stockInventory[index] = { ...window.stockInventory[index], name, price, qty };
+        }
+    } else {
+        const existingIndex = window.stockInventory.findIndex(i => i.name.toLowerCase() === name.toLowerCase());
+        if (existingIndex > -1) {
+            window.stockInventory[existingIndex].price = price;
+            window.stockInventory[existingIndex].qty += qty;
+        } else {
+            window.stockInventory.push({ id: Date.now(), name, price, qty });
+        }
+    }
+
+    document.getElementById('newStockName').value = '';
+    document.getElementById('newStockPrice').value = '';
+    document.getElementById('newStockQty').value = '';
+    if(editIdInput) editIdInput.value = '';
+    
+    const btn = document.querySelector('#stockModal .btn-primary');
+    if (btn) {
+        btn.innerHTML = '<i class="fas fa-plus"></i> Add / Update Stock';
+        btn.style.background = ''; 
+    }
+
+    window.renderStockTable();
+    window.renderInventoryDropdown();
+    
+    await dbSet('stockData', window.stockInventory);
+    Swal.fire({toast: true, position: 'top-end', icon: 'success', title: editId ? 'Stock Updated!' : 'Stock Added!', showConfirmButton: false, timer: 1500});
+};
+
+window.editStockItem = function(id) {
+    const item = window.stockInventory.find(i => i.id === id);
+    if (!item) return;
+
+    document.getElementById('newStockName').value = item.name;
+    document.getElementById('newStockPrice').value = item.price;
+    document.getElementById('newStockQty').value = item.qty;
+    
+    let editIdInput = document.getElementById('editStockId');
+    if(!editIdInput) {
+        editIdInput = document.createElement('input');
+        editIdInput.type = 'hidden';
+        editIdInput.id = 'editStockId';
+        document.querySelector('#stockModal .form-grid').appendChild(editIdInput);
+    }
+    editIdInput.value = item.id;
+
+    const btn = document.querySelector('#stockModal .btn-primary');
+    if (btn) {
+        btn.innerHTML = '<i class="fas fa-save"></i> Update Stock Item';
+        btn.style.background = '#f59e0b'; 
+    }
+};
+
+window.deleteStockItem = async function(id) {
+    Swal.fire({
+        title: 'Delete Item?',
+        text: "Are you sure you want to remove this item from stock?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        confirmButtonText: 'Yes, delete it'
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            window.stockInventory = window.stockInventory.filter(i => i.id !== id);
+            window.renderStockTable();
+            window.renderInventoryDropdown();
+            await dbSet('stockData', window.stockInventory);
+            Swal.fire({toast: true, position: 'top-end', icon: 'success', title: 'Deleted!', showConfirmButton: false, timer: 1500});
+        }
+    });
+};
+
+window.renderStockTable = function() {
+    const tbody = document.getElementById('stockTableBody');
+    if(!tbody) return;
+    tbody.innerHTML = '';
+
+    // 🟢 সার্চ বারের টেক্সট নেওয়া হচ্ছে
+    const searchInput = document.getElementById('searchStockInput');
+    const filterText = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+    // 🟢 সার্চ অনুযায়ী লিস্ট ফিল্টার করা হচ্ছে
+    const filteredStock = window.stockInventory.filter(item => {
+        if (!filterText) return true;
+        return item.name.toLowerCase().includes(filterText);
+    });
+
+    if (filteredStock.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:15px; color:gray; font-size:12px;">No items found.</td></tr>';
+        return;
+    }
+
+    filteredStock.forEach(item => {
+        const stockColor = item.qty <= 2 ? 'color: var(--danger); font-weight: bold;' : 'color: var(--success); font-weight: bold;';
+        tbody.innerHTML += `
+            <tr style="border-bottom: 1px solid var(--border-color);">
+                <td style="padding: 6px 4px; color: var(--text-main); font-weight: 500; font-size: 11px;">${item.name}</td>
+                <td style="padding: 6px 4px; color: var(--text-main); font-size: 11px;">₹${item.price}</td>
+                <td style="padding: 6px 4px; font-size: 11px; ${stockColor}">${item.qty} pcs</td>
+                <td style="padding: 6px 4px; text-align: center; white-space: nowrap;">
+                    <button onclick="window.editStockItem(${item.id})" style="background:none; border:none; color:var(--warning); cursor:pointer; margin-right:8px; font-size:12px;" title="Edit"><i class="fas fa-edit"></i></button>
+                    <button onclick="window.deleteStockItem(${item.id})" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:12px;" title="Delete"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>
+        `;
+    });
+};
+
+window.renderInventoryDropdown = function() {
+    const datalist = document.getElementById('stockDataList');
+    if(!datalist) return;
+    datalist.innerHTML = '';
+    window.stockInventory.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item.name;
+        datalist.appendChild(option);
+    });
+};
+
+window.currentUnitPrice = 0; 
+window.saleCart = []; 
+
+window.autoFillItemPrice = function() {
+    const inputName = document.getElementById('itemName').value.trim();
+    const item = window.stockInventory.find(i => i.name.toLowerCase() === inputName.toLowerCase());
+    
+    if (item) {
+        window.currentUnitPrice = item.price; 
+        window.updateSalePriceCalc(); 
+        if (item.qty <= 0) Swal.fire({toast: true, position: 'top-end', icon: 'error', title: 'Out of Stock!', showConfirmButton: false, timer: 2000});
+    }
+};
+
+window.updateSalePriceCalc = function() {
+    const qty = parseInt(document.getElementById('saleQty').value) || 1;
+    if (window.currentUnitPrice > 0) {
+        document.getElementById('itemPrice').value = window.currentUnitPrice * qty;
+    }
+};
+
+window.addToCart = function() {
+    const name = document.getElementById('itemName').value.trim();
+    const qty = parseInt(document.getElementById('saleQty').value) || 1;
+    const totalItemPrice = parseFloat(document.getElementById('itemPrice').value);
+
+    if (!name || isNaN(totalItemPrice) || qty < 1) {
+        Swal.fire({toast: true, position: 'top', icon: 'error', title: 'Enter item name and price!', showConfirmButton: false, timer: 2000});
+        return;
+    }
+
+    const stockItemCheck = window.stockInventory.find(i => i.name.toLowerCase() === name.toLowerCase());
+    if (stockItemCheck && stockItemCheck.qty < qty) {
+        Swal.fire('Low Stock!', `You only have ${stockItemCheck.qty} pcs of "${stockItemCheck.name}" left.`, 'warning');
+    }
+
+    window.saleCart.push({ name: name, qty: qty, price: totalItemPrice });
+    
+    document.getElementById('itemName').value = '';
+    document.getElementById('saleQty').value = '1';
+    document.getElementById('itemPrice').value = '';
+    window.currentUnitPrice = 0;
+
+    window.renderCart();
+};
+
+window.renderCart = function() {
+    const container = document.getElementById('saleCartContainer');
+    const list = document.getElementById('saleCartList');
+    const totalSpan = document.getElementById('cartTotalPrice');
+
+    if (window.saleCart.length === 0) {
+        container.style.display = 'none';
+        totalSpan.textContent = '0';
+        window.calculateSaleDue();
+        return;
+    }
+
+    list.innerHTML = '';
+    let grandTotal = 0;
+
+    window.saleCart.forEach((item, index) => {
+        grandTotal += item.price;
+        list.innerHTML += `
+            <li style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px dashed var(--border-color);">
+                <span><b>${item.name}</b> (x${item.qty})</span>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-weight: 600;">₹${item.price}</span>
+                    <button onclick="window.removeFromCart(${index})" style="background: none; border: none; color: var(--danger); cursor: pointer;"><i class="fas fa-times"></i></button>
+                </div>
+            </li>
+        `;
+    });
+
+    totalSpan.textContent = grandTotal;
+    container.style.display = 'block';
+    window.calculateSaleDue();
+};
+
+window.removeFromCart = function(index) {
+    window.saleCart.splice(index, 1);
+    window.renderCart();
+};
+
+window.processSale = function() {
+    const sId = document.getElementById('saleStudentId').value;
+    const editId = document.getElementById('editSaleId').value;
+    const paid = parseFloat(document.getElementById('amountPaid').value) || 0;
+
+    if (!sId) { Swal.fire({toast: true, position: 'top', icon: 'error', title: 'Select a student!', showConfirmButton: false, timer: 2000}); return; }
+    if (window.saleCart.length === 0) { Swal.fire({toast: true, position: 'top', icon: 'error', title: 'Cart is empty!', showConfirmButton: false, timer: 2000}); return; }
+
+    let cartTotal = 0;
+    let combinedNamesArray = [];
+    window.saleCart.forEach(item => {
+        cartTotal += item.price;
+        combinedNamesArray.push(`${item.name} (x${item.qty})`);
+    });
+
+    const finalItemName = combinedNamesArray.join(', '); 
+    const due = cartTotal - paid;
+    const currentYear = document.getElementById('salesYearFilter').value;
+    const student = students.find(s => s.id == sId);
+
+    if (editId) {
+        const index = salesDataArray.findIndex(s => s.id == editId);
+        if(index > -1) {
+            salesDataArray[index] = { ...salesDataArray[index], studentId: student.id, studentName: student.name, item: finalItemName, cart: [...window.saleCart], price: cartTotal, paid: paid, due: due };
+        }
+        window.addAccessoryDueToStudent(student.id, parseInt(editId), finalItemName, due); 
+        Swal.fire({toast: true, position: 'top-end', icon: 'success', title: 'Sale Updated!', showConfirmButton: false, timer: 1500});
+    } else {
+        const newSaleId = Date.now();
+        const saleData = {
+            id: newSaleId, studentId: student.id, studentName: student.name, item: finalItemName, cart: [...window.saleCart], price: cartTotal, paid: paid, due: due, date: new Date().toISOString().split('T')[0]
+        };
+        salesDataArray.unshift(saleData);
+        window.addAccessoryDueToStudent(student.id, newSaleId, finalItemName, due); 
+        
+        // 🟢 NEW: স্টক আপডেট এবং ০ হলে ডিলিট করার লজিক
+        let stockUpdated = false;
+        window.saleCart.forEach(cartItem => {
+            const stockItem = window.stockInventory.find(i => i.name.toLowerCase() === cartItem.name.toLowerCase());
+            if (stockItem && stockItem.qty >= cartItem.qty) {
+                stockItem.qty -= cartItem.qty; 
+                stockUpdated = true;
+            }
+        });
+        
+        if (stockUpdated) {
+            // 🟢 যে আইটেমগুলোর স্টক ০ হয়ে গেছে, সেগুলোকে রিমুভ করা হচ্ছে
+            window.stockInventory = window.stockInventory.filter(i => i.qty > 0);
+            
+            dbSet('stockData', window.stockInventory).catch(e=>console.log(e)); 
+            window.renderStockTable(); 
+            window.renderInventoryDropdown();
+        }
+
+        Swal.fire({toast: true, position: 'top-end', icon: 'success', title: 'Sale Completed!', showConfirmButton: false, timer: 1500});
+        setTimeout(() => window.generateSalePDF(saleData, student), 500);
+    }
+
+    window.renderSalesUI();
+    window.cancelSaleEdit();
+    window.syncSalesToFirebase(currentYear);
+};
+
+window.cancelSaleEdit = function() {
+    document.getElementById('saleStudentId').value = '';
+    document.getElementById('saleSelectedName').textContent = '🔍 Click here to search student...';
+    document.getElementById('saleSelectedName').style.color = 'var(--text-muted)';
+    document.getElementById('saleSelectedPhoto').style.display = 'none';
+    document.getElementById('itemName').value = '';
+    document.getElementById('saleQty').value = '1'; 
+    document.getElementById('itemPrice').value = '';
+    document.getElementById('amountPaid').value = '';
+    document.getElementById('editSaleId').value = '';
+    window.currentUnitPrice = 0;
+    window.saleCart = []; 
+    window.renderCart();
+    
+    document.getElementById('saleProcessBtn').innerHTML = '<i class="fas fa-check-circle"></i> Checkout & Send Receipt';
+    document.getElementById('saleProcessBtn').className = 'btn-primary';
+    document.getElementById('saleCancelEditBtn').style.display = 'none';
+};
+
+window.editSaleRecord = function(saleId) {
+    const sale = salesDataArray.find(s => s.id === saleId);
+    if(!sale) return;
+    
+    const student = students.find(st => st.id == sale.studentId);
+    if(student) window.selectStudentForSale(student.id, student.name, student.photo || 'https://via.placeholder.com/35?text=S');
+
+    if (sale.cart && Array.isArray(sale.cart)) {
+        window.saleCart = [...sale.cart];
+    } else {
+        let extractedName = sale.item; let extractedQty = 1;
+        const match = sale.item.match(/(.*)\s+\(x(\d+)\)$/);
+        if (match) { extractedName = match[1]; extractedQty = parseInt(match[2]); }
+        window.saleCart = [{ name: extractedName, qty: extractedQty, price: sale.price }];
+    }
+    
+    window.renderCart();
+    document.getElementById('amountPaid').value = sale.paid;
+    document.getElementById('editSaleId').value = sale.id;
+
+    document.getElementById('saleProcessBtn').innerHTML = '<i class="fas fa-save"></i> Update Sale';
+    document.getElementById('saleProcessBtn').className = 'btn-warning';
+    document.getElementById('saleCancelEditBtn').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+window.generateSalePDF = async function(sale, student) {
+    Swal.fire({ title: 'Generating Receipt...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+
+    const { jsPDF } = window.jspdf;
+    
+    let estLines = 0;
+    if (sale.cart && Array.isArray(sale.cart)) {
+        sale.cart.forEach(item => { estLines += Math.ceil(item.name.length / 25); });
+    } else {
+        estLines = Math.ceil(sale.item.length / 25);
+    }
+    const pageHeight = Math.max(148, 120 + (estLines * 6)); 
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [105, pageHeight] });
+
+    if (typeof instituteLogo !== 'undefined' && instituteLogo) {
+        doc.saveGraphicsState();
+        doc.setGState(new doc.GState({ opacity: 0.08 }));
+        doc.addImage(instituteLogo, 'JPEG', 12.5, (pageHeight/2)-40, 80, 80);
+        doc.restoreGraphicsState();
+    }
+
+    doc.setDrawColor(0); doc.setLineWidth(0.5); doc.rect(5, 5, 95, pageHeight - 10);
+    let y = 15;
+
+    if (typeof instituteLogo !== 'undefined' && instituteLogo) { doc.addImage(instituteLogo, 'JPEG', 42.5, 8, 20, 20); y = 32; }
+
+    doc.setFontSize(12); doc.setFont("helvetica", "bold");
+    const titleLines = doc.splitTextToSize(typeof INSTITUTE_NAME !== 'undefined' ? INSTITUTE_NAME : 'Music Classes', 90);
+    doc.text(titleLines, 52.5, y, {align: "center"});
+    y += (titleLines.length * 5) + 2;
+
+    doc.setFontSize(10); doc.setFont("helvetica", "normal");
+    // 🟢 এখানে CASH MEMO পরিবর্তন করে MONEY RECEIPT করা হয়েছে
+    doc.text("ACCESSORIES MONEY RECEIPT", 52.5, y, {align: "center"});
+    doc.setLineWidth(0.2); doc.line(25, y+1, 80, y+1); y += 8; 
+
+    doc.setFontSize(9);
+    doc.text(`Date:`, 12, y); doc.setFont("helvetica", "bold"); doc.text(`${new Date(sale.date).toLocaleDateString('en-IN')}`, 32, y); doc.setFont("helvetica", "normal"); y += 6;
+    
+    doc.text(`Student:`, 12, y); doc.setFont("helvetica", "bold"); 
+    const nameLines = doc.splitTextToSize(student.name, 60);
+    doc.text(nameLines, 32, y); 
+    doc.setFont("helvetica", "normal"); 
+    y += (nameLines.length * 4) + 4;
+
+    doc.setFillColor(240, 240, 240);
+    doc.rect(10, y, 85, 6, 'F');
+    doc.setFont("helvetica", "bold");
+    doc.text(`Item Name`, 12, y+4); doc.text(`Qty`, 65, y+4); doc.text(`Price`, 80, y+4);
+    doc.setFont("helvetica", "normal");
+    y += 10;
+
+    if (sale.cart && Array.isArray(sale.cart)) {
+        sale.cart.forEach(item => {
+            const itemLines = doc.splitTextToSize(item.name, 50); 
+            doc.text(itemLines, 12, y); 
+            doc.text(`x${item.qty}`, 65, y); 
+            doc.text(`Rs.${item.price}`, 80, y); 
+            y += (itemLines.length * 4) + 3; 
+        });
+    } else {
+        const itemLines = doc.splitTextToSize(sale.item, 50);
+        doc.text(itemLines, 12, y); 
+        doc.text(`Rs.${sale.price}`, 80, y); 
+        y += (itemLines.length * 4) + 3;
+    }
+    
+    doc.line(10, y, 95, y); y += 6;
+
+    doc.setFont("helvetica", "bold");
+    doc.text(`Grand Total:`, 48, y); doc.text(`Rs. ${sale.price}/-`, 75, y); y += 6;
+    doc.setTextColor(0, 128, 0); 
+    doc.text(`Paid Amount:`, 48, y); doc.text(`Rs. ${sale.paid}/-`, 75, y); doc.setTextColor(0); y += 6;
+
+    if(sale.due > 0) {
+        doc.setTextColor(200, 0, 0); doc.text(`Current Due:`, 48, y); doc.text(`Rs. ${sale.due}/-`, 75, y); doc.setTextColor(0);
+        y += 6; 
+    }
+    y += 6;
+
+    // Signature
+    let sigBaseY = pageHeight - 10; // 🟢 'Authorized Signature' লেখাটির Y পজিশন
+    if (typeof authorizedSignature !== 'undefined' && authorizedSignature) { 
+        // 🟢 সিগনেচারের ছবিটি 'Authorized Signature' লেখাটির ঠিক উপরে (y পজিশন কমিয়ে) বসানো হলো
+        doc.addImage(authorizedSignature, 'PNG', 55, sigBaseY - 12, 35, 10); 
+    }
+    doc.setFontSize(8); doc.setFont("helvetica", "bold"); doc.text(`Authorized Signature`, 72, sigBaseY, {align:"center"});
+
+    const safeItemName = sale.cart && sale.cart.length > 0 ? "Multiple_Items" : sale.item.replace(/\s+/g, '_');
+    const fileName = `Money_Receipt_${safeItemName}.pdf`;
+    
+    window.tempSaleDoc = doc; window.tempSaleFileName = fileName;
+    let cleanPhone = student.phone ? student.phone.replace(/[^0-9]/g, '') : '';
+    if(cleanPhone.length === 10) cleanPhone = '91' + cleanPhone; window.tempSalePhone = cleanPhone;
+    
+    let itemsNamesWA = sale.cart ? sale.cart.map(i => `${i.name} (x${i.qty})`).join(', ') : sale.item;
+    
+    let dueMsg = sale.due > 0 ? `\nDue: ₹${sale.due}\n*Please clear your due amount of ₹${sale.due} as soon as possible.*` : '';
+    // 🟢 মেসেজে "Money Receipt" লেখা যোগ করা হয়েছে
+    window.tempSaleMsg = `Hello ${student.name},\nHere is your Money Receipt for *${itemsNamesWA}*.\nTotal: ₹${sale.price}\nPaid: ₹${sale.paid}${dueMsg}\n\nThank You!`;
+
+    Swal.close();
+    setTimeout(() => {
+        Swal.fire({
+            title: 'Receipt Generated!', icon: 'success',
+            html: `
+                <div style="display:flex; flex-direction:column; gap:12px; margin-top: 10px;">
+                    <button onclick="window.shareSaleReceiptWA()" style="background:#25D366; color:white; border:none; padding:16px; border-radius:12px; font-size:16px; font-weight:bold; cursor:pointer; width:100%; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow: 0 4px 6px rgba(37,211,102,0.2);">
+                        <i class="fab fa-whatsapp" style="font-size:20px;"></i> Share to WhatsApp
+                    </button>
+                    <button onclick="window.sendSaleReceiptSMS()" style="background:#f59e0b; color:white; border:none; padding:16px; border-radius:12px; font-size:16px; font-weight:bold; cursor:pointer; width:100%; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow: 0 4px 6px rgba(245,158,11,0.2);">
+                        <i class="fas fa-sms" style="font-size:18px;"></i> Send SMS
+                    </button>
+                    <button onclick="window.downloadSaleReceiptOnly()" style="background:#64748b; color:white; border:none; padding:16px; border-radius:12px; font-size:16px; font-weight:bold; cursor:pointer; width:100%; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow: 0 4px 6px rgba(100,116,139,0.2);">
+                        <i class="fas fa-download" style="font-size:18px;"></i> Download Only
+                    </button>
+                </div>
+            `,
+            showCloseButton: true, showConfirmButton: false, allowOutsideClick: false
+        });
+    }, 100);
+};
+
+window.sendSaleWhatsApp = async function(saleId) {
+    const sale = salesDataArray.find(s => s.id === saleId);
+    if(!sale) return;
+    const student = students.find(st => st.id == sale.studentId);
+    
+    if(sale && student) {
+        let cleanPhone = student.phone ? student.phone.replace(/[^0-9]/g, '') : '';
+        if(cleanPhone.length === 10) cleanPhone = '91' + cleanPhone;
+        let dueMsg = sale.due > 0 ? `\n*Current Due:* ₹${sale.due}\n*Please clear your due amount of ₹${sale.due} as soon as possible.*` : '';
+        
+        // 🟢 Srikanta Banerjee এর জায়গায় INSTITUTE_NAME বসানো হয়েছে
+        const msg = `Hello ${student.name},\n\nThis is your Money Receipt for *${sale.item}*.\n\n*Total Price:* ₹${sale.price}\n*Amount Paid:* ₹${sale.paid}${dueMsg}\n\nRegards,\n*${INSTITUTE_NAME}*`;
+        
+        window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+    }
+};
+
+window.sendSaleSMS = async function(saleId) {
+    const sale = salesDataArray.find(s => s.id === saleId);
+    if(!sale) return;
+    const student = students.find(st => st.id == sale.studentId);
+    
+    if(sale && student) {
+        let cleanPhone = student.phone ? student.phone.replace(/[^0-9]/g, '') : '';
+        if (!cleanPhone) {
+            Swal.fire('Error', 'Student phone number is missing!', 'error');
+            return;
+        }
+        let dueMsg = sale.due > 0 ? `\nCurrent Due: Rs.${sale.due}\nPlease clear your due amount of Rs.${sale.due} as soon as possible.` : '';
+        
+        // 🟢 Srikanta Banerjee এর জায়গায় INSTITUTE_NAME বসানো হয়েছে
+        const msg = `Hello ${student.name},\n\nThis is your Money Receipt for ${sale.item}.\n\nTotal Price: Rs.${sale.price}\nAmount Paid: Rs.${sale.paid}${dueMsg}\n\nRegards,\n${INSTITUTE_NAME}`;
+        
+        window.location.href = `sms:${cleanPhone}?body=${encodeURIComponent(msg)}`;
+    }
+};
+window.resendSaleReceipt = async function(saleId) {
+    const sale = salesDataArray.find(s => s.id === saleId);
+    if(!sale) return;
+    const student = students.find(st => st.id == sale.studentId);
+    if(sale && student) window.generateSalePDF(sale, student);
+};
+
+
+
+window.sendSaleReceiptSMS = function() {
+    const msg = window.tempSaleMsg;
+    const phone = window.tempSalePhone;
+    
+    if (!phone) {
+        Swal.fire('Error', 'Student phone number is missing!', 'error');
+        return;
+    }
+    
+    window.location.href = `sms:${phone}?body=${encodeURIComponent(msg)}`;
+};
+
+window.shareSaleReceiptWA = async function() {
+    const doc = window.tempSaleDoc;
+    const fileName = window.tempSaleFileName;
+    const msg = window.tempSaleMsg;
+    const phone = window.tempSalePhone;
+
+    const pdfBlob = doc.output('blob');
+    const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+
+    Swal.close();
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+            await navigator.share({ files: [file], title: 'Item Receipt', text: msg });
+        } catch(e) {
+            doc.save(fileName);
+            window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+    } else {
+        doc.save(fileName);
+        window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+    }
+};
+
+window.downloadSaleReceiptOnly = function() {
+    window.tempSaleDoc.save(window.tempSaleFileName);
+    Swal.close();
+};
+
+// 🟢 NEW: Accessory Due Popup Function (Mobile Responsive & Fixed)
+window.showSalesDuesPopup = function() {
+    let dueRecords = salesDataArray.filter(s => s.due > 0);
+    
+    if (dueRecords.length === 0) {
+        Swal.fire('No Dues', 'All accessory sales are fully paid!', 'success');
+        return;
+    }
+
+    // 🟢 Container style আপডেট করা হয়েছে যাতে overflow ঠিক থাকে
+    let listHtml = '<div style="max-height: 60vh; overflow-y: auto; text-align: left; padding: 5px;">';
+    
+    dueRecords.forEach(sale => {
+        const student = students.find(st => st.id == sale.studentId);
+        const photoSrc = student && student.photo ? student.photo : 'https://via.placeholder.com/50?text=S';
+        const dateStr = new Date(sale.date).toLocaleDateString('en-IN');
+        
+        // 🟢 Mobile view ঠিক করার জন্য flex-direction এবং padding আপডেট করা হয়েছে
+        listHtml += `
+            <div style="background: var(--bg-input); padding: 15px; border-radius: 12px; margin-bottom: 12px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <img src="${photoSrc}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #cbd5e1; flex-shrink: 0;">
+                    <div style="flex-grow: 1; word-break: break-word;">
+                        <div style="font-weight: 700; font-size: 15px; color: var(--text-main);">${sale.studentName}</div>
+                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                            <strong>Date:</strong> ${dateStr}
+                        </div>
+                    </div>
+                </div>
+
+                <div style="font-size: 13px; color: var(--text-main); line-height: 1.5; background: var(--bg-body); padding: 8px; border-radius: 8px;">
+                    <strong>Item:</strong> <span style="color:#0284c7;">${sale.item}</span>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; background: #fff1f2; padding: 12px; border-radius: 8px; border: 1px dashed #fecaca;">
+                    <div>
+                        <div style="font-size: 11px; color: #be123c; font-weight: bold; text-transform: uppercase;">Total Due</div>
+                        <div style="font-weight: 900; font-size: 18px; color: #e11d48;">₹${sale.due}</div>
+                    </div>
+                    <button onclick="Swal.close(); window.editSaleRecord(${sale.id});" style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(16,185,129,0.2);">
+                        Pay Now
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    listHtml += '</div>';
+
+    Swal.fire({
+        title: 'Pending Accessory Dues',
+        html: listHtml,
+        showConfirmButton: true,
+        confirmButtonText: 'Close',
+        // 🟢 Close বাটনটি লাল করা হয়েছে
+        confirmButtonColor: '#ef4444', 
+        width: '95%',
+        padding: '15px'
+    });
+};
+window.processSale = processSale;
+// 🟢 NEW: Smart Autocomplete for Cart Item Input
+document.addEventListener('DOMContentLoaded', () => {
+    const itemNameInput = document.getElementById('itemName');
+    if (itemNameInput && !document.getElementById('itemSuggestions')) {
+        itemNameInput.removeAttribute('list'); // আগের ডাটালিস্ট রিমুভ করা হলো
+        
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'relative';
+        wrapper.style.width = '100%';
+        
+        itemNameInput.parentNode.insertBefore(wrapper, itemNameInput);
+        wrapper.appendChild(itemNameInput);
+        
+        const suggDiv = document.createElement('div');
+        suggDiv.id = 'itemSuggestions';
+        suggDiv.style.cssText = 'display:none; position:absolute; top:100%; left:0; width:100%; max-height:180px; overflow-y:auto; background:var(--bg-card); border:1px solid var(--border-color); border-radius:8px; z-index:1000; box-shadow:0 4px 10px rgba(0,0,0,0.15); margin-top:5px; text-align:left;';
+        wrapper.appendChild(suggDiv);
+        
+        itemNameInput.addEventListener('input', function() {
+            window.showItemSuggestions();
+            window.autoFillItemPrice();
+        });
+        itemNameInput.addEventListener('focus', window.showItemSuggestions);
+        
+        document.addEventListener('click', (e) => {
+            if(e.target !== itemNameInput) suggDiv.style.display = 'none';
+        });
+    }
+});
+
+window.showItemSuggestions = function() {
+    const input = document.getElementById('itemName');
+    const suggDiv = document.getElementById('itemSuggestions');
+    if(!input || !suggDiv) return;
+    
+    const val = input.value.toLowerCase().trim();
+    suggDiv.innerHTML = '';
+    
+    let matches = window.stockInventory;
+    if (val) {
+        matches = window.stockInventory.filter(i => i.name.toLowerCase().includes(val));
+    }
+    
+    if (matches.length === 0) {
+        suggDiv.style.display = 'none';
+        return;
+    }
+    
+    matches.forEach(item => {
+        const div = document.createElement('div');
+        const stockClr = item.qty <= 0 ? 'var(--danger)' : 'var(--text-muted)';
+        div.style.cssText = 'padding: 12px; border-bottom: 1px solid var(--border-color); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.2s;';
+        div.innerHTML = `
+            <span style="font-size: 13px; font-weight: 600; color: var(--text-main);">${item.name}</span> 
+            <span style="color: ${stockClr}; font-size: 11px; font-weight: bold; background: var(--bg-body); padding: 2px 6px; border-radius: 4px;">Stock: ${item.qty}</span>
+        `;
+        div.onclick = function() {
+            input.value = item.name;
+            suggDiv.style.display = 'none';
+            window.autoFillItemPrice(); // ক্লিক করার সাথে সাথে দাম বসে যাবে
+        };
+        suggDiv.appendChild(div);
+    });
+    suggDiv.style.display = 'block';
+};
+
+window.autoFillItemPrice = function() {
+    const inputName = document.getElementById('itemName').value.trim();
+    const item = window.stockInventory.find(i => i.name.toLowerCase() === inputName.toLowerCase());
+    
+    if (item) {
+        window.currentUnitPrice = item.price; 
+        window.updateSalePriceCalc(); 
+    } else {
+        window.currentUnitPrice = 0;
+        document.getElementById('itemPrice').value = '';
+    }
+};
+window.exportAllStudentsPDF = async function() {
+    if (!students || students.length === 0) {
+        Swal.fire('Info', 'No students available to export.', 'info');
+        return;
+    }
+
+    Swal.fire({ title: 'Generating PDF...', text: 'Please wait...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        let y = 20;
+
+        // 🟢 PDF Header
+        if (typeof instituteLogo !== 'undefined' && instituteLogo) {
+            doc.addImage(instituteLogo, 'JPEG', 15, 10, 15, 15);
+        }
+        doc.setFontSize(16);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(0);
+        doc.text(typeof INSTITUTE_NAME !== 'undefined' ? INSTITUTE_NAME : 'Music Classes', pageWidth/2, 18, {align: "center"});
+        
+        doc.setFontSize(12);
+        doc.setTextColor(80);
+        doc.text("Complete Student Directory", pageWidth/2, 25, {align: "center"});
+        
+        doc.setDrawColor(200);
+        doc.setLineWidth(0.5);
+        doc.line(15, 30, pageWidth-15, 30);
+        y = 40;
+
+        // 🟢 Student Row Drawing Function (Updated with Address)
+        const drawStudentRow = (s, isActive) => {
+            if (y > pageHeight - 35) { // পেজ শেষ হলে নতুন পেজ নেবে
+                doc.addPage();
+                y = 20;
+            }
+            
+            // Student Photo
+            if (s.photo) {
+                try {
+                    doc.addImage(s.photo, 'JPEG', 15, y, 18, 18);
+                    doc.setDrawColor(0);
+                    doc.setLineWidth(0.3);
+                    doc.rect(15, y, 18, 18);
+                } catch(e) {
+                    doc.setDrawColor(200); doc.setFillColor(240); doc.rect(15, y, 18, 18, 'FD');
+                }
+            } else {
+                doc.setDrawColor(200); doc.setFillColor(240); doc.rect(15, y, 18, 18, 'FD');
+                doc.setFontSize(8); doc.setTextColor(150); doc.text("No Pic", 24, y + 10, {align:'center'});
+            }
+
+            // Student Details
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(0);
+            doc.text(`${s.name} (ID: ${s.serial_no})`, 38, y + 4);
+            
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(9);
+            doc.setTextColor(80);
+            doc.text(`Class: ${s.class || 'N/A'}  |  Phone: ${s.phone || 'N/A'}`, 38, y + 9);
+            
+            let joinDate = s.joining_date ? new Date(s.joining_date).toLocaleDateString('en-IN') : 'N/A';
+            doc.text(`Joined: ${joinDate}  |  Fee: Rs. ${s.fee_amount || 0}`, 38, y + 14);
+
+            // 🟢 NEW: Address Added Here
+            let addressText = s.address ? s.address : 'N/A';
+            // ঠিকানা খুব বড় হলে কেটে ছোট করে দেবে যাতে ডিজাইন নষ্ট না হয়
+            if (addressText.length > 60) addressText = addressText.substring(0, 60) + '...'; 
+            doc.text(`Address: ${addressText}`, 38, y + 19);
+
+            // Active/Inactive Badge
+            doc.setFontSize(9);
+            doc.setFont("helvetica", "bold");
+            if (isActive) {
+                doc.setTextColor(16, 185, 129); // Green
+                doc.text("ACTIVE", pageWidth - 15, y + 9, {align: "right"});
+            } else {
+                doc.setTextColor(239, 68, 68); // Red
+                doc.text("INACTIVE", pageWidth - 15, y + 9, {align: "right"});
+            }
+            
+            // Bottom line for row
+            doc.setDrawColor(230);
+            doc.setLineWidth(0.2);
+            doc.line(15, y + 24, pageWidth-15, y + 24);
+            
+            y += 29; // পরের স্টুডেন্টের জন্য গ্যাপ বাড়ানো হলো
+        };
+
+        // 🟢 Separate Active and Inactive Students
+        const activeStudents = students.filter(s => window.isStudentCurrentlyActive(s)).sort((a,b) => a.name.localeCompare(b.name));
+        const inactiveStudents = students.filter(s => !window.isStudentCurrentlyActive(s)).sort((a,b) => a.name.localeCompare(b.name));
+
+        // 🟢 Draw Active Students
+        if (activeStudents.length > 0) {
+            doc.setFontSize(13);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(16, 185, 129);
+            doc.text(`Active Students (${activeStudents.length})`, 15, y);
+            y += 8;
+            activeStudents.forEach(s => drawStudentRow(s, true));
+        }
+
+        // 🟢 Draw Inactive Students
+        if (inactiveStudents.length > 0) {
+            y += 5;
+            if (y > pageHeight - 30) { doc.addPage(); y = 20; }
+            doc.setFontSize(13);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(239, 68, 68);
+            doc.text(`Inactive Students (${inactiveStudents.length})`, 15, y);
+            y += 8;
+            inactiveStudents.forEach(s => drawStudentRow(s, false));
+        }
+
+        // 🟢 Page Footer
+        const pageCount = doc.getNumberOfPages();
+        for(let i=1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.setTextColor(150);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Page ${i} of ${pageCount}  |  Generated on: ${new Date().toLocaleDateString('en-IN')}`, pageWidth/2, pageHeight - 10, {align: 'center'});
+        }
+
+        doc.save(`Student_Directory_${new Date().toISOString().split('T')[0]}.pdf`);
+        Swal.close();
+
+    } catch (error) {
+        console.error(error);
+        Swal.fire('Error', 'Failed to generate PDF. Check console for details.', 'error');
+    }
+};
+window.openThemeSelector = function() {
+    let isAutoTheme = localStorage.getItem('auto_theme_enabled') !== 'false';
+
+    Swal.fire({
+        title: 'Choose Theme',
+        html: `
+            <div style="background: var(--bg-input); padding: 15px; border-radius: 12px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color);">
+                <span style="font-weight: bold; font-size: 15px; color: var(--text-main);"><i class="fas fa-magic" style="color: var(--primary); margin-right: 5px;"></i> Auto Daily Theme</span>
+                
+                <label style="position: relative; display: inline-block; width: 50px; height: 28px;">
+                    <input type="checkbox" id="autoThemeToggle" ${isAutoTheme ? 'checked' : ''} onchange="toggleAutoTheme(this.checked)" style="opacity: 0; width: 0; height: 0;">
+                    <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: ${isAutoTheme ? 'var(--success)' : 'var(--secondary)'}; border-radius: 34px; transition: .4s;">
+                        <span style="position: absolute; content: ''; height: 20px; width: 20px; left: ${isAutoTheme ? '26px' : '4px'}; bottom: 4px; background-color: white; border-radius: 50%; transition: .4s; box-shadow: 0 2px 5px rgba(0,0,0,0.2);"></span>
+                    </span>
+                </label>
+            </div>
+
+            <div id="manualThemeGrid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; transition: 0.3s; opacity: ${isAutoTheme ? '0.4' : '1'}; pointer-events: ${isAutoTheme ? 'none' : 'auto'};">
+                <button onclick="changePortalTheme('light')" style="background: #f8fafc; color: #1e293b; border: 2px solid #cbd5e1; padding: 12px; border-radius: 12px; font-weight: bold; font-size: 14px; cursor: pointer;">☀️ Light</button>
+                <button onclick="changePortalTheme('dark')" style="background: #1e293b; color: #f1f5f9; border: 2px solid #334155; padding: 12px; border-radius: 12px; font-weight: bold; font-size: 14px; cursor: pointer;">🌙 Dark</button>
+                
+                <button onclick="changePortalTheme('blue')" style="background: #e0f2fe; color: #0369a1; border: 2px solid #bae6fd; padding: 12px; border-radius: 12px; font-weight: bold; font-size: 14px; cursor: pointer;">🌊 Ocean Blue</button>
+                <button onclick="changePortalTheme('green')" style="background: #dcfce7; color: #166534; border: 2px solid #bbf7d0; padding: 12px; border-radius: 12px; font-weight: bold; font-size: 14px; cursor: pointer;">🍃 Nature Green</button>
+                
+                <button onclick="changePortalTheme('magenta')" style="background: #fae8ff; color: #86198f; border: 2px solid #f5d0fe; padding: 12px; border-radius: 12px; font-weight: bold; font-size: 14px; cursor: pointer;">🎨 Magenta</button>
+                
+                <button onclick="changePortalTheme('orange-red')" style="background: #ffe8e0; color: #a62d00; border: 2px solid #ffc3b3; padding: 12px; border-radius: 12px; font-weight: bold; font-size: 14px; cursor: pointer;">🔥 Orange Red</button>
+                
+                <button onclick="changePortalTheme('purple-dark')" style="background: #3b0764; color: #f3e8ff; border: 2px solid #5b21b6; padding: 12px; border-radius: 12px; font-weight: bold; font-size: 14px; cursor: pointer; grid-column: span 2;">🌌 Purple Night</button>
+            </div>
+        `,
+        showConfirmButton: false,
+        showCloseButton: true,
+        background: 'var(--bg-card)',
+        color: 'var(--text-main)'
+    });
+};
+
+// 🟢 অটো থিম অন/অফ করার লজিক
+window.toggleAutoTheme = function(isChecked) {
+    localStorage.setItem('auto_theme_enabled', isChecked);
+    
+    // সাথে সাথে সুইচ এবং ম্যানুয়াল বাটনগুলোর ডিজাইন আপডেট করা
+    const grid = document.getElementById('manualThemeGrid');
+    if(grid) {
+        grid.style.opacity = isChecked ? '0.4' : '1';
+        grid.style.pointerEvents = isChecked ? 'none' : 'auto';
+    }
+    const toggleBg = document.querySelector('input#autoThemeToggle + span');
+    const toggleCircle = document.querySelector('input#autoThemeToggle + span > span');
+    if(toggleBg && toggleCircle) {
+        toggleBg.style.backgroundColor = isChecked ? 'var(--success)' : 'var(--secondary)';
+        toggleCircle.style.left = isChecked ? '26px' : '4px';
+    }
+    
+    // নতুন সেটিং অনুযায়ী সাথে সাথে থিম লোড করা
+    loadTheme();
+};
+
+// 🔴 ম্যানুয়ালি থিম সিলেক্ট করার লজিক
+window.changePortalTheme = function(themeName) {
+    localStorage.setItem('auto_theme_enabled', 'false'); // ম্যানুয়াল সিলেক্ট করলে অটো অফ হয়ে যাবে
+    localStorage.setItem('app_theme', themeName);
+    document.body.setAttribute('data-theme', themeName);
+    
+    Swal.close();
+    loadTheme(); // বাটন টেক্সট আপডেট করার জন্য
+};
+// ==========================================
+// 🟢 LEADERBOARD, CERTIFICATE & REWARDS LOGIC
+// ==========================================
+// 🟢 সাপ্তাহিক র‍্যাংক ক্যালকুলেশন (রবিবার থেকে শনিবার)
+window.calculateWeeklyRank = function(studentId) {
+    const now = new Date();
+    const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+    
+    // বর্তমান সপ্তাহের রবিবারের তারিখ বের করা
+    const sunday = new Date(now);
+    sunday.setDate(now.getDate() - currentDay);
+    sunday.setHours(0, 0, 0, 0);
+
+    // বর্তমান সপ্তাহের শনিবারের তারিখ বের করা
+    const saturday = new Date(sunday);
+    saturday.setDate(sunday.getDate() + 6);
+    saturday.setHours(23, 59, 59, 999);
+
+    let studentStats = [];
+    students.forEach(student => {
+        if (student.practice_log && student.practice_log.length > 0) {
+            let weeklyMins = 0;
+            student.practice_log.forEach(log => {
+                const parts = log.date.split('/');
+                let logDate = parts.length === 3 ? new Date(parts[2], parts[1] - 1, parts[0]) : new Date(log.date);
+                logDate.setHours(0,0,0,0);
+                
+                // শুধুমাত্র এই সপ্তাহের রবিবার থেকে শনিবারের ডেটা নেবে
+                if (logDate >= sunday && logDate <= saturday) {
+                    weeklyMins += (parseInt(log.minutes) || 0);
+                }
+            });
+            if (weeklyMins > 0) studentStats.push({ id: student.id, mins: weeklyMins });
+        }
+    });
+
+    studentStats.sort((a, b) => b.mins - a.mins);
+    const rankIndex = studentStats.findIndex(st => st.id === studentId);
+    return (rankIndex !== -1 && rankIndex < 3) ? rankIndex + 1 : null;
+};
+
+// 2. Practice Leaderboard Logic (With Profile Click & Rewards)
+window.renderPracticeLeaderboard = function() {
+    const filter = document.getElementById('leaderboardFilter');
+    if(!filter) return;
+    const filterVal = filter.value;
+    const listContainer = document.getElementById('practiceLeaderboardList');
+    if(!listContainer) return;
+
+    const now = new Date();
+    now.setHours(0,0,0,0);
+
+    let startDate = new Date(now);
+    if (filterVal === 'weekly') {
+        const dayOfWeek = now.getDay();
+        const diff = now.getDate() - dayOfWeek;
+        startDate.setDate(diff);
+    } else if (filterVal === 'monthly') {
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    } else if (filterVal === 'yearly') {
+        startDate = new Date(now.getFullYear(), 0, 1);
+    } else {
+        startDate = new Date(2000, 0, 1); 
+    }
+
+    let studentStats = {};
+    students.forEach(student => {
+        if (student.practice_log && student.practice_log.length > 0) {
+            let totalMins = 0;
+            student.practice_log.forEach(log => {
+                const parts = log.date.split('/');
+                let logDate = parts.length === 3 ? new Date(parts[2], parts[1] - 1, parts[0]) : new Date(log.date);
+                logDate.setHours(0,0,0,0);
+                if (logDate >= startDate && logDate <= now) totalMins += (parseInt(log.minutes) || 0);
+            });
+            if (totalMins > 0) studentStats[student.id] = { student: student, totalMins: totalMins };
+        }
+    });
+
+    let leaderboard = Object.values(studentStats);
+    leaderboard.sort((a, b) => b.totalMins - a.totalMins);
+    leaderboard = leaderboard.slice(0, 10); 
+
+    listContainer.innerHTML = '';
+    if (leaderboard.length === 0) {
+        listContainer.innerHTML = '<p style="text-align:center; color:gray; font-size:13px; padding: 15px;">No practice logged.</p>';
+        return;
+    }
+
+    leaderboard.forEach((item, index) => {
+        const s = item.student;
+        const photoSrc = s.photo ? s.photo : 'https://via.placeholder.com/40?text=S';
+        
+        let rankDisplay = `<div style="font-size:14px; font-weight:900; color:gray; width: 30px; text-align: center;">#${index+1}</div>`;
+        if (index === 0) rankDisplay = `<div style="font-size:22px; width: 30px; text-align: center;">🥇</div>`;
+        if (index === 1) rankDisplay = `<div style="font-size:22px; width: 30px; text-align: center;">🥈</div>`;
+        if (index === 2) rankDisplay = `<div style="font-size:22px; width: 30px; text-align: center;">🥉</div>`;
+
+        let h = Math.floor(item.totalMins / 60); let m = item.totalMins % 60;
+        let timeStr = h > 0 ? `${h}h ${m}m` : `${m}m`;
+
+        // 🟢 Top 3 Students Reward Buttons (Mobile View Fixed)
+        let rewardBtns = '';
+        if (index < 3) {
+            rewardBtns = `
+            <div style="margin-top: 6px; display: flex; gap: 4px; flex-wrap: wrap;">
+                <button onclick="window.generatePracticeCertificate(${s.id}, ${index+1}, '${filterVal}', ${item.totalMins})" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border: none; padding: 4px 6px; border-radius: 4px; font-size: 9px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 4px rgba(245,158,11,0.3);"><i class="fas fa-award"></i> Certificate</button>
+                <button onclick="window.sendLeaderboardMsg('wa', ${s.id}, ${index+1}, '${filterVal}')" style="background: #25D366; color: white; border: none; padding: 4px 6px; border-radius: 4px; font-size: 9px; cursor: pointer; font-weight: bold;"><i class="fab fa-whatsapp"></i></button>
+                <button onclick="window.sendLeaderboardMsg('sms', ${s.id}, ${index+1}, '${filterVal}')" style="background: #3b82f6; color: white; border: none; padding: 4px 6px; border-radius: 4px; font-size: 9px; cursor: pointer; font-weight: bold;"><i class="fas fa-sms"></i></button>
+            </div>`;
+        }
+
+        // 🟢 লিডারবোর্ড লিস্টের কার্ড ডিজাইন (মোবাইল ভিউ ফিক্সড)
+        listContainer.innerHTML += `
+            <div style="display:flex; align-items:center; justify-content:space-between; background:var(--bg-card); padding:10px 8px; border-radius:10px; margin-bottom:8px; border:1px solid var(--border-color); box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                
+                <div style="display:flex; align-items:flex-start; gap:8px; flex:1; overflow:hidden;">
+                    <div style="margin-top: 3px; flex-shrink:0;">${rankDisplay}</div>
+                    
+                    <img src="${photoSrc}" style="width:36px; height:36px; border-radius:50%; object-fit:cover; border:2px solid ${index < 3 ? '#f59e0b' : 'var(--primary)'}; cursor:pointer; flex-shrink:0;" onclick="closeModal('leaderboardModal'); showStudentDetails(${s.id})">
+                    
+                    <div style="min-width:0; flex:1;">
+                        <div style="font-weight:700; font-size:13px; color:var(--text-main); cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" onclick="closeModal('leaderboardModal'); showStudentDetails(${s.id})">${s.name}</div>
+                        <div style="font-size:10px; color:var(--text-muted);">${s.class || 'Student'}</div>
+                        ${rewardBtns}
+                    </div>
+                </div>
+
+                <div style="background: ${index < 3 ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'var(--primary)'}; color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; flex-shrink:0; white-space:nowrap; box-shadow: 0 2px 5px rgba(0,0,0,0.2); margin-left:5px;">
+                    <i class="fas fa-clock"></i> ${timeStr}
+                </div>
+                
+            </div>
+        `;
+    });
+};
+
+// 🟢 1. Send SMS / WA Message for Leaderboard (নির্দিষ্ট মাস ও সাল উল্লেখ সহ)
+window.sendLeaderboardMsg = function(type, studentId, rank, timeRange) {
+    const student = students.find(s => s.id === studentId);
+    if (!student) return;
+    
+    const now = new Date();
+    let periodText = "";
+    
+    // 🟢 সময় অনুযায়ী ডাইনামিক টেক্সট তৈরি
+    if (timeRange === 'weekly') {
+        const sunday = new Date(now);
+        sunday.setDate(now.getDate() - now.getDay());
+        periodText = `the week of ${sunday.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'})}`;
+    } else if (timeRange === 'monthly') {
+        periodText = now.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }); // যেমন: April 2026
+    } else if (timeRange === 'yearly') {
+        periodText = "the year " + now.getFullYear(); // যেমন: the year 2026
+    } else {
+        periodText = "Lifetime";
+    }
+
+    const instName = typeof INSTITUTE_NAME !== 'undefined' ? INSTITUTE_NAME : 'Music Classes';
+    
+    let msg = `🎉 Congratulations ${student.name}!\n\nYou have secured Rank #${rank} in the Practice Leaderboard for *${periodText}*! Keep up the great work and keep practicing. 🎸🎹\n\nRegards,\n${instName}`;
+    
+    if (type === 'wa') {
+        let cleanPhone = student.phone ? student.phone.replace(/[^0-9]/g, '') : '';
+        if (cleanPhone.length === 10) cleanPhone = '91' + cleanPhone;
+        if(cleanPhone) window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+        else Swal.fire('Error', 'No phone number found', 'error');
+    } else if (type === 'sms') {
+        if(student.phone) window.open(`sms:${student.phone}?body=${encodeURIComponent(msg)}`, '_self');
+        else Swal.fire('Error', 'No phone number found', 'error');
+    }
+};
+
+// 🟢 2. প্রফেশনাল সার্টিফিকেট জেনারেটর (নির্দিষ্ট মাস ও সাল উল্লেখ সহ)
+window.generatePracticeCertificate = async function(studentId, rank, timeRange, totalMins) {
+    const student = students.find(s => s.id === studentId);
+    if (!student) return;
+
+    Swal.fire({ title: 'Generating Certificate...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const width = doc.internal.pageSize.getWidth();
+    const height = doc.internal.pageSize.getHeight();
+    const now = new Date();
+    
+    // 🟢 পিরিয়ড বা মাসের নাম বের করা
+    let periodText = "";
+    if (timeRange === 'weekly') {
+        const sunday = new Date(now);
+        sunday.setDate(now.getDate() - now.getDay());
+        periodText = `Week of ${sunday.toLocaleDateString('en-IN', {day:'2-digit', month:'short'})}`;
+    } else if (timeRange === 'monthly') {
+        periodText = now.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }); // যেমন: April 2026
+    } else if (timeRange === 'yearly') {
+        periodText = "Year " + now.getFullYear(); // যেমন: Year 2026
+    } else {
+        periodText = "Lifetime Achievement";
+    }
+
+    doc.setFillColor(255, 255, 255);
+    doc.rect(0, 0, width, height, 'F');
+    
+    if (typeof instituteLogo !== 'undefined' && instituteLogo) {
+        doc.saveGraphicsState();
+        doc.setGState(new doc.GState({ opacity: 0.05 })); 
+        doc.addImage(instituteLogo, 'JPEG', (width / 2) - 60, (height / 2) - 60, 120, 120);
+        doc.restoreGraphicsState();
+    }
+
+    doc.setDrawColor(218, 165, 32); doc.setLineWidth(4); doc.rect(8, 8, width - 16, height - 16);
+    doc.setDrawColor(30, 41, 59); doc.setLineWidth(0.5); doc.rect(11, 11, width - 22, height - 22);
+
+    let y = 25; 
+    
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(22);
+    doc.setTextColor(184, 134, 11); 
+    const instName = (typeof INSTITUTE_NAME !== 'undefined' ? INSTITUTE_NAME : 'Music Classes').toUpperCase();
+    doc.text(instName, width/2, y, { align: "center" });
+    
+    y += 15; 
+    
+    if (typeof instituteLogo !== 'undefined' && instituteLogo) {
+        doc.addImage(instituteLogo, 'JPEG', width/2 - 12, y, 24, 24);
+        y += 35; 
+    } else {
+        y += 20;
+    }
+
+    doc.setFontSize(26); doc.setTextColor(15, 23, 42);
+    doc.text("CERTIFICATE OF ACHIEVEMENT", width/2, y, { align: "center" });
+    
+    y += 12; 
+    doc.setFontSize(14); doc.setFont("helvetica", "italic"); doc.setTextColor(71, 85, 105);
+    doc.text("This certificate is proudly presented to", width/2, y, { align: "center" });
+
+    y += 15; 
+    
+    if(student.photo) {
+        try {
+            doc.addImage(student.photo, 'JPEG', width/2 - 18, y, 36, 36);
+            doc.setDrawColor(184, 134, 11); doc.setLineWidth(1); doc.rect(width/2 - 18, y, 36, 36); 
+            y += 50; 
+        } catch(e) { y += 15; }
+    } else {
+        y += 20;
+    }
+
+    doc.setFontSize(32); doc.setTextColor(0, 0, 0); doc.setFont("helvetica", "bold");
+    doc.text(student.name, width/2, y, { align: "center" });
+
+    y += 15; 
+    
+    doc.setFontSize(15); doc.setTextColor(51, 65, 85); doc.setFont("helvetica", "normal");
+    let h = Math.floor(totalMins / 60); let m = totalMins % 60;
+    let timeStr = h > 0 ? `${h}h ${m}m` : `${m}m`;
+    
+    // 🟢 এখানে নির্দিষ্ট মাস বা পিরিয়ড প্রিন্ট হবে
+    doc.text(`For securing Rank #${rank} during ${periodText}`, width/2, y, { align: "center" });
+    y += 10;
+    doc.setFont("helvetica", "bold");
+    doc.text(`with a total practice time of ${timeStr}.`, width/2, y, { align: "center" });
+
+    const footerY = height - 25; 
+    doc.setFontSize(11); doc.setTextColor(0, 0, 0); doc.setFont("helvetica", "normal");
+    doc.text(`Date: ${new Date().toLocaleDateString('en-IN')}`, 30, footerY);
+    
+    if (typeof authorizedSignature !== 'undefined' && authorizedSignature) {
+        doc.addImage(authorizedSignature, 'PNG', width - 80, footerY - 15, 40, 15);
+    }
+    doc.setDrawColor(0); doc.setLineWidth(0.4); doc.line(width - 90, footerY + 1, width - 30, footerY + 1);
+    doc.text("Authorized Signature", width - 60, footerY + 6, { align: "center" });
+
+    const fileName = `Certificate_${student.name.replace(/\s+/g, '_')}.pdf`;
+    window.tempCertDoc = doc; window.tempCertFileName = fileName;
+    
+    let cleanPhone = student.phone ? student.phone.replace(/[^0-9]/g, '') : '';
+    if(cleanPhone.length === 10) cleanPhone = '91' + cleanPhone; 
+    window.tempCertPhone = cleanPhone;
+    
+    // 🟢 হোয়াটসঅ্যাপ মেসেজে নির্দিষ্ট মাস/বছর উল্লেখ থাকবে
+    window.tempCertMsg = `🎉 Congratulations ${student.name}!\n\nHere is your Practice Certificate for *${periodText}*.\nRank: #${rank}\nTotal Time: ${timeStr}\n\nKeep practicing! 🎸🎹\n\nRegards,\n${instName}`;
+
+    Swal.close();
+    setTimeout(() => {
+        Swal.fire({
+            title: 'Certificate Ready!', icon: 'success',
+            html: `<div style="display:flex; flex-direction:column; gap:10px; margin-top:15px;">
+                <button onclick="window.shareCertWA()" style="background:#25D366; color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer;"><i class="fab fa-whatsapp"></i> Share to WhatsApp</button>
+                <button onclick="window.downloadCertOnly()" style="background:#3b82f6; color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer;"><i class="fas fa-download"></i> Download PDF</button>
+            </div>`,
+            showCloseButton: true, showConfirmButton: false, allowOutsideClick: false
+        });
+    }, 100);
+};
+
+window.shareCertWA = async function() {
+    const doc = window.tempCertDoc; const fileName = window.tempCertFileName;
+    const msg = window.tempCertMsg; const phone = window.tempCertPhone;
+    const pdfBlob = doc.output('blob'); const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+    Swal.close();
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try { await navigator.share({ files: [file], title: 'Certificate', text: msg }); } 
+        catch(e) { doc.save(fileName); if(phone) window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank'); }
+    } else {
+        doc.save(fileName); if(phone) window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+    }
+};
+
+window.downloadCertOnly = function() {
+    window.tempCertDoc.save(window.tempCertFileName);
+    Swal.close();
 };
 </script>
 </body>
