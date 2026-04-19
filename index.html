@@ -2393,35 +2393,36 @@ window.showHelpOptions = function() {
         }
 
 window.loadTheme = function() {
-            // অটো থিম চালু আছে কিনা চেক করা (ডিফল্ট: true)
-            let isAutoTheme = localStorage.getItem('auto_theme_enabled');
-            if (isAutoTheme === null) {
-                isAutoTheme = 'true';
-                localStorage.setItem('auto_theme_enabled', 'true');
-            }
+    // অটো থিম চালু আছে কিনা চেক করা (ডিফল্ট: true)
+    let isAutoTheme = localStorage.getItem('auto_theme_enabled');
+    if (isAutoTheme === null) {
+        isAutoTheme = 'true';
+        localStorage.setItem('auto_theme_enabled', 'true');
+    }
 
-            let themeToApply = 'light';
+    let themeToApply = 'light';
 
-            if (isAutoTheme === 'true') {
-                // 🟢 অটো থিম: সপ্তাহের ৭ দিনের জন্য ৭টি আলাদা থিম!
-                const themes = ['dark', 'magenta', 'light', 'blue', 'orange-red', 'green', 'purple-dark'];
-                const today = new Date().getDay(); // রবিবার(0) থেকে শনিবার(6)
-                themeToApply = themes[today];
-            } else {
-                // 🔴 ম্যানুয়াল থিম: যদি অটো থিম অফ থাকে
-                themeToApply = localStorage.getItem('app_theme') || 'light';
-            }
+    if (isAutoTheme === 'true') {
+        // 🟢 আপনার দেওয়া রুটিন অনুযায়ী ৭ দিনের ৭টি থিম
+        // [রবিবার, সোমবার, মঙ্গলবার, বুধবার, বৃহস্পতিবার, শুক্রবার, শনিবার]
+        const themes = ['dark', 'light', 'green', 'orange-red', 'blue', 'magenta', 'purple-dark'];
+        const today = new Date().getDay(); // রবিবার(0) থেকে শনিবার(6)
+        themeToApply = themes[today];
+    } else {
+        // 🔴 ম্যানুয়াল থিম: যদি অটো থিম অফ থাকে
+        themeToApply = localStorage.getItem('app_theme') || 'light';
+    }
 
-            // থিম অ্যাপ্লাই করা
-            document.body.setAttribute('data-theme', themeToApply);
-            
-            // ম্যানেজার অ্যাপের সেটিংস বাটনের টেক্সট আপডেট
-            const btn = document.getElementById('themeToggleBtn');
-            if (btn) {
-                let themeNameDisplay = themeToApply.charAt(0).toUpperCase() + themeToApply.slice(1);
-                btn.innerHTML = `<i class="fas fa-palette"></i> ${isAutoTheme === 'true' ? 'Auto Theme ('+themeNameDisplay+')' : 'Choose Theme'}`;
-            }
-        }
+    // থিম অ্যাপ্লাই করা
+    document.body.setAttribute('data-theme', themeToApply);
+    
+    // ম্যানেজার অ্যাপের সেটিংস বাটনের টেক্সট আপডেট
+    const btn = document.getElementById('themeToggleBtn');
+    if (btn) {
+        let themeNameDisplay = themeToApply.charAt(0).toUpperCase() + themeToApply.slice(1);
+        btn.innerHTML = `<i class="fas fa-palette"></i> ${isAutoTheme === 'true' ? 'Auto Theme ('+themeNameDisplay+')' : 'Choose Theme'}`;
+    }
+};
 
         let isPhotoDeletedInEdit = false;
 
