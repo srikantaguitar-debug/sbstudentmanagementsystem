@@ -1910,12 +1910,20 @@ if (isStudentActive) {
 }
 
 
-// 🟢 স্টুডেন্ট পোর্টালে "গত পিরিয়ডের" (Past Period) রেজাল্ট অনুযায়ী ব্যাজ লজিক
+// 🟢 স্টুডেন্ট পোর্টালে "গত পিরিয়ডের" (Past Period) রেজাল্ট অনুযায়ী ব্যাজ লজিক (Final Fix)
 let rank = null;
 let rankType = ""; 
-let totalBadgeMins = 0; // 🟢 মোট প্র্যাকটিস টাইম স্টোর করার জন্য নতুন ভেরিয়েবল
+let totalBadgeMins = 0; 
 
-if (s.practice_log && s.practice_log.length > 0) {
+// pLogs থেকে ডেটা নিয়ে চেক করবে (কারণ students অ্যারে পোর্টালে ফাঁকা থাকে)
+let allLogs = [...(pLogs || [])];
+if (s.practice_log) {
+    s.practice_log.forEach(l => {
+        if(!allLogs.some(pl => pl.id === l.id)) allLogs.push({...l, studentId: s.id});
+    });
+}
+
+if (allLogs.length > 0) {
     const _now = new Date();
     
     // --- ১. গত সপ্তাহের ডেট রেঞ্জ (Sunday to Saturday) ---
@@ -1931,29 +1939,23 @@ if (s.practice_log && s.practice_log.length > 0) {
     const _firstOfLastMonth = new Date(_now.getFullYear(), _now.getMonth() - 1, 1);
     const _lastOfLastMonth = new Date(_now.getFullYear(), _now.getMonth(), 0, 23, 59, 59);
 
-    // র‍্যাংক এবং টাইম চেক করার ফাংশন (All Subjects মিলিয়ে)
+    // র‍্যাংক এবং টাইম চেক করার ফাংশন
     function checkRankForPeriod(start, end) {
         let statsMap = {};
-        students.forEach(st => {
-            let stMins = 0;
-            if (st.practice_log) {
-                st.practice_log.forEach(log => {
-                    const parts = log.date.split('/');
-                    let logDate = parts.length === 3 ? new Date(parts[2], parts[1] - 1, parts[0]) : new Date(log.date);
-                    logDate.setHours(0,0,0,0);
-                    if (logDate >= start && logDate <= end) {
-                        stMins += (parseInt(log.minutes) || 0); // 🟢 যেকোনো সাবজেক্টের টাইম যোগ হবে
-                    }
-                });
+        allLogs.forEach(log => {
+            const parts = log.date.split('/');
+            let logDate = parts.length === 3 ? new Date(parts[2], parts[1] - 1, parts[0]) : new Date(log.date);
+            logDate.setHours(0,0,0,0);
+            if (logDate >= start && logDate <= end) {
+                if(!statsMap[log.studentId]) statsMap[log.studentId] = 0;
+                statsMap[log.studentId] += (parseInt(log.minutes) || 0);
             }
-            if (stMins > 0) statsMap[st.id] = stMins;
         });
         
-        // স্টুডেন্টের নিজের টাইমটা আলাদা করে সেভ করে রাখা
         if(statsMap[s.id]) totalBadgeMins = statsMap[s.id];
         
         let sorted = Object.keys(statsMap).map(id => ({ id: parseInt(id), mins: statsMap[id] })).sort((a,b) => b.mins - a.mins);
-        return sorted.findIndex(st => st.id === s.id);
+        return sorted.findIndex(st => parseInt(st.id) === parseInt(s.id));
     }
 
     // গত সপ্তাহের র‍্যাংক চেক
