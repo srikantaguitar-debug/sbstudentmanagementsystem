@@ -1909,8 +1909,39 @@ if (isStudentActive) {
     </div>`;
 }
 
-// 🟢 স্টুডেন্ট পোর্টালে মেডেল ব্যাজ ডিজাইন (উন্নত ও সুন্দর)
-const rank = window.calculateWeeklyRank ? window.calculateWeeklyRank(s.id) : null;
+// 🟢 স্টুডেন্ট পোর্টালে মেডেল ব্যাজ ডিজাইন (সঠিক র‍্যাংক ক্যালকুলেশন সহ)
+let rank = null;
+if (pLogs && pLogs.length > 0) {
+    const _now = new Date();
+    const _sunday = new Date(_now);
+    _sunday.setDate(_now.getDate() - _now.getDay());
+    _sunday.setHours(0, 0, 0, 0);
+    const _saturday = new Date(_sunday);
+    _saturday.setDate(_sunday.getDate() + 6);
+    _saturday.setHours(23, 59, 59, 999);
+
+    let weeklyStatsMap = {};
+    let allLogs = [...pLogs];
+    
+    (s.practice_log || []).forEach(l => {
+        if(!allLogs.some(pl => pl.id === l.id)) allLogs.push({...l, studentId: s.id});
+    });
+
+    allLogs.forEach(log => {
+        const parts = log.date.split('/');
+        let logDate = parts.length === 3 ? new Date(parts[2], parts[1] - 1, parts[0]) : new Date(log.date);
+        logDate.setHours(0,0,0,0);
+        if (logDate >= _sunday && logDate <= _saturday) {
+            if(!weeklyStatsMap[log.studentId]) weeklyStatsMap[log.studentId] = 0;
+            weeklyStatsMap[log.studentId] += (parseInt(log.minutes) || 0);
+        }
+    });
+
+    let sortedStats = Object.keys(weeklyStatsMap).map(id => ({ id: parseInt(id), mins: weeklyStatsMap[id] })).sort((a,b) => b.mins - a.mins);
+    const rankIndex = sortedStats.findIndex(st => st.id === s.id);
+    if (rankIndex !== -1 && rankIndex < 3) rank = rankIndex + 1;
+}
+
 let badgeOverlay = '';
 if (rank === 1) badgeOverlay = `<div style="position:absolute; bottom:0px; right:-8px; font-size:30px; background:#ffffff; border-radius:50%; width:42px; height:42px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(0,0,0,0.25); border: 2px solid #facc15; z-index:10;" title="Weekly Rank 1">🥇</div>`;
 else if (rank === 2) badgeOverlay = `<div style="position:absolute; bottom:0px; right:-8px; font-size:30px; background:#ffffff; border-radius:50%; width:42px; height:42px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(0,0,0,0.25); border: 2px solid #cbd5e1; z-index:10;" title="Weekly Rank 2">🥈</div>`;
@@ -7037,7 +7068,7 @@ function getPracticeStats(student, filter = 'All') {
     now.setHours(0, 0, 0, 0);
     
     const dayOfWeek = now.getDay();
-    const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); 
+    const diff = now.getDate() - dayOfWeek; // 0 = Sunday, এখান থেকে উইকলি শুরু হবে
     const weekStart = new Date(now);
     weekStart.setDate(diff);
     weekStart.setHours(0, 0, 0, 0);
@@ -9671,9 +9702,9 @@ window.renderPracticeLeaderboard = function() {
                     </div>
                 </div>
 
-                <div style="background: ${index < 3 ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'var(--primary)'}; color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; flex-shrink:0; white-space:nowrap; box-shadow: 0 2px 5px rgba(0,0,0,0.2); margin-left:5px;">
-                    <i class="fas fa-clock"></i> ${timeStr}
-                </div>
+                <div style="background: ${index < 3 ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'var(--primary)'}; color: white; padding: 6px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; flex-shrink:0; white-space:nowrap; display:flex; align-items:center; justify-content:center; gap:4px; min-width:max-content; box-shadow: 0 2px 5px rgba(0,0,0,0.2); margin-left:5px;">
+    <i class="fas fa-clock"></i> ${timeStr}
+</div>
                 
             </div>
         `;
@@ -9756,7 +9787,7 @@ window.generatePracticeCertificate = async function(studentId, rank, timeRange, 
     doc.setDrawColor(218, 165, 32); doc.setLineWidth(4); doc.rect(8, 8, width - 16, height - 16);
     doc.setDrawColor(30, 41, 59); doc.setLineWidth(0.5); doc.rect(11, 11, width - 22, height - 22);
 
-    let y = 25; 
+    let y = 22; // শুরু একটু ওপর থেকে হবে
     
     doc.setFont("helvetica", "bold");
     doc.setFontSize(22);
@@ -9764,46 +9795,45 @@ window.generatePracticeCertificate = async function(studentId, rank, timeRange, 
     const instName = (typeof INSTITUTE_NAME !== 'undefined' ? INSTITUTE_NAME : 'Music Classes').toUpperCase();
     doc.text(instName, width/2, y, { align: "center" });
     
-    y += 15; 
+    y += 10; 
     
     if (typeof instituteLogo !== 'undefined' && instituteLogo) {
-        doc.addImage(instituteLogo, 'JPEG', width/2 - 12, y, 24, 24);
-        y += 35; 
+        doc.addImage(instituteLogo, 'JPEG', width/2 - 10, y, 20, 20); // লোগো সাইজ পারফেক্ট করা হলো
+        y += 30; // লোগোর নিচে গ্যাপ
     } else {
-        y += 20;
+        y += 15;
     }
 
-    doc.setFontSize(26); doc.setTextColor(15, 23, 42);
+    doc.setFontSize(24); doc.setTextColor(15, 23, 42);
     doc.text("CERTIFICATE OF ACHIEVEMENT", width/2, y, { align: "center" });
     
     y += 12; 
     doc.setFontSize(14); doc.setFont("helvetica", "italic"); doc.setTextColor(71, 85, 105);
     doc.text("This certificate is proudly presented to", width/2, y, { align: "center" });
 
-    y += 15; 
+    y += 10; 
     
     if(student.photo) {
         try {
-            doc.addImage(student.photo, 'JPEG', width/2 - 18, y, 36, 36);
-            doc.setDrawColor(184, 134, 11); doc.setLineWidth(1); doc.rect(width/2 - 18, y, 36, 36); 
-            y += 50; 
+            doc.addImage(student.photo, 'JPEG', width/2 - 15, y, 30, 30);
+            doc.setDrawColor(184, 134, 11); doc.setLineWidth(1); doc.rect(width/2 - 15, y, 30, 30); 
+            y += 42; 
         } catch(e) { y += 15; }
     } else {
-        y += 20;
+        y += 15;
     }
 
-    doc.setFontSize(32); doc.setTextColor(0, 0, 0); doc.setFont("helvetica", "bold");
+    doc.setFontSize(28); doc.setTextColor(0, 0, 0); doc.setFont("helvetica", "bold");
     doc.text(student.name, width/2, y, { align: "center" });
 
-    y += 15; 
+    y += 12; 
     
-    doc.setFontSize(15); doc.setTextColor(51, 65, 85); doc.setFont("helvetica", "normal");
+    doc.setFontSize(14); doc.setTextColor(51, 65, 85); doc.setFont("helvetica", "normal");
     let h = Math.floor(totalMins / 60); let m = totalMins % 60;
     let timeStr = h > 0 ? `${h}h ${m}m` : `${m}m`;
     
-    // 🟢 এখানে নির্দিষ্ট মাস বা পিরিয়ড প্রিন্ট হবে
     doc.text(`For securing Rank #${rank} during ${periodText}`, width/2, y, { align: "center" });
-    y += 10;
+    y += 8;
     doc.setFont("helvetica", "bold");
     doc.text(`with a total practice time of ${timeStr}.`, width/2, y, { align: "center" });
 
