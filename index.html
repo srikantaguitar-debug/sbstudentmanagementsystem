@@ -2496,40 +2496,92 @@ async function initApp() {
                     }
                 }
 
-                const [aData, fData, rData, scData, gmData, sData] = await Promise.all([
+                // প্রথমে পুরনো ডেটা ফেচ করা হচ্ছে মাইগ্রেশনের জন্য
+                const [aDataOld, fDataOld, rData, scData, gmData, sData] = await Promise.all([
                     dbGet('attendance'),
                     dbGet('fees'),
                     dbGet('reminders'),
                     dbGet('studentSerialCounter'),
                     dbGet('globalMaterials'),
-                    dbGet('stockData') // 🟢 এটি নতুন যোগ হলো
+                    dbGet('stockData')
                 ]);
 
                 students = loadedStudents || []; 
-                // 🟢 Manager-এর জন্য গ্লোবাল প্র্যাকটিস লগগুলো স্টুডেন্টদের ডেটায় মার্জ করা হচ্ছে
-if (window.globalPracticeLogs && window.globalPracticeLogs.length > 0) {
-    window.globalPracticeLogs.forEach(log => {
-        let s = students.find(st => st.id == log.studentId);
-        if (s) {
-            if (!s.practice_log) s.practice_log = [];
-            if (!s.practice_log.some(l => l.id === log.id)) {
-                s.practice_log.push(log);
-            }
-        }
-    });
-    students.forEach(s => {
-        if (s.practice_log) s.practice_log.sort((a,b) => b.id - a.id);
-    });
-}
-                attendance = aData || {}; 
-                fees = fData || {}; 
+                
+                // 🟢 Manager-এর জন্য গ্লোবাল প্র্যাকটিস লগ সিঙ্ক (Two-way Sync for Leaderboard Fix)
+                let needsPlogSync = false;
+                
+                // ১. সমস্ত পুরনো লগগুলোকে গ্লোবাল পুলে (pLogs) পাঠানো হচ্ছে
+                students.forEach(st => {
+                    if (st.practice_log && st.practice_log.length > 0) {
+                        st.practice_log.forEach(l => {
+                            if (!window.globalPracticeLogs.some(gl => gl.id === l.id)) {
+                                window.globalPracticeLogs.push({...l, studentId: st.id, studentName: st.name});
+                                needsPlogSync = true;
+                            }
+                        });
+                    }
+                });
+
+                // ২. গ্লোবাল লগগুলোকে আবার স্টুডেন্টদের প্রোফাইলে আপডেট করা হচ্ছে
+                if (window.globalPracticeLogs && window.globalPracticeLogs.length > 0) {
+                    window.globalPracticeLogs.forEach(log => {
+                        let s = students.find(st => st.id == log.studentId);
+                        if (s) {
+                            if (!s.practice_log) s.practice_log = [];
+                            if (!s.practice_log.some(l => l.id === log.id)) {
+                                s.practice_log.push(log);
+                            }
+                        }
+                    });
+                    students.forEach(s => {
+                        if (s.practice_log) s.practice_log.sort((a,b) => b.id - a.id);
+                    });
+                }
+
+                // ৩. যদি পুরনো কোনো লগ নতুন করে সিঙ্ক হয়ে থাকে, তবে তা সাথে সাথে ফায়ারবেসে সেভ করা
+                const currentUser = firebase.auth().currentUser;
+                if (needsPlogSync && currentUser) {
+                    const currentYear = new Date().getFullYear();
+                    db.collection(COLLECTION_NAME).doc(DOC_ID).collection('practice_logs').doc(String(currentYear)).set({
+                        records: window.globalPracticeLogs
+                    }, { merge: true }).catch(e => console.log(e));
+                }
+
+                attendance = {}; 
+                fees = {}; 
+                
+                const user = firebase.auth().currentUser;
+                const targetUid = new URLSearchParams(window.location.search).get('manager') || (user ? user.uid : DOC_ID);
+
+                // 🟢 সাব-কালেকশন থেকে সমস্ত বছরের ডেটা লোড করা
+                const attSnap = await db.collection(COLLECTION_NAME).doc(targetUid).collection('attendance').get();
+                attSnap.forEach(doc => { if(doc.data().records) Object.assign(attendance, doc.data().records); });
+
+                const feeSnap = await db.collection(COLLECTION_NAME).doc(targetUid).collection('fees').get();
+                feeSnap.forEach(doc => { if(doc.data().records) Object.assign(fees, doc.data().records); });
+                
+                // 🟢 অটো-মাইগ্রেশন: পুরনো মেইন ডকুমেন্টে ডেটা থাকলে, সেটা সাব-কালেকশনে পাঠিয়ে ডিলিট করে দেবে
+                let needsMigration = false;
+                if(aDataOld && Object.keys(aDataOld).length > 0) { Object.assign(attendance, aDataOld); needsMigration = true; }
+                if(fDataOld && Object.keys(fDataOld).length > 0) { Object.assign(fees, fDataOld); needsMigration = true; }
+                
+                if(needsMigration && user && !new URLSearchParams(window.location.search).get('manager')) {
+                    await window.syncAttendanceToFirebase();
+                    await window.syncFeesToFirebase();
+                    await db.collection(COLLECTION_NAME).doc(user.uid).update({
+                        attendance: firebase.firestore.FieldValue.delete(),
+                        fees: firebase.firestore.FieldValue.delete()
+                    }).catch(e => console.log(e));
+                }
+
                 reminders = rData || []; 
                 window.stockInventory = sData || [];
                 window.renderInventoryDropdown();
                 globalMaterials = gmData || [];
                 studentSerialCounter = parseInt(scData) || (students.length > 0 ? students.length + 1 : 1); 
                 
-                loadAllData(); 
+                loadAllData();
             } catch(e) {
                 console.error("Init Error:", e);
                 if(!students) students = [];
@@ -3249,9 +3301,54 @@ async function addStudent() {
     } 
 }
 
+// 🟢 NEW: Attendance Monthly Sub-collection Sync (Fix for 1MB Limit)
+window.syncAttendanceToFirebase = async function() {
+    const user = firebase.auth().currentUser;
+    const targetUid = new URLSearchParams(window.location.search).get('manager') || (user ? user.uid : DOC_ID);
+    if (!targetUid) return;
+
+    let monthlyAtt = {};
+    Object.keys(attendance).forEach(date => {
+        // Date থেকে YYYY-MM (বছর ও মাস) বের করা
+        let monthStr = "";
+        if (date.includes('-')) {
+            monthStr = date.substring(0, 7); // YYYY-MM
+        } else if (date.includes('/')) {
+            const parts = date.split('/');
+            monthStr = `${parts[2]}-${parts[1]}`;
+        }
+        
+        if (monthStr) {
+            if(!monthlyAtt[monthStr]) monthlyAtt[monthStr] = {};
+            monthlyAtt[monthStr][date] = attendance[date];
+        }
+    });
+    
+    let promises = [];
+    for (const m of Object.keys(monthlyAtt)) {
+        promises.push(db.collection(COLLECTION_NAME).doc(targetUid).collection('attendance').doc(m).set({ records: monthlyAtt[m] }, { merge: true }));
+    }
+    await Promise.all(promises);
+};
+
+// 🟢 NEW: Fees Monthly Sub-collection Sync
+window.syncFeesToFirebase = async function() {
+    const user = firebase.auth().currentUser;
+    const targetUid = new URLSearchParams(window.location.search).get('manager') || (user ? user.uid : DOC_ID);
+    if (!targetUid) return;
+
+    let promises = [];
+    for (const monthStr of Object.keys(fees)) {
+        let monthlyFee = {};
+        monthlyFee[monthStr] = fees[monthStr];
+        promises.push(db.collection(COLLECTION_NAME).doc(targetUid).collection('fees').doc(monthStr).set({ records: monthlyFee }, { merge: true }));
+    }
+    await Promise.all(promises);
+};
+
 async function saveData() { 
-    await dbSet('attendance', attendance); 
-    await dbSet('fees', fees); 
+    await window.syncAttendanceToFirebase(); 
+    await window.syncFeesToFirebase(); 
     await dbSet('reminders', reminders);
     await dbSet('globalMaterials', globalMaterials); 
     await dbSet('studentSerialCounter', studentSerialCounter); 
@@ -3374,10 +3471,17 @@ async function importData(event) {
 
             const user = firebase.auth().currentUser;
             if (user) {
-                document.getElementById('restore-status').innerText = "Cleaning old database...";
+                document.getElementById('restore-status').innerText = "Syncing Fees & Attendance...";
                 
-                dbSet('attendance', attendance).catch(console.error);
-                dbSet('fees', fees).catch(console.error);
+                // 🟢 পুরনো ব্যাকআপ ডেটা নিজে থেকেই Yearly Sub-collection এ সেভ হয়ে যাবে!
+                await window.syncAttendanceToFirebase();
+                await window.syncFeesToFirebase();
+                
+                // মেইন ডকুমেন্টে যদি কিছু থেকে থাকে, তা মুছে দেবে
+                db.collection(COLLECTION_NAME).doc(user.uid).update({
+                    attendance: firebase.firestore.FieldValue.delete(),
+                    fees: firebase.firestore.FieldValue.delete()
+                }).catch(e => console.log(e));
                 dbSet('reminders', reminders).catch(console.error);
                 dbSet('globalMaterials', globalMaterials).catch(console.error); 
                 dbSet('stockData', window.stockInventory).catch(console.error); // 🟢 Stock ফায়ারবেসে সেভ
@@ -5324,8 +5428,9 @@ window.markAttendance = async function(studentId, status) {
 
             const user = firebase.auth().currentUser;
             if(user) {
-                const deletePath = `attendance.${date}.${studentId}`;
-                db.collection(COLLECTION_NAME).doc(user.uid).update({
+                const monthStr = date.substring(0, 7); // YYYY-MM
+                const deletePath = `records.${date}.${studentId}`;
+                db.collection(COLLECTION_NAME).doc(user.uid).collection('attendance').doc(monthStr).update({
                     [deletePath]: firebase.firestore.FieldValue.delete()
                 }).catch(e => console.log("Delete queued for offline sync."));
             }
@@ -5666,8 +5771,9 @@ async function unmarkFee(studentId, month) {
 
             const user = firebase.auth().currentUser;
             if (user) {
-                const fieldPath = `fees.${month}.${studentId}`;
-                db.collection(COLLECTION_NAME).doc(user.uid).update({
+                const fieldPath = `records.${month}.${studentId}`;
+                // ফিস এর month ভেরিয়েবলটাই YYYY-MM ফরম্যাটে থাকে, তাই ওটাই ডকুমেন্ট আইডি হবে
+                db.collection(COLLECTION_NAME).doc(user.uid).collection('fees').doc(month).update({
                     [fieldPath]: firebase.firestore.FieldValue.delete()
                 }).catch(err => console.log("Offline mode: Delete queued for sync."));
             }
@@ -7858,26 +7964,30 @@ window.executePermanentDelete = async function(studentId) {
         // ২. ফায়ারবেস ডেটাবেস থেকে স্টুডেন্ট ডকুমেন্ট ডিলিট করা
         await db.collection(COLLECTION_NAME).doc(targetUid).collection('students').doc(String(studentId)).delete();
 
-        // ৩. লোকাল Attendance এবং Fees থেকে ডেটা মুছে ফেলা এবং ফায়ারবেস আপডেট রেডি করা
-        const updates = {};
-        
+        // ৩. Monthly Subcollection থেকে ডেটা মুছে ফেলা
+        const updatesByMonthAtt = {};
         for (let date in attendance) {
             if (attendance[date][studentId]) {
                 delete attendance[date][studentId];
-                updates[`attendance.${date}.${studentId}`] = firebase.firestore.FieldValue.delete();
+                const monthStr = date.substring(0, 7); // YYYY-MM
+                if(!updatesByMonthAtt[monthStr]) updatesByMonthAtt[monthStr] = {};
+                updatesByMonthAtt[monthStr][`records.${date}.${studentId}`] = firebase.firestore.FieldValue.delete();
             }
         }
+        for (let month in updatesByMonthAtt) {
+            db.collection(COLLECTION_NAME).doc(targetUid).collection('attendance').doc(month).update(updatesByMonthAtt[month]).catch(e=>console.log(e));
+        }
 
+        const updatesByMonthFees = {};
         for (let month in fees) {
             if (fees[month][studentId]) {
                 delete fees[month][studentId];
-                updates[`fees.${month}.${studentId}`] = firebase.firestore.FieldValue.delete();
+                if(!updatesByMonthFees[month]) updatesByMonthFees[month] = {};
+                updatesByMonthFees[month][`records.${month}.${studentId}`] = firebase.firestore.FieldValue.delete();
             }
         }
-
-        // ফায়ারবেসের মেইন ডকুমেন্ট আপডেট করা (Attendance & Fees মুছতে)
-        if (Object.keys(updates).length > 0) {
-            await db.collection(COLLECTION_NAME).doc(targetUid).update(updates);
+        for (let month in updatesByMonthFees) {
+            db.collection(COLLECTION_NAME).doc(targetUid).collection('fees').doc(month).update(updatesByMonthFees[month]).catch(e=>console.log(e));
         }
 
         // ৪. ডেটাবেস রিফ্রেশ করা এবং UI আপডেট করা
@@ -8000,12 +8110,10 @@ window.executeSingleRestoreFromFullBackup = async function(backupData, studentId
             });
         }
 
-        // ৬. মেইন ডেটাবেসে Attendance ও Fees সিঙ্ক করা
+        // ৬. মেইন ডেটাবেসে Attendance ও Fees সিঙ্ক করা (Yearly Sub-collection)
         if (needsDbSync) {
-            const updates = {};
-            if (backupData.attendance) updates.attendance = attendance;
-            if (backupData.fees) updates.fees = fees;
-            await db.collection(COLLECTION_NAME).doc(targetUid).update(updates);
+            await window.syncAttendanceToFirebase();
+            await window.syncFeesToFirebase();
         }
 
         // ৭. UI রিফ্রেশ
